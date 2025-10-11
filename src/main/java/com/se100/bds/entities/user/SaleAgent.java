@@ -1,12 +1,16 @@
 package com.se100.bds.entities.user;
 
 import com.se100.bds.entities.AbstractBaseEntity;
+import com.se100.bds.entities.appointment.Appointment;
+import com.se100.bds.entities.ranking.IndividualSalesAgentRanking;
 import com.se100.bds.utils.Constants;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Builder
@@ -52,4 +56,20 @@ public class SaleAgent extends AbstractBaseEntity {
 
     @Column(name = "career_ranking", nullable = false)
     private int careerRanking;
+
+    @OneToMany(mappedBy = "assignedAgent", cascade = CascadeType.ALL)
+    @Builder.Default
+    private List<com.se100.bds.entities.property.Property> assignedProperties = new ArrayList<>();
+
+    @OneToMany(mappedBy = "agent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Appointment> appointments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "agent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<com.se100.bds.entities.contract.Contract> contracts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "agent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<IndividualSalesAgentRanking> rankings = new ArrayList<>();
 }

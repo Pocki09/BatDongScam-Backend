@@ -1,10 +1,14 @@
 package com.se100.bds.entities.user;
 
 import com.se100.bds.entities.AbstractBaseEntity;
+import com.se100.bds.entities.violation.ViolationReport;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.se100.bds.utils.Constants;
 
 @Entity
@@ -56,4 +60,12 @@ public class User extends AbstractBaseEntity {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private PropertyOwner propertyOwner;
+
+    @OneToMany(mappedBy = "recipient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<com.se100.bds.entities.notification.Notification> notifications = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ViolationReport> violations = new ArrayList<>();
 }

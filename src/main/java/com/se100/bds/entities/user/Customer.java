@@ -1,11 +1,16 @@
 package com.se100.bds.entities.user;
 
 import com.se100.bds.entities.AbstractBaseEntity;
+import com.se100.bds.entities.appointment.Appointment;
+import com.se100.bds.entities.contract.Contract;
+import com.se100.bds.entities.search.SearchLog;
 import com.se100.bds.utils.Constants;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Builder
@@ -48,4 +53,20 @@ public class Customer extends AbstractBaseEntity {
 
     @Column(name = "lead_score", nullable = false)
     private int leadScore;
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Appointment> appointments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Contract> contracts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<SearchLog> searchLogs = new ArrayList<>();
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<com.se100.bds.entities.ranking.IndividualCustomerLead> customerLeads = new ArrayList<>();
 }

@@ -83,4 +83,279 @@ public final class Constants {
                     .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid customer tier name: %s", name)));
         }
     }
+
+    @Getter
+    @AllArgsConstructor
+    public enum AppointmentStatusEnum {
+        PENDING("PENDING"),
+        CONFIRMED("CONFIRMED"),
+        COMPLETED("COMPLETED"),
+        CANCELLED("CANCELLED");
+
+        private final String value;
+
+        public static AppointmentStatusEnum get(final String name) {
+            return Stream.of(AppointmentStatusEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid appointment status name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum ContractTypeEnum {
+        PURCHASE("PURCHASE"),
+        RENTAL("RENTAL");
+
+        private final String value;
+
+        public static ContractTypeEnum get(final String name) {
+            return Stream.of(ContractTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid contract type name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum ContractStatusEnum {
+        DRAFT("DRAFT"),
+        PENDING_SIGNING("PENDING_SIGNING"),
+        ACTIVE("ACTIVE"),
+        COMPLETED("COMPLETED"),
+        CANCELLED("CANCELLED");
+
+        private final String value;
+
+        public static ContractStatusEnum get(final String name) {
+            return Stream.of(ContractStatusEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid contract status name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum ContractPaymentTypeEnum {
+        MORTGAGE("MORTGAGE"),
+        MONTHLY_RENT("MONTHLY_RENT"),
+        PAID_IN_FULL("PAID_IN_FULL");
+
+        private final String value;
+
+        public static ContractPaymentTypeEnum get(final String name) {
+            return Stream.of(ContractPaymentTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid contract payment type name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum PaymentTypeEnum {
+        DEPOSIT("DEPOSIT"),
+        ADVANCE("ADVANCE"),
+        INSTALLMENT("INSTALLMENT"),
+        FULL_PAY("FULL_PAY"),
+        MONTHLY("MONTHLY"),
+        PENALTY("PENALTY"),
+        REFUND("REFUND");
+
+        private final String value;
+
+        public static PaymentTypeEnum get(final String name) {
+            return Stream.of(PaymentTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid payment type name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum VerificationStatusEnum {
+        PENDING("PENDING"),
+        VERIFIED("VERIFIED"),
+        REJECTED("REJECTED");
+
+        private final String value;
+
+        public static VerificationStatusEnum get(final String name) {
+            return Stream.of(VerificationStatusEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid verification status name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum NotificationTypeEnum {
+        APPOINTMENT_REMINDER("APPOINTMENT_REMINDER"),
+        CONTRACT_UPDATE("CONTRACT_UPDATE"),
+        PAYMENT_DUE("PAYMENT_DUE"),
+        VIOLATION_WARNING("VIOLATION_WARNING"),
+        SYSTEM_ALERT("SYSTEM_ALERT");
+
+        private final String value;
+
+        public static NotificationTypeEnum get(final String name) {
+            return Stream.of(NotificationTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid notification type name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum RelatedEntityTypeEnum {
+        PROPERTY("PROPERTY"),
+        CONTRACT("CONTRACT"),
+        PAYMENT("PAYMENT"),
+        APPOINTMENT("APPOINTMENT"),
+        USER("USER");
+
+        private final String value;
+
+        public static RelatedEntityTypeEnum get(final String name) {
+            return Stream.of(RelatedEntityTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid related entity type name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum NotificationStatusEnum {
+        PENDING("PENDING"),
+        SENT("SENT"),
+        READ("READ"),
+        FAILED("FAILED");
+
+        private final String value;
+
+        public static NotificationStatusEnum get(final String name) {
+            return Stream.of(NotificationStatusEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid notification status name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum MediaTypeEnum {
+        IMAGE("IMAGE"),
+        VIDEO("VIDEO"),
+        DOCUMENT("DOCUMENT");
+
+        private final String value;
+
+        public static MediaTypeEnum get(final String name) {
+            return Stream.of(MediaTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid media type name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum TransactionTypeEnum {
+        SALE("SALE"),
+        RENTAL("RENTAL");
+
+        private final String value;
+
+        public static TransactionTypeEnum get(final String name) {
+            return Stream.of(TransactionTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid transaction type name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum OrientationEnum {
+        NORTH("NORTH"),
+        SOUTH("SOUTH"),
+        EAST("EAST"),
+        WEST("WEST"),
+        NORTH_EAST("NORTH_EAST"),
+        NORTH_WEST("NORTH_WEST"),
+        SOUTH_EAST("SOUTH_EAST"),
+        SOUTH_WEST("SOUTH_WEST"),
+        UNKNOWN("UNKNOWN");
+
+        private final String value;
+
+        public static OrientationEnum get(final String name) {
+            return Stream.of(OrientationEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid orientation name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum PropertyStatusEnum {
+        PENDING("PENDING"),
+        APPROVED("APPROVED"),
+        REJECTED("REJECTED");
+
+        private final String value;
+
+        public static PropertyStatusEnum get(final String name) {
+            return Stream.of(PropertyStatusEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid property status name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum LeadClassificationEnum {
+        COLD("COLD"),
+        WARM("WARM"),
+        HOT("HOT"),
+        CONVERTED("CONVERTED");
+
+        private final String value;
+
+        public static LeadClassificationEnum get(final String name) {
+            return Stream.of(LeadClassificationEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid lead classification name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum ReportTypeEnum {
+        FINANCIAL("FINANCIAL"),
+        AGENT_PERFORMANCE("AGENT_PERFORMANCE"),
+        PROPERTY_STATISTICS("PROPERTY_STATISTICS"),
+        CUSTOMER_ANALYTICS("CUSTOMER_ANALYTICS"),
+        VIOLATION("VIOLATION");
+
+        private final String value;
+
+        public static ReportTypeEnum get(final String name) {
+            return Stream.of(ReportTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid report type name: %s", name)));
+        }
+    }
 }
+
