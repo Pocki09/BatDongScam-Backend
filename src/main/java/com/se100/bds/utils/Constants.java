@@ -106,7 +106,8 @@ public final class Constants {
     @AllArgsConstructor
     public enum ContractTypeEnum {
         PURCHASE("PURCHASE"),
-        RENTAL("RENTAL");
+        RENTAL("RENTAL"),
+        INVESTMENT("INVESTMENT");
 
         private final String value;
 
@@ -269,7 +270,8 @@ public final class Constants {
     @AllArgsConstructor
     public enum TransactionTypeEnum {
         SALE("SALE"),
-        RENTAL("RENTAL");
+        RENTAL("RENTAL"),
+        INVESTMENT("INVESTMENT");
 
         private final String value;
 
