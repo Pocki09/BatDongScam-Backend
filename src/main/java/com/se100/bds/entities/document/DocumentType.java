@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "DocumentType")
+@Table(name = "document_types")
 @Builder
 @Getter
 @Setter

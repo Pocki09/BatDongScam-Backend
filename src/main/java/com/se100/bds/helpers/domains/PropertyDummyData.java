@@ -1,0 +1,125 @@
+package com.se100.bds.helpers.domains;
+
+import com.se100.bds.entities.location.Ward;
+import com.se100.bds.entities.property.Property;
+import com.se100.bds.entities.property.PropertyType;
+import com.se100.bds.entities.user.PropertyOwner;
+import com.se100.bds.entities.user.SaleAgent;
+import com.se100.bds.repositories.location.WardRepository;
+import com.se100.bds.repositories.property.PropertyRepository;
+import com.se100.bds.repositories.property.PropertyTypeRepository;
+import com.se100.bds.repositories.user.PropertyOwnerRepository;
+import com.se100.bds.repositories.user.SaleAgentRepository;
+import com.se100.bds.utils.Constants;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+@Slf4j
+@RequiredArgsConstructor
+@Service
+public class PropertyDummyData {
+
+    private final PropertyRepository propertyRepository;
+    private final PropertyOwnerRepository propertyOwnerRepository;
+    private final SaleAgentRepository saleAgentRepository;
+    private final PropertyTypeRepository propertyTypeRepository;
+    private final WardRepository wardRepository;
+
+    private final Random random = new Random();
+
+    public void createDummy() {
+        createDummyProperties();
+    }
+
+    private void createDummyProperties() {
+        log.info("Creating dummy properties");
+
+        List<PropertyOwner> owners = propertyOwnerRepository.findAll();
+        List<SaleAgent> agents = saleAgentRepository.findAll();
+        List<PropertyType> types = propertyTypeRepository.findAll();
+        List<Ward> wards = wardRepository.findAll();
+
+        if (owners.isEmpty() || agents.isEmpty() || types.isEmpty() || wards.isEmpty()) {
+            log.warn("Cannot create properties - missing required data");
+            return;
+        }
+
+        List<Property> properties = new ArrayList<>();
+
+        // Create 200 properties
+        for (int i = 1; i <= 200; i++) {
+            PropertyOwner owner = owners.get(random.nextInt(owners.size()));
+            SaleAgent agent = agents.get(random.nextInt(agents.size()));
+            PropertyType type = types.get(random.nextInt(types.size()));
+            Ward ward = wards.get(random.nextInt(wards.size()));
+
+            Constants.TransactionTypeEnum transactionType = random.nextBoolean()
+                    ? Constants.TransactionTypeEnum.SALE
+                    : Constants.TransactionTypeEnum.RENTAL;
+
+            BigDecimal area = new BigDecimal(50 + random.nextInt(450)); // 50-500 sqm
+            BigDecimal pricePerSqm = new BigDecimal(50000000 + random.nextInt(200000000)); // 50M-250M VND/sqm
+            BigDecimal priceAmount = area.multiply(pricePerSqm);
+
+            Property property = Property.builder()
+                    .owner(owner)
+                    .assignedAgent(agent)
+                    .propertyType(type)
+                    .ward(ward)
+                    .title(generatePropertyTitle(type.getTypeName(), ward, i))
+                    .description(generatePropertyDescription(type.getTypeName(), area))
+                    .transactionType(transactionType)
+                    .fullAddress(String.format("%d %s Street, %s", i, type.getTypeName(), ward.getWardName()))
+                    .area(area)
+                    .rooms(2 + random.nextInt(6)) // 2-7 rooms
+                    .bathrooms(1 + random.nextInt(4)) // 1-4 bathrooms
+                    .floors(1 + random.nextInt(5)) // 1-5 floors
+                    .bedrooms(1 + random.nextInt(5)) // 1-5 bedrooms
+                    .houseOrientation(getRandomOrientation())
+                    .balconyOrientation(getRandomOrientation())
+                    .yearBuilt(2000 + random.nextInt(25)) // 2000-2024
+                    .priceAmount(priceAmount)
+                    .pricePerSquareMeter(pricePerSqm)
+                    .commissionRate(new BigDecimal("0.02")) // 2% commission
+                    .amenities("WiFi, Air Conditioning, Parking, Security")
+                    .status(random.nextDouble() < 0.8 ? Constants.PropertyStatusEnum.APPROVED : Constants.PropertyStatusEnum.PENDING)
+                    .viewCount(random.nextInt(1000))
+                    .approvedAt(LocalDateTime.now().minusDays(random.nextInt(180)))
+                    .mediaList(new ArrayList<>())
+                    .appointments(new ArrayList<>())
+                    .contracts(new ArrayList<>())
+                    .violations(new ArrayList<>())
+                    .documents(new ArrayList<>())
+                    .build();
+
+            properties.add(property);
+        }
+
+        propertyRepository.saveAll(properties);
+        log.info("Saved {} properties to database", properties.size());
+    }
+
+    private String generatePropertyTitle(String typeName, Ward ward, int index) {
+        return String.format("Beautiful %s in %s - Property #%d", typeName, ward.getWardName(), index);
+    }
+
+    private String generatePropertyDescription(String typeName, BigDecimal area) {
+        return String.format("Modern %s with %.2f square meters of living space. " +
+                "Located in a prime location with easy access to amenities. " +
+                "Perfect for families or investors looking for quality property.",
+                typeName.toLowerCase(), area);
+    }
+
+    private Constants.OrientationEnum getRandomOrientation() {
+        Constants.OrientationEnum[] orientations = Constants.OrientationEnum.values();
+        return orientations[random.nextInt(orientations.length)];
+    }
+}
+

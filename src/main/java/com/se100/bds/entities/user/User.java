@@ -12,6 +12,7 @@ import java.util.List;
 import com.se100.bds.utils.Constants;
 
 @Entity
+@Table(name = "users")
 @Builder
 @Getter
 @Setter

@@ -9,7 +9,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ViolationReport")
+@Table(name = "violation_reports")
 @Builder
 @Getter
 @Setter
@@ -45,4 +45,3 @@ public class ViolationReport extends AbstractBaseEntity {
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
 }
-

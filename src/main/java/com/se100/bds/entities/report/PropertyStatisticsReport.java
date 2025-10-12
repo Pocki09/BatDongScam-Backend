@@ -7,7 +7,7 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "PropertyStatisticsReport")
+@Table(name = "property_statistics_reports")
 @Builder
 @Getter
 @Setter
@@ -40,4 +40,3 @@ public class PropertyStatisticsReport extends AbstractBaseEntity {
     @Column(name = "most_popular_location_id")
     private String mostPopularLocationId;
 }
-

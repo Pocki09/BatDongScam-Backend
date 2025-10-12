@@ -8,7 +8,7 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "AgentPerformanceReport")
+@Table(name = "agent_performance_reports")
 @Builder
 @Getter
 @Setter
@@ -65,4 +65,3 @@ public class AgentPerformanceReport extends AbstractBaseEntity {
     @Column(name = "avg_rating_current_month", precision = 5, scale = 2)
     private BigDecimal avgRatingCurrentMonth;
 }
-

@@ -3,7 +3,6 @@ package com.se100.bds.entities.user;
 import com.se100.bds.entities.AbstractBaseEntity;
 import com.se100.bds.entities.appointment.Appointment;
 import com.se100.bds.entities.contract.Contract;
-import com.se100.bds.entities.search.SearchLog;
 import com.se100.bds.utils.Constants;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "customers")
 @Builder
 @Getter
 @Setter
@@ -61,10 +61,6 @@ public class Customer extends AbstractBaseEntity {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Contract> contracts = new ArrayList<>();
-
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<SearchLog> searchLogs = new ArrayList<>();
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

@@ -1,0 +1,53 @@
+package com.se100.bds.helpers.domains;
+
+import com.se100.bds.entities.property.PropertyType;
+import com.se100.bds.repositories.property.PropertyTypeRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Slf4j
+@RequiredArgsConstructor
+@Service
+public class PropertyTypeDummyData {
+
+    private final PropertyTypeRepository propertyTypeRepository;
+
+    public void createDummy() {
+        createDummyPropertyTypes();
+    }
+
+    private void createDummyPropertyTypes() {
+        log.info("Creating dummy property types");
+
+        List<PropertyType> propertyTypes = new ArrayList<>();
+
+        propertyTypes.add(createPropertyType("Apartment", "Modern apartment buildings with multiple units"));
+        propertyTypes.add(createPropertyType("House", "Standalone residential houses"));
+        propertyTypes.add(createPropertyType("Villa", "Luxury villas with private gardens"));
+        propertyTypes.add(createPropertyType("Townhouse", "Multi-story houses in urban areas"));
+        propertyTypes.add(createPropertyType("Penthouse", "Luxury apartments on top floors"));
+        propertyTypes.add(createPropertyType("Studio", "Compact single-room apartments"));
+        propertyTypes.add(createPropertyType("Duplex", "Two-floor apartments"));
+        propertyTypes.add(createPropertyType("Office Space", "Commercial office properties"));
+        propertyTypes.add(createPropertyType("Shop House", "Mixed-use commercial and residential"));
+        propertyTypes.add(createPropertyType("Land", "Vacant land plots"));
+
+        propertyTypeRepository.saveAll(propertyTypes);
+        log.info("Saved {} property types to database", propertyTypes.size());
+    }
+
+    private PropertyType createPropertyType(String typeName, String description) {
+        return PropertyType.builder()
+                .typeName(typeName)
+                .description(description)
+                .avatarUrl(null)
+                .isActive(true)
+                .properties(new ArrayList<>())
+                .build();
+    }
+}
+

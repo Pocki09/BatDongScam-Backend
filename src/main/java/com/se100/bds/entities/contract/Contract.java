@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "Contract")
+@Table(name = "contract")
 @Builder
 @Getter
 @Setter

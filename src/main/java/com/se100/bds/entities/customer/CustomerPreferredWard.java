@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "CustomerPreferredWard")
+@Table(name = "customer_preferred_wards")
 @Builder
 @Getter
 @Setter

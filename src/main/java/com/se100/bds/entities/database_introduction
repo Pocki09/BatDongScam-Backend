@@ -1,0 +1,569 @@
+Database Schema Documentation
+Entities
+1. User
+The User entity represents the base user account in the system. Users can have different roles such as Admin, Sales Agent, Customer, or Property Owner.
+Attribute	Type	Constraints	Description
+user_id	UUID	Primary Key	Unique identifier for the user
+role	ENUM (ADMIN, SALESAGENT, GUEST, PROPERTY_OWNER, CUSTOMER)	Not Null	Role of the user in the system
+email	VARCHAR(255)	Not Null, Unique	User’s email address
+phone_number	VARCHAR(20)	Not Null, Unique	User’s phone number
+address	VARCHAR(500)	Not Null	User’s physical address
+password	VARCHAR(255)	Not Null	Encrypted password
+first_name	VARCHAR(100)	Not Null	User’s first name
+last_name	VARCHAR(100)	Not Null	User’s last name
+avatar_url	VARCHAR(500)	Nullable	URL to user’s avatar image
+status	ENUM (ACTIVE, SUSPENDED, PENDING_APPROVAL, REJECTED)	Not Null	Current status of the user profile
+last_login_at	TIMESTAMP	Nullable	Timestamp of last login
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+2. Customer
+The Customer entity extends User and contains customer-specific information and metrics.
+Attribute	Type	Constraints	Description
+customer_id	UUID	Primary Key, Foreign Key → User(user_id)	References the user_id from User table
+current_month_spending	DECIMAL(15,2)	Not Null	Total spending in the current month
+total_spending	DECIMAL(15,2)	Not Null	Total spending across all time
+current_month_purchases	INTEGER	Not Null	Number of purchases in current month
+total_purchases	INTEGER	Not Null	Total number of purchases
+current_month_rentals	INTEGER	Not Null	Number of rentals in current month
+total_rentals	INTEGER	Not Null	Total number of rentals
+current_month_searches	INTEGER	Not Null	Number of searches in current month
+current_month_viewings	INTEGER	Not Null	Number of property viewings in current month
+customer_tier	ENUM (BRONZE, SILVER, GOLD, PLATINUM)	Not Null	Customer tier based on activity and spending
+lead_score	INTEGER	Not Null	Score indicating customer’s likelihood to convert
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+3. SaleAgent
+The SaleAgent entity extends User and contains sales agent-specific information and performance metrics.
+Attribute	Type	Constraints	Description
+sale_agent_id	UUID	Primary Key, Foreign Key → User(user_id)	References the user_id from User table
+employee_code	VARCHAR(50)	Not Null, Unique	Unique employee identification code
+max_properties	INTEGER	Not Null	Maximum number of properties agent can handle
+hired_date	TIMESTAMP	Not Null	Date when agent was hired
+current_month_revenue	DECIMAL(15,2)	Not Null	Revenue generated in current month
+total_revenue	DECIMAL(15,2)	Not Null	Total revenue generated across all time
+current_month_deals	INTEGER	Not Null	Number of deals closed in current month
+total_deals	INTEGER	Not Null	Total number of deals closed
+active_properties	INTEGER	Not Null	Number of currently active properties
+performance_tier	ENUM (BRONZE, SILVER, GOLD, PLATINUM)	Not Null	Agent’s performance tier
+current_month_ranking	INTEGER	Not Null	Agent’s ranking for current month
+career_ranking	INTEGER	Not Null	Agent’s overall career ranking
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+4. PropertyOwner
+The PropertyOwner entity extends User and contains property owner-specific information.
+Attribute	Type	Constraints	Description
+property_owner_id	UUID	Primary Key, Foreign Key → User(user_id)	References the user_id from User table
+identification_number	VARCHAR(50)	Not Null, Unique	Owner’s identification/tax number
+for_rent	INTEGER	Not Null	Number of properties available for rent
+for_sale	INTEGER	Not Null	Number of properties available for sale
+renting	INTEGER	Not Null	Number of properties currently being rented
+sold	INTEGER	Not Null	Number of properties sold
+approved_at	TIMESTAMP	Nullable	Timestamp when owner was approved
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+5. City
+The City entity represents a city/province in the location hierarchy.
+Attribute	Type	Constraints	Description
+city_id	UUID	Primary Key	Unique identifier for the city
+city_name	VARCHAR(100)	Nullable	Name of the city
+description	TEXT	Nullable	Description of the city
+img_url	VARCHAR(500)	Nullable	URL to city image
+total_area	DECIMAL(15,2)	Nullable	Total area of the city in square meters
+avg_land_price	DECIMAL(15,2)	Nullable	Average land price in the city
+population	INTEGER	Nullable	Total population of the city
+is_active	BOOLEAN	Nullable	Whether the city is active in the system
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+6. District
+The District entity represents a district within a city.
+Attribute	Type	Constraints	Description
+district_id	UUID	Primary Key	Unique identifier for the district
+city_id	UUID	Foreign Key → City(city_id), Not Null	The city this district belongs to
+district_name	VARCHAR(100)	Nullable	Name of the district
+img_url	VARCHAR(500)	Nullable	URL to district image
+description	TEXT	Nullable	Description of the district
+total_area	DECIMAL(15,2)	Nullable	Total area of the district
+avg_land_price	DECIMAL(15,2)	Nullable	Average land price in the district
+population	INTEGER	Nullable	Total population of the district
+is_active	BOOLEAN	Nullable	Whether the district is active
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+7. Ward
+The Ward entity represents a ward/commune within a district.
+Attribute	Type	Constraints	Description
+ward_id	UUID	Primary Key	Unique identifier for the ward
+district_id	UUID	Foreign Key → District(district_id), Not Null	The district this ward belongs to
+ward_name	VARCHAR(100)	Not Null	Name of the ward
+img_url	VARCHAR(500)	Nullable	URL to ward image
+description	TEXT	Not Null	Description of the ward
+total_area	DECIMAL(15,2)	Not Null	Total area of the ward
+avg_land_price	DECIMAL(15,2)	Nullable	Average land price in the ward
+population	INTEGER	Not Null	Total population of the ward
+is_active	BOOLEAN	Nullable	Whether the ward is active
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+8. PropertyType
+The PropertyType entity represents different types of properties (e.g., apartment, house, villa).
+Attribute	Type	Constraints	Description
+property_type_id	UUID	Primary Key	Unique identifier for property type
+type_name	VARCHAR(50)	Not Null, Unique	Name of the property type
+avatar_url	VARCHAR(500)	Nullable	URL to property type icon/image
+description	TEXT	Nullable	Description of the property type
+is_active	BOOLEAN	Nullable	Whether this property type is active
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+9. Property
+The Property entity represents a real estate property listed in the system.
+Attribute	Type	Constraints	Description
+property_id	UUID	Primary Key	Unique identifier for the property
+owner_id	UUID	Foreign Key → PropertyOwner(property_owner_id), Not Null	The owner of this property
+assigned_agent_id	UUID	Foreign Key → SaleAgent(sale_agent_id)	The sales agent assigned to this property
+property_type_id	UUID	Foreign Key → PropertyType(property_type_id), Not Null	Type of this property
+ward_id	UUID	Foreign Key → Ward(ward_id), Not Null	Location of the property
+title	VARCHAR(200)	Not Null	Title/name of the property listing
+description	TEXT	Not Null	Detailed description of the property
+transaction_type	ENUM (SALE, RENTAL, INVESTMENT)	Not Null	Type of transaction (sale/rental)
+full_address	VARCHAR(500)	Nullable	Complete address of the property
+area	DECIMAL(10,2)	Not Null	Total area in square meters
+rooms	INTEGER	Nullable	Total number of rooms
+bathrooms	INTEGER	Nullable	Number of bathrooms
+floors	INTEGER	Nullable	Number of floors
+bedrooms	INTEGER	Nullable	Number of bedrooms
+house_orientation	ENUM (NORTH, SOUTH, EAST, WEST, NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST, UNKNOWN)	Nullable	Orientation of the house
+balcony_orientation	ENUM (NORTH, SOUTH, EAST, WEST, NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST, UNKNOWN)	Nullable	Orientation of the balcony
+year_built	INTEGER	Nullable	Year the property was built
+price_amount	DECIMAL(15,2)	Not Null	Price of the property
+price_per_square_meter	DECIMAL(15,2)	Nullable	Price per square meter
+commission_rate	DECIMAL(5,4)	Not Null	Commission rate for the agent
+amenities	TEXT	Nullable	List of amenities
+status	ENUM (PENDING, APPROVED, REJECTED)	Nullable	Current status of the property
+view_count	INTEGER	Nullable	Number of times property was viewed
+approved_at	TIMESTAMP	Nullable	Timestamp when property was approved
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+10. Media
+The Media entity represents media files (images, videos, documents) associated with properties.
+Attribute	Type	Constraints	Description
+media_id	UUID	Primary Key	Unique identifier for the media
+property_id	UUID	Foreign Key → Property(property_id), Not Null	The property this media belongs to
+media_type	ENUM (IMAGE, VIDEO, DOCUMENT)	Not Null	Type of media file
+file_name	VARCHAR(255)	Not Null	Name of the media file
+file_path	VARCHAR(500)	Not Null	Path/URL to the media file
+mime_type	VARCHAR(100)	Not Null	MIME type of the file
+document_type	VARCHAR(100)	Nullable	Type of document if media is a document
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+11. Appointment
+The Appointment entity represents scheduled property viewings between customers and agents.
+Attribute	Type	Constraints	Description
+appointment_id	UUID	Primary Key	Unique identifier for the appointment
+property_id	UUID	Foreign Key → Property(property_id), Not Null	The property to be viewed
+customer_id	UUID	Foreign Key → Customer(customer_id), Not Null	The customer requesting the viewing
+agent_id	UUID	Foreign Key → SaleAgent(sale_agent_id), Not Null	The agent conducting the viewing
+requested_date	TIMESTAMP	Not Null	Date/time requested by customer
+confirmed_date	TIMESTAMP	Nullable	Date/time confirmed by agent
+status	VARCHAR(50)	Nullable	Current status of the appointment
+customer_requirements	TEXT	Nullable	Special requirements from customer
+agent_notes	TEXT	Nullable	Notes from the agent
+viewing_outcome	TEXT	Nullable	Outcome of the viewing
+customer_interest_level	VARCHAR(50)	Nullable	Level of customer interest
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+12. Contract
+The Contract entity represents a contract between a customer and property owner for property transaction.
+Attribute	Type	Constraints	Description
+contract_id	UUID	Primary Key	Unique identifier for the contract
+property_id	UUID	Foreign Key → Property(property_id), Not Null	The property in the contract
+customer_id	UUID	Foreign Key → Customer(customer_id), Not Null	The customer in the contract
+agent_id	UUID	Foreign Key → SaleAgent(sale_agent_id), Not Null	The agent facilitating the contract
+contract_type	ENUM (PURCHASE, RENTAL, INVESTMENT)	Not Null	Type of contract
+contract_number	VARCHAR(50)	Not Null, Unique	Unique contract number
+commission_amount	DECIMAL(15,2)	Not Null	Commission amount for agent
+service_fee_amount	DECIMAL(15,2)	Not Null	Service fee amount
+start_date	DATE	Not Null	Contract start date
+end_date	DATE	Not Null	Contract end date
+special_terms	TEXT	Not Null	Special terms and conditions
+status	ENUM (DRAFT, PENDING_SIGNING, ACTIVE, COMPLETED, CANCELLED)	Not Null	Current status of contract
+cancellation_reason	TEXT	Not Null	Reason for cancellation if applicable
+cancellation_penalty	DECIMAL(15,2)	Not Null	Penalty for cancellation
+contract_payment_type	ENUM (MORTGAGE, MONTHLY_RENT, PAID_IN_FULL)	Not Null	Payment type for the contract
+total_contract_amount	DECIMAL(15,2)	Not Null	Total contract amount
+deposit_amount	DECIMAL(15,2)	Not Null	Deposit amount paid
+remaining_amount	DECIMAL(15,2)	Not Null	Remaining amount to be paid
+advance_payment_amount	DECIMAL(15,2)	Not Null	Advance payment amount
+installment_amount	INTEGER	Not Null	Number of installments
+progress_milestone	DECIMAL(15,2)	Not Null	Progress milestone percentage
+final_payment_amount	DECIMAL(15,2)	Not Null	Final payment amount
+late_payment_penalty_rate	DECIMAL(5,4)	Not Null	Penalty rate for late payments
+special_conditions	TEXT	Not Null	Special conditions
+signed_at	TIMESTAMP	Not Null	When contract was signed
+completed_at	TIMESTAMP	Not Null	When contract was completed
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+13. Payment
+The Payment entity represents individual payments made as part of a contract.
+Attribute	Type	Constraints	Description
+payment_id	UUID	Primary Key	Unique identifier for the payment
+contract_id	UUID	Foreign Key → Contract(contract_id)	The contract this payment belongs to
+payment_type	ENUM (DEPOSIT, ADVANCE, INSTALLMENT, FULL_PAY, MONTHLY, PENALTY, REFUND)	Not Null	Type of payment
+amount	DECIMAL(15,2)	Not Null	Payment amount
+due_date	DATE	Not Null	When payment is due
+paid_date	DATE	Nullable	When payment was actually made
+installment_number	INTEGER	Nullable	Installment number if applicable
+payment_method	VARCHAR(50)	Nullable	Method of payment
+transaction_reference	VARCHAR(100)	Nullable	Transaction reference number
+status	VARCHAR(50)	Nullable	Payment status
+overdue_days	INTEGER	Nullable	Number of days overdue
+penalty_amount	DECIMAL(15,2)	Nullable	Penalty amount if late
+notes	TEXT	Nullable	Additional notes
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+14. Review
+The Review entity represents customer reviews for appointments or contracts.
+Attribute	Type	Constraints	Description
+review_id	UUID	Primary Key	Unique identifier for the review
+appointment_id	UUID	Foreign Key → Appointment(appointment_id)	The appointment being reviewed
+contract_id	UUID	Foreign Key → Contract(contract_id)	The contract being reviewed
+rating	SMALLINT	Not Null	Rating score (typically 1-5)
+comment	TEXT	Nullable	Review comment
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+15. Notification
+The Notification entity represents system notifications sent to users.
+Attribute	Type	Constraints	Description
+notification_id	UUID	Primary Key	Unique identifier for the notification
+recipient_id	UUID	Foreign Key → User(user_id), Not Null	User receiving the notification
+type	ENUM (APPOINTMENT_REMINDER, CONTRACT_UPDATE, PAYMENT_DUE, VIOLATION_WARNING, SYSTEM_ALERT)	Nullable	Type of notification
+title	VARCHAR(200)	Not Null	Notification title
+message	TEXT	Not Null	Notification message
+related_entity_type	ENUM (PROPERTY, CONTRACT, PAYMENT, APPOINTMENT, USER)	Nullable	Type of related entity
+related_entity_id	VARCHAR(100)	Nullable	ID of related entity
+delivery_status	ENUM (PENDING, SENT, READ, FAILED)	Nullable	Delivery status
+is_read	BOOLEAN	Nullable	Whether notification has been read
+img_url	VARCHAR(500)	Not Null	Image URL for notification
+read_at	TIMESTAMP	Nullable	When notification was read
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+16. SearchLog
+The SearchLog entity tracks customer search activity.
+Attribute	Type	Constraints	Description
+search_log_id	UUID	Primary Key	Unique identifier for the search log
+user_id	UUID	Foreign Key → User(user_id)	ID of the user who performed the search
+city_id	UUID	Foreign Key → City(city_id)	ID of the city searched
+district_id	UUID	Foreign Key → District(district_id)	ID of the district searched
+ward_id	UUID	Foreign Key → Ward(ward_id)	ID of the ward searched
+property_type_id	UUID	Foreign Key → PropertyType(property_type_id)	ID of the property type searched
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+17. ViolationReport
+The ViolationReport entity represents reports of policy violations by users or properties.
+Attribute	Type	Constraints	Description
+violation_id	UUID	Primary Key	Unique identifier for the violation
+user_id	UUID	Foreign Key → User(user_id)	User involved in the violation
+property_id	UUID	Foreign Key → Property(property_id)	Property involved in the violation
+violation_type	VARCHAR(100)	Not Null	Type of violation
+description	TEXT	Not Null	Description of the violation
+severity	VARCHAR(50)	Nullable	Severity level of the violation
+status	VARCHAR(50)	Nullable	Current status of the report
+resolution_notes	TEXT	Nullable	Notes on how violation was resolved
+resolved_at	TIMESTAMP	Nullable	When violation was resolved
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+18. DocumentType
+The DocumentType entity defines types of identification documents required.
+Attribute	Type	Constraints	Description
+document_type_id	UUID	Primary Key	Unique identifier for document type
+name	VARCHAR(100)	Nullable	Name of the document type
+description	TEXT	Nullable	Description of the document type
+is_compulsory	BOOLEAN	Nullable	Whether this document is mandatory
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+19. IdentificationDocument
+The IdentificationDocument entity represents legal documents for properties and users.
+Attribute	Type	Constraints	Description
+document_id	UUID	Primary Key	Unique identifier for the document
+document_type_id	UUID	Foreign Key → DocumentType(document_type_id), Not Null	Type of this document
+property_id	UUID	Foreign Key → Property(property_id)	Property this document belongs to
+document_number	VARCHAR(20)	Not Null	Official document number
+document_name	VARCHAR(255)	Not Null	Name of the document
+file_path	VARCHAR(500)	Not Null	Path to the document file
+issue_date	DATE	Nullable	Date document was issued
+expiry_date	DATE	Nullable	Date document expires
+issuing_authority	VARCHAR(100)	Nullable	Authority that issued the document
+verification_status	ENUM (PENDING, VERIFIED, REJECTED)	Nullable	Verification status
+verified_at	TIMESTAMP	Nullable	When document was verified
+rejection_reason	TEXT	Nullable	Reason for rejection if applicable
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+20. IndividualCustomerLead
+The IndividualCustomerLead entity tracks monthly customer lead scoring and classification.
+Attribute	Type	Constraints	Description
+lead_id	UUID	Primary Key	Unique identifier for the lead record
+customer_id	UUID	Foreign Key → Customer(customer_id), Not Null	The customer being tracked
+lead_month	INTEGER	Nullable	Month of the lead data
+lead_year	INTEGER	Nullable	Year of the lead data
+month_viewings_requested	INTEGER	Nullable	Number of viewings requested in month
+month_viewings_attended	INTEGER	Nullable	Number of viewings attended in month
+month_spending	DECIMAL(15,2)	Nullable	Total spending in the month
+month_purchases	DECIMAL(15,2)	Nullable	Total purchases in the month
+month_rentals	DECIMAL(15,2)	Nullable	Total rentals in the month
+month_contracts_signed	INTEGER	Nullable	Number of contracts signed in month
+lead_score	INTEGER	Nullable	Lead score for the month
+lead_classification	ENUM (COLD, WARM, HOT, CONVERTED)	Nullable	Classification of the lead
+customer_tier	ENUM (BRONZE, SILVER, GOLD, PLATINUM)	Nullable	Customer tier for the month
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+21. IndividualSalesAgentRanking
+The IndividualSalesAgentRanking entity tracks monthly performance metrics for sales agents.
+Attribute	Type	Constraints	Description
+ranking_id	UUID	Primary Key	Unique identifier for the ranking record
+agent_id	UUID	Foreign Key → SaleAgent(sale_agent_id), Not Null	The agent being ranked
+ranking_month	INTEGER	Nullable	Month of the ranking
+ranking_year	INTEGER	Nullable	Year of the ranking
+month_revenue	DECIMAL(15,2)	Nullable	Revenue generated in the month
+month_deals	INTEGER	Nullable	Number of deals closed in month
+month_properties_assigned	INTEGER	Nullable	Properties assigned in the month
+month_appointments_completed	INTEGER	Nullable	Appointments completed in month
+month_customer_satisfaction_avg	DECIMAL(3,2)	Nullable	Average customer satisfaction score
+performance_tier	ENUM (BRONZE, SILVER, GOLD, PLATINUM)	Nullable	Performance tier for the month
+ranking_position	INTEGER	Nullable	Agent’s ranking position
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+22. Report
+The Report entity is the base entity for all system reports.
+Attribute	Type	Constraints	Description
+report_id	UUID	Primary Key	Unique identifier for the report
+report_type	ENUM (FINANCIAL, AGENT_PERFORMANCE, PROPERTY_STATISTICS, CUSTOMER_ANALYTICS, VIOLATION)	Not Null	Type of report
+report_month	INTEGER	Nullable	Month the report covers
+report_year	INTEGER	Nullable	Year the report covers
+title	VARCHAR(200)	Not Null	Title of the report
+description	TEXT	Nullable	Description of the report
+start_date	DATE	Not Null	Start date of report period
+end_date	DATE	Not Null	End date of report period
+file_path	VARCHAR(500)	Nullable	Path to generated report file
+file_format	VARCHAR(20)	Not Null	Format of the report file
+status	VARCHAR(50)	Nullable	Current status of the report
+completed_at	TIMESTAMP	Nullable	When report was completed
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+23. FinancialReport
+The FinancialReport entity contains detailed financial metrics and analytics.
+Attribute	Type	Constraints	Description
+report_id	UUID	Primary Key, Foreign Key → Report(report_id)	References the report_id from Report table
+total_revenue_current_month	DECIMAL(15,2)	Nullable	Total revenue for current month
+total_revenue	DECIMAL(15,2)	Nullable	Total revenue across all time
+total_service_fees_current_month	DECIMAL(15,2)	Nullable	Total service fees for current month
+total_service_fees	DECIMAL(15,2)	Nullable	Total service fees across all time
+contract_count_current_month	INTEGER	Nullable	Number of contracts in current month
+contract_count	INTEGER	Nullable	Total number of contracts
+total_commission_earned_current_month	DECIMAL(15,2)	Nullable	Commission earned in current month
+total_commission_earned	DECIMAL(15,2)	Nullable	Total commission earned
+top_performing_city_id	UUID	Foreign Key → City(city_id), Not Null	Top performing city
+top_performing_district_id	UUID	Foreign Key → District(district_id), Not Null	Top performing district
+top_performing_ward_id	UUID	Foreign Key → Ward(ward_id)	Top performing ward
+top_performing_property_type_id	UUID	Foreign Key → PropertyType(property_type_id)	Top performing property type
+net_profit	DECIMAL(15,2)	Nullable	Net profit
+avg_property_price	DECIMAL(15,2)	Nullable	Average property price
+total_rates	INTEGER	Nullable	Total number of ratings
+avg_rating	DECIMAL(5,2)	Nullable	Average rating
+total_rates_current_month	INTEGER	Nullable	Total ratings in current month
+avg_rating_current_month	DECIMAL(5,2)	Nullable	Average rating for current month
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+24. PropertyStatisticsReport
+The PropertyStatisticsReport entity contains property-related statistics and metrics.
+Attribute	Type	Constraints	Description
+report_id	UUID	Primary Key, Foreign Key → Report(report_id)	References the report_id from Report table
+total_active_properties	INTEGER	Nullable	Total number of active properties
+total_sold_properties_current_month	INTEGER	Nullable	Properties sold in current month
+total_sold_properties	DECIMAL(5,2)	Nullable	Total properties sold
+total_rented_properties_current_month	DECIMAL(15,2)	Nullable	Properties rented in current month
+total_rented_properties	INTEGER	Nullable	Total properties rented
+most_popular_property_type_id	UUID	Nullable	ID of most popular property type
+most_popular_location_id	UUID	Nullable	ID of most popular location
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+25. CustomerAnalyticsReport
+The CustomerAnalyticsReport entity contains customer behavior analytics and metrics.
+Attribute	Type	Constraints	Description
+report_id	UUID	Primary Key, Foreign Key → Report(report_id)	References the report_id from Report table
+total_active_customers	INTEGER	Nullable	Total number of active customers
+new_customers_acquired_current_month	INTEGER	Nullable	New customers in current month
+customer_churn_rate	DECIMAL(5,2)	Nullable	Customer churn rate percentage
+avg_customer_transaction_value	DECIMAL(15,2)	Nullable	Average transaction value per customer
+high_value_customers_count	INTEGER	Nullable	Number of high-value customers
+customer_satisfaction_score	DECIMAL(5,2)	Nullable	Overall customer satisfaction score
+total_rates	INTEGER	Nullable	Total number of ratings
+avg_rating	DECIMAL(5,2)	Nullable	Average rating
+total_rates_current_month	INTEGER	Nullable	Total ratings in current month
+avg_rating_current_month	DECIMAL(5,2)	Nullable	Average rating for current month
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+26. AgentPerformanceReport
+The AgentPerformanceReport entity contains sales agent performance metrics and analytics.
+Attribute	Type	Constraints	Description
+report_id	UUID	Primary Key, Foreign Key → Report(report_id)	References the report_id from Report table
+total_agents	INTEGER	Nullable	Total number of agents
+total_active_agents	INTEGER	Nullable	Total number of active agents
+top_performer_agent_id_current_month	UUID	Foreign Key → SaleAgent(sale_agent_id), Not Null	Top performer in current month
+top_performer_revenue_current_month	DECIMAL(15,2)	Nullable	Top performer’s revenue in current month
+top_performer_agent_id	UUID	Foreign Key → SaleAgent(sale_agent_id), Not Null	Overall top performer
+top_performer_revenue	DECIMAL(15,2)	Nullable	Overall top performer’s revenue
+bottom_performer_agent_id_current_month	UUID	Foreign Key → SaleAgent(sale_agent_id), Not Null	Bottom performer in current month
+bottom_performer_revenue_current_month	DECIMAL(15,2)	Nullable	Bottom performer’s revenue in current month
+avg_revenue_per_agent	DECIMAL(15,2)	Nullable	Average revenue per agent
+avg_customer_satisfaction	DECIMAL(15,2)	Nullable	Average customer satisfaction
+total_rates	INTEGER	Nullable	Total number of ratings
+avg_rating	DECIMAL(5,2)	Nullable	Average rating
+total_rates_current_month	INTEGER	Nullable	Total ratings in current month
+avg_rating_current_month	DECIMAL(5,2)	Nullable	Average rating for current month
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+27. ViolationReportDetails
+The ViolationReportDetails entity contains violation statistics and compliance metrics.
+Attribute	Type	Constraints	Description
+report_id	UUID	Primary Key, Foreign Key → Report(report_id)	References the report_id from Report table
+total_violations_reported	INTEGER	Nullable	Total violations reported
+total_violations_reported_current_month	INTEGER	Nullable	Violations reported in current month
+serious_violations_count_current_month	INTEGER	Nullable	Serious violations in current month
+serious_violations_count	INTEGER	Nullable	Total serious violations
+minor_violations_count_current_month	INTEGER	Nullable	Minor violations in current month
+minor_violations_count	INTEGER	Nullable	Total minor violations
+avg_resolution_time_hours	INTEGER	Nullable	Average time to resolve violations
+violation_trend	DECIMAL(5,2)	Nullable	Violation trend percentage
+most_common_violation_type	VARCHAR(100)	Nullable	Most common type of violation
+accounts_suspended	INTEGER	Nullable	Number of accounts suspended
+compliance_rate	DECIMAL(5,2)	Nullable	Overall compliance rate percentage
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+28. CustomerFavoriteProperty
+The CustomerFavoriteProperty entity represents a many-to-many relationship between customers and their favorite properties.
+Attribute	Type	Constraints	Description
+id	UUID	Primary Key	Unique identifier for the favorite record
+customer_id	UUID	Foreign Key → Customer(customer_id), Not Null	The customer who favorited the property
+property_id	UUID	Foreign Key → Property(property_id), Not Null	The favorited property
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+29. CustomerPreferredCity
+The CustomerPreferredCity entity represents customer preferences for cities.
+Attribute	Type	Constraints	Description
+id	UUID	Primary Key	Unique identifier for the preference
+customer_id	UUID	Foreign Key → Customer(customer_id), Not Null	The customer with this preference
+city_id	UUID	Foreign Key → City(city_id), Not Null	The preferred city
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+30. CustomerPreferredDistrict
+The CustomerPreferredDistrict entity represents customer preferences for districts.
+Attribute	Type	Constraints	Description
+id	UUID	Primary Key	Unique identifier for the preference
+customer_id	UUID	Foreign Key → Customer(customer_id), Not Null	The customer with this preference
+district_id	UUID	Foreign Key → District(district_id), Not Null	The preferred district
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+31. CustomerPreferredWard
+The CustomerPreferredWard entity represents customer preferences for wards.
+Attribute	Type	Constraints	Description
+id	UUID	Primary Key	Unique identifier for the preference
+customer_id	UUID	Foreign Key → Customer(customer_id), Not Null	The customer with this preference
+ward_id	UUID	Foreign Key → Ward(ward_id), Not Null	The preferred ward
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+32. CustomerPreferredPropertyType
+The CustomerPreferredPropertyType entity represents customer preferences for property types.
+Attribute	Type	Constraints	Description
+id	UUID	Primary Key	Unique identifier for the preference
+customer_id	UUID	Foreign Key → Customer(customer_id), Not Null	The customer with this preference
+property_type_id	UUID	Foreign Key → PropertyType(property_type_id), Not Null	The preferred property type
+created_at	TIMESTAMP	Not Null, Auto-generated	Timestamp when record was created
+updated_at	TIMESTAMP	Not Null, Auto-updated	Timestamp when record was last updated
+________________________________________
+Relationships
+User Relationships
+•	User → Customer: One-to-One - user_id references customer_id
+•	User → SaleAgent: One-to-One - user_id references sale_agent_id
+•	User → PropertyOwner: One-to-One - user_id references property_owner_id
+•	User → Notification: One-to-Many - user_id is referenced by recipient_id in Notification
+•	User → ViolationReport: One-to-Many - user_id is referenced in ViolationReport
+Customer Relationships
+•	Customer → User: One-to-One - customer_id references user_id
+•	Customer → Appointment: One-to-Many - customer_id is referenced in Appointment
+•	Customer → Contract: One-to-Many - customer_id is referenced in Contract
+•	Customer → SearchLog: One-to-Many - customer_id is referenced in SearchLog
+•	Customer → IndividualCustomerLead: One-to-Many - customer_id is referenced in IndividualCustomerLead
+•	Customer → CustomerFavoriteProperty: One-to-Many - customer_id is referenced in CustomerFavoriteProperty
+•	Customer → CustomerPreferredCity: One-to-Many - customer_id is referenced in CustomerPreferredCity
+•	Customer → CustomerPreferredDistrict: One-to-Many - customer_id is referenced in CustomerPreferredDistrict
+•	Customer → CustomerPreferredWard: One-to-Many - customer_id is referenced in CustomerPreferredWard
+•	Customer → CustomerPreferredPropertyType: One-to-Many - customer_id is referenced in CustomerPreferredPropertyType
+SaleAgent Relationships
+•	SaleAgent → User: One-to-One - sale_agent_id references user_id
+•	SaleAgent → Property: One-to-Many - sale_agent_id is referenced by assigned_agent_id in Property
+•	SaleAgent → Appointment: One-to-Many - sale_agent_id is referenced by agent_id in Appointment
+•	SaleAgent → Contract: One-to-Many - sale_agent_id is referenced by agent_id in Contract
+•	SaleAgent → IndividualSalesAgentRanking: One-to-Many - sale_agent_id is referenced by agent_id in IndividualSalesAgentRanking
+•	SaleAgent → AgentPerformanceReport: One-to-Many - sale_agent_id is referenced in AgentPerformanceReport
+PropertyOwner Relationships
+•	PropertyOwner → User: One-to-One - property_owner_id references user_id
+•	PropertyOwner → Property: One-to-Many - property_owner_id is referenced by owner_id in Property
+Location Hierarchy Relationships
+•	City → District: One-to-Many - city_id is referenced in District
+•	District → City: Many-to-One - district_id references city_id
+•	District → Ward: One-to-Many - district_id is referenced in Ward
+•	Ward → District: Many-to-One - ward_id references district_id
+•	Ward → Property: One-to-Many - ward_id is referenced in Property
+Property Related Relationships
+•	PropertyType → Property: One-to-Many - property_type_id is referenced in Property
+•	Property → PropertyType: Many-to-One - property_id references property_type_id
+•	Property → PropertyOwner: Many-to-One - property_id references owner_id
+•	Property → SaleAgent: Many-to-One - property_id references assigned_agent_id
+•	Property → Ward: Many-to-One - property_id references ward_id
+•	Property → Media: One-to-Many - property_id is referenced in Media
+•	Property → Appointment: One-to-Many - property_id is referenced in Appointment
+•	Property → Contract: One-to-Many - property_id is referenced in Contract
+•	Property → ViolationReport: One-to-Many - property_id is referenced in ViolationReport
+•	Property → IdentificationDocument: One-to-Many - property_id is referenced in IdentificationDocument
+•	Property → CustomerFavoriteProperty: One-to-Many - property_id is referenced in CustomerFavoriteProperty
+Appointment and Contract Relationships
+•	Appointment → Property: Many-to-One - appointment_id references property_id
+•	Appointment → Customer: Many-to-One - appointment_id references customer_id
+•	Appointment → SaleAgent: Many-to-One - appointment_id references agent_id
+•	Appointment → Review: One-to-One - appointment_id is referenced in Review
+•	Contract → Property: Many-to-One - contract_id references property_id
+•	Contract → Customer: Many-to-One - contract_id references customer_id
+•	Contract → SaleAgent: Many-to-One - contract_id references agent_id
+•	Contract → Payment: One-to-Many - contract_id is referenced in Payment
+•	Contract → Review: One-to-One - contract_id is referenced in Review
+Document Relationships
+•	DocumentType → IdentificationDocument: One-to-Many - document_type_id is referenced in IdentificationDocument
+•	IdentificationDocument → DocumentType: Many-to-One - document_id references document_type_id
+•	IdentificationDocument → Property: Many-to-One - document_id references property_id
+Report Relationships
+•	Report → FinancialReport: One-to-One - report_id is shared between Report and FinancialReport
+•	Report → AgentPerformanceReport: One-to-One - report_id is shared between Report and AgentPerformanceReport
+•	Report → PropertyStatisticsReport: One-to-One - report_id is shared between Report and PropertyStatisticsReport
+•	Report → CustomerAnalyticsReport: One-to-One - report_id is shared between Report and CustomerAnalyticsReport
+•	Report → ViolationReportDetails: One-to-One - report_id is shared between Report and ViolationReportDetails
+•	FinancialReport → City: Many-to-One - top_performing_city_id references city_id
+•	FinancialReport → District: Many-to-One - top_performing_district_id references district_id
+•	FinancialReport → Ward: Many-to-One - top_performing_ward_id references ward_id
+•	FinancialReport → PropertyType: Many-to-One - top_performing_property_type_id references property_type_id
+Ranking and Analytics Relationships
+•	IndividualCustomerLead → Customer: Many-to-One - lead_id references customer_id
+•	IndividualSalesAgentRanking → SaleAgent: Many-to-One - ranking_id references agent_id
+Other Relationships
+•	Payment → Contract: Many-to-One - payment_id references contract_id
+•	Review → Appointment: One-to-One - review_id references appointment_id
+•	Review → Contract: One-to-One - review_id references contract_id
+•	Notification → User: Many-to-One - notification_id references recipient_id
+•	ViolationReport → User: Many-to-One - violation_id references user_id
+•	ViolationReport → Property: Many-to-One - violation_id references property_id
+•	Media → Property: Many-to-One - media_id references property_id
+Customer Preference Relationships
+•	CustomerPreferredCity → Customer: Many-to-One - customer_id in CustomerPreferredCity references customer_id
+•	CustomerPreferredCity → City: Many-to-One - city_id in CustomerPreferredCity references city_id
+•	CustomerPreferredDistrict → Customer: Many-to-One - customer_id in CustomerPreferredDistrict references customer_id
+•	CustomerPreferredDistrict → District: Many-to-One - district_id in CustomerPreferredDistrict references district_id
+•	CustomerPreferredWard → Customer: Many-to-One - customer_id in CustomerPreferredWard references customer_id
+•	CustomerPreferredWard → Ward: Many-to-One - ward_id in CustomerPreferredWard references ward_id
+•	CustomerPreferredPropertyType → Customer: Many-to-One - customer_id in CustomerPreferredPropertyType references customer_id
+•	CustomerPreferredPropertyType → PropertyType: Many-to-One - property_type_id in CustomerPreferredPropertyType references property_type_id

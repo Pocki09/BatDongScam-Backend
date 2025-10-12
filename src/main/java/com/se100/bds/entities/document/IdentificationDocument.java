@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "IdentificationDocument")
+@Table(name = "identification_documents")
 @Builder
 @Getter
 @Setter

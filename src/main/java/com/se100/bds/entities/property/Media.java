@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "Media")
+@Table(name = "media")
 @Builder
 @Getter
 @Setter

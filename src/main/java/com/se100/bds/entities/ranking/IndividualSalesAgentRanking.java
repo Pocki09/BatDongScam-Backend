@@ -9,7 +9,7 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "IndividualSalesAgentRanking")
+@Table(name = "individual_sales_agent_rankings")
 @Builder
 @Getter
 @Setter
@@ -51,4 +51,3 @@ public class IndividualSalesAgentRanking extends AbstractBaseEntity {
     @Column(name = "ranking_position")
     private Integer rankingPosition;
 }
-

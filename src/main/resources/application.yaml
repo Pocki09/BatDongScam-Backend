@@ -31,7 +31,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         show_sql: true
         format_sql: true
-        globally_quoted_identifiers: true
+#        globally_quoted_identifiers: true
     open-in-view: false
   datasource:
     url: jdbc:postgresql://${POSTGRESQL_HOST}:${POSTGRESQL_PORT}/${POSTGRESQL_DB}
