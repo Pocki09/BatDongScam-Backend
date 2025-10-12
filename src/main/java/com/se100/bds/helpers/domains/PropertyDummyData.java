@@ -89,7 +89,7 @@ public class PropertyDummyData {
                     .pricePerSquareMeter(pricePerSqm)
                     .commissionRate(new BigDecimal("0.02")) // 2% commission
                     .amenities("WiFi, Air Conditioning, Parking, Security")
-                    .status(random.nextDouble() < 0.8 ? Constants.PropertyStatusEnum.APPROVED : Constants.PropertyStatusEnum.PENDING)
+                    .status(random.nextDouble() < 0.8 ? Constants.PropertyStatusEnum.AVAILABLE : Constants.PropertyStatusEnum.PENDING)
                     .viewCount(random.nextInt(1000))
                     .approvedAt(LocalDateTime.now().minusDays(random.nextInt(180)))
                     .mediaList(new ArrayList<>())
@@ -122,4 +122,3 @@ public class PropertyDummyData {
         return orientations[random.nextInt(orientations.length)];
     }
 }
-

@@ -1,6 +1,7 @@
 package com.se100.bds.services.domains.property;
 
 import com.se100.bds.entities.property.Property;
+import com.se100.bds.services.dtos.results.PropertyCard;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -10,9 +11,9 @@ import java.util.UUID;
 
 public interface PropertyService {
     Page<Property> getAll(Pageable pageable);
-    Page<Property> getAllCardsWithFilters(List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds,
-                                     List<UUID> propertyTypeIds, BigDecimal minPrice, BigDecimal maxPrice, BigDecimal totalArea,
-                                     int rooms, int bathrooms, int bedrooms, int floors, String houseOrientation, String balconyOrientation,
-                                     String transactionType,
-                                     Pageable pageable);
+    Page<PropertyCard> getAllCardsWithFilters(List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds,
+                                              List<UUID> propertyTypeIds, BigDecimal minPrice, BigDecimal maxPrice, BigDecimal totalArea,
+                                              Integer rooms, Integer bathrooms, Integer bedrooms, Integer floors, String houseOrientation, String balconyOrientation,
+                                              String transactionType,
+                                              Pageable pageable);
 }
