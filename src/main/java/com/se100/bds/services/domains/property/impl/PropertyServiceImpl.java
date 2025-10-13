@@ -3,11 +3,11 @@ package com.se100.bds.services.domains.property.impl;
 import com.se100.bds.entities.property.Property;
 import com.se100.bds.entities.user.User;
 import com.se100.bds.mappers.PropertyMapper;
-import com.se100.bds.repositories.domains.customer.CustomerFavoritePropertyRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.repositories.dtos.PropertyCardProtection;
 import com.se100.bds.services.domains.customer.CustomerFavoriteService;
 import com.se100.bds.services.domains.property.PropertyService;
+import com.se100.bds.services.domains.search.SearchService;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.services.dtos.results.PropertyCard;
 import com.se100.bds.utils.Constants;
@@ -29,6 +29,7 @@ public class PropertyServiceImpl implements PropertyService {
     private final CustomerFavoriteService customerFavoriteService;
     private final PropertyMapper propertyMapper;
     private final UserService userService;
+    private final SearchService searchService;
 
     @Override
     public Page<Property> getAll(Pageable pageable) {
@@ -36,9 +37,22 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
-    public Page<PropertyCard> getAllCardsWithFilters(List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds, List<UUID> propertyTypeIds, BigDecimal minPrice, BigDecimal maxPrice, BigDecimal totalArea, Integer rooms, Integer bathrooms, Integer bedrooms, Integer floors, String houseOrientation, String balconyOrientation, String transactionType, Pageable pageable) {
+    public Page<PropertyCard> getAllCardsWithFilters(List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds,
+                                                     List<UUID> propertyTypeIds, BigDecimal minPrice, BigDecimal maxPrice, BigDecimal totalArea,
+                                                     Integer rooms, Integer bathrooms, Integer bedrooms, Integer floors,
+                                                     String houseOrientation, String balconyOrientation, String transactionType, int topK,
+                                                     Pageable pageable) {
 
-        User currentUser = userService.getUser();
+        User currentUser = null;
+        try {
+            currentUser = userService.getUser();
+            searchService.addSearchList(currentUser.getId(), cityIds, districtIds, wardIds, propertyTypeIds);
+        } catch (Exception ignored) {
+        }
+
+        if (topK > 0) {
+            // TODO: Implement most popular Search for type
+        }
 
         Page<PropertyCardProtection> cardProtections = propertyRepository.findAllPropertyCardsWithFilter(
                 pageable,
@@ -62,6 +76,7 @@ public class PropertyServiceImpl implements PropertyService {
         if (currentUser == null) {
             return propertyMapper.mapToPage(cardProtections, PropertyCard.class);
         }
+
 
         for (PropertyCardProtection card : cardProtections) {
             if (customerFavoriteService.isLike(card.getId(), currentUser.getId(), Constants.LikeTypeEnum.PROPERTY)) {

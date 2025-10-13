@@ -10,6 +10,7 @@ import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.servlet.LocaleResolver;
@@ -21,6 +22,7 @@ import java.util.TimeZone;
 import static com.se100.bds.utils.Constants.SECURITY_SCHEME_NAME;
 
 @Configuration
+@EnableAsync
 public class AppConfig {
     @Bean
     public LocaleResolver localResolver(@Value("${app.default-locale:vi}") final String defaultLocale,

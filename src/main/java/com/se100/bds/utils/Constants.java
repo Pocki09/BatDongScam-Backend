@@ -381,5 +381,25 @@ public final class Constants {
                     .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid like type name: %s", name)));
         }
     }
+
+    @Getter
+    @AllArgsConstructor
+    public enum SearchTypeEnum {
+        PROPERTY("PROPERTY"),
+        CITY("CITY"),
+        DISTRICT("DISTRICT"),
+        WARD("WARD"),
+        PROPERTY_TYPE("PROPERTY_TYPE");
+
+        private final String value;
+
+        public static SearchTypeEnum get(final String name) {
+            return Stream.of(SearchTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid like type name: %s", name)));
+        }
+    }
+
 }
 

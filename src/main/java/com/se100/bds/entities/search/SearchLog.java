@@ -26,6 +26,9 @@ public class SearchLog extends AbstractMongoBaseEntity {
     @Field("ward_id")
     private UUID wardId;
 
+    @Field("property_id")
+    private UUID propertyId;
+
     @Field("property_type_id")
     private UUID propertyTypeId;
 }

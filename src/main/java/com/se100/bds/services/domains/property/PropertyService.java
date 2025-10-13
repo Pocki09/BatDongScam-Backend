@@ -14,6 +14,6 @@ public interface PropertyService {
     Page<PropertyCard> getAllCardsWithFilters(List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds,
                                               List<UUID> propertyTypeIds, BigDecimal minPrice, BigDecimal maxPrice, BigDecimal totalArea,
                                               Integer rooms, Integer bathrooms, Integer bedrooms, Integer floors, String houseOrientation, String balconyOrientation,
-                                              String transactionType,
+                                              String transactionType, int topK,
                                               Pageable pageable);
 }

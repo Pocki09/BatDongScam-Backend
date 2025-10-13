@@ -33,10 +33,10 @@ import static com.se100.bds.utils.Constants.SECURITY_SCHEME_NAME;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/properties")
-@Tag(name = "003. Properties", description = "Property Listing API")
+@RequestMapping("/public/properties")
+@Tag(name = "003. Public Properties", description = "Public Property Listing API")
 @Slf4j
-public class PropertyController extends AbstractBaseController {
+public class PublicPropertyController extends AbstractBaseController {
     private final PropertyMapper propertyMapper;
     private final PropertyService propertyService;
 
@@ -136,6 +136,7 @@ public class PropertyController extends AbstractBaseController {
                 houseOrientation,
                 balconyOrientation,
                 transactionType,
+                limit,
                 pageable
         );
 
