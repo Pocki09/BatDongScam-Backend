@@ -10,6 +10,7 @@ services:
       - ${SERVER_PORT}:${SERVER_PORT}
     depends_on:
       - postgres
+      - mongodb
     env_file:
       - ../.env
     networks:
@@ -30,6 +31,22 @@ services:
     networks:
       - bds-project-network
 
+  mongodb:
+    image: mongo:7.0
+    container_name: ${PROJECT_NAME}-mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGODB_DB}
+    ports:
+      - ${MONGODB_EXTERNAL_PORT}:27017
+    volumes:
+      - mongodb-data:/data/db
+      - ../../var/logs/mongodb:/var/log/mongodb
+    networks:
+      - bds-project-network
+
   # mailhog:
   #   image: mailhog/mailhog:latest
   #   container_name: template-mailhog
@@ -42,6 +59,7 @@ services:
 
 volumes:
   postgres-data:
+  mongodb-data:
 
 networks:
   bds-project-network:

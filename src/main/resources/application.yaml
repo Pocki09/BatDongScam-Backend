@@ -38,6 +38,10 @@ spring:
     username: ${POSTGRESQL_USER}
     password: ${POSTGRESQL_PASSWORD}
   data:
+    mongodb:
+      host: ${MONGODB_HOST}
+      port: ${MONGODB_PORT}
+      database: ${MONGODB_DB}
     web:
       pageable:
         default-page-size: ${PAGEABLE_DEFAULT_PAGE_SIZE}

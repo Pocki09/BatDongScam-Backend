@@ -75,10 +75,7 @@ public class CustomerPreferencesDummyData {
             int favoriteCount = 2 + random.nextInt(4);
             for (int i = 0; i < favoriteCount && i < properties.size(); i++) {
                 Property property = properties.get(random.nextInt(properties.size()));
-                CustomerFavoriteProperty favorite = CustomerFavoriteProperty.builder()
-                        .customer(customer)
-                        .property(property)
-                        .build();
+                CustomerFavoriteProperty favorite = new CustomerFavoriteProperty(customer.getId(), property.getId());
                 favorites.add(favorite);
             }
 
@@ -86,10 +83,7 @@ public class CustomerPreferencesDummyData {
             int cityCount = 1 + random.nextInt(2);
             for (int i = 0; i < cityCount && i < cities.size(); i++) {
                 City city = cities.get(random.nextInt(cities.size()));
-                CustomerPreferredCity preferredCity = CustomerPreferredCity.builder()
-                        .customer(customer)
-                        .city(city)
-                        .build();
+                CustomerPreferredCity preferredCity = new CustomerPreferredCity(customer.getId(), city.getId());
                 preferredCities.add(preferredCity);
             }
 
@@ -97,10 +91,7 @@ public class CustomerPreferencesDummyData {
             int districtCount = 1 + random.nextInt(3);
             for (int i = 0; i < districtCount && i < districts.size(); i++) {
                 District district = districts.get(random.nextInt(districts.size()));
-                CustomerPreferredDistrict preferredDistrict = CustomerPreferredDistrict.builder()
-                        .customer(customer)
-                        .district(district)
-                        .build();
+                CustomerPreferredDistrict preferredDistrict = new CustomerPreferredDistrict(customer.getId(), district.getId());
                 preferredDistricts.add(preferredDistrict);
             }
 
@@ -108,10 +99,7 @@ public class CustomerPreferencesDummyData {
             int wardCount = 1 + random.nextInt(3);
             for (int i = 0; i < wardCount && i < wards.size(); i++) {
                 Ward ward = wards.get(random.nextInt(wards.size()));
-                CustomerPreferredWard preferredWard = CustomerPreferredWard.builder()
-                        .customer(customer)
-                        .ward(ward)
-                        .build();
+                CustomerPreferredWard preferredWard = new CustomerPreferredWard(customer.getId(), ward.getId());
                 preferredWards.add(preferredWard);
             }
 
@@ -119,10 +107,7 @@ public class CustomerPreferencesDummyData {
             int typeCount = 1 + random.nextInt(3);
             for (int i = 0; i < typeCount && i < propertyTypes.size(); i++) {
                 PropertyType type = propertyTypes.get(random.nextInt(propertyTypes.size()));
-                CustomerPreferredPropertyType preferredType = CustomerPreferredPropertyType.builder()
-                        .customer(customer)
-                        .propertyType(type)
-                        .build();
+                CustomerPreferredPropertyType preferredType = new CustomerPreferredPropertyType(customer.getId(), type.getId());
                 preferredTypes.add(preferredType);
             }
         }

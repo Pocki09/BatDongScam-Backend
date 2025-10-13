@@ -1,24 +1,17 @@
 package com.se100.bds.entities.customer;
 
-import com.se100.bds.entities.AbstractBaseEntity;
-import com.se100.bds.entities.location.District;
-import com.se100.bds.entities.user.Customer;
-import jakarta.persistence.*;
+import com.se100.bds.entities.AbstractCustomerPreferenceEntity;
 import lombok.*;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "customer_preferred_districts")
-@Builder
+import java.util.UUID;
+
+@Document(collection = "customer_preferred_districts")
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-public class CustomerPreferredDistrict extends AbstractBaseEntity {
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", nullable = false)
-    private Customer customer;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "district_id", nullable = false)
-    private District district;
+public class CustomerPreferredDistrict extends AbstractCustomerPreferenceEntity {
+    public CustomerPreferredDistrict(UUID customerId, UUID refId) {
+        super(customerId, refId);
+    }
 }

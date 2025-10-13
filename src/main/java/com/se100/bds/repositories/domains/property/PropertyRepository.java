@@ -42,7 +42,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
         p.id,
         p.title,
         (SELECT m2.filePath FROM Media m2 WHERE m2.property.id = p.id ORDER BY m2.createdAt ASC LIMIT 1),
-        (SELECT CASE WHEN (COUNT(f) > 0) THEN true ELSE false END FROM CustomerFavoriteProperty f WHERE f.property.id = p.id AND f.customer.id = :userId),
+        false,
         COALESCE((SELECT CAST(COUNT(m2.id) AS int) FROM Media m2 WHERE m2.property.id = p.id), 0),
         p.fullAddress,
         d.districtName,

@@ -14,6 +14,8 @@ import java.util.UUID;
 public interface UserService {
     User getUser();
 
+    UUID getUserId();
+
     UserDetails loadUserById(String id);
 
     JwtUserDetails getPrincipal(Authentication authentication);

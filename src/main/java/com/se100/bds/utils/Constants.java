@@ -362,5 +362,24 @@ public final class Constants {
                     .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid report type name: %s", name)));
         }
     }
+
+    @Getter
+    @AllArgsConstructor
+    public enum LikeTypeEnum {
+        PROPERTY("PROPERTY"),
+        CITY("CITY"),
+        DISTRICT("DISTRICT"),
+        WARD("WARD"),
+        PROPERTY_TYPE("PROPERTY_TYPE");
+
+        private final String value;
+
+        public static LikeTypeEnum get(final String name) {
+            return Stream.of(LikeTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid like type name: %s", name)));
+        }
+    }
 }
 

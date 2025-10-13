@@ -69,6 +69,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    public UUID getUserId() {
+        return getUser().getId();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<User> findAll(Pageable pageable) {
         return userRepository.findAll(pageable);
     }

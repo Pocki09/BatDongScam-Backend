@@ -3,11 +3,14 @@ package com.se100.bds.services.domains.property.impl;
 import com.se100.bds.entities.property.Property;
 import com.se100.bds.entities.user.User;
 import com.se100.bds.mappers.PropertyMapper;
+import com.se100.bds.repositories.domains.customer.CustomerFavoritePropertyRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.repositories.dtos.PropertyCardProtection;
+import com.se100.bds.services.domains.customer.CustomerFavoriteService;
 import com.se100.bds.services.domains.property.PropertyService;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.services.dtos.results.PropertyCard;
+import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,6 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PropertyServiceImpl implements PropertyService {
     private final PropertyRepository propertyRepository;
+    private final CustomerFavoriteService customerFavoriteService;
     private final PropertyMapper propertyMapper;
     private final UserService userService;
 
@@ -55,17 +59,16 @@ public class PropertyServiceImpl implements PropertyService {
                 currentUser != null ? currentUser.getId() : null
         );
 
-        return cardProtections.map(p -> new PropertyCard(
-                p.getId(),
-                p.getTitle(),
-                p.getThumbnailUrl(),
-                p.isFavorite(),
-                p.getNumberOfImages(),
-                p.getDistrict(),
-                p.getCity(),
-                p.getStatus(),
-                p.getPrice(),
-                p.getTotalArea()
-        ));
+        if (currentUser == null) {
+            return propertyMapper.mapToPage(cardProtections, PropertyCard.class);
+        }
+
+        for (PropertyCardProtection card : cardProtections) {
+            if (customerFavoriteService.isLike(card.getId(), currentUser.getId(), Constants.LikeTypeEnum.PROPERTY)) {
+                card.setFavorite(true);
+            }
+        }
+
+        return propertyMapper.mapToPage(cardProtections, PropertyCard.class);
     }
 }
