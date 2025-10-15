@@ -7,8 +7,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @Configuration
 @EnableMongoAuditing
 @EnableMongoRepositories(basePackages = {
-        "com.se100.bds.repositories.domains.customer",
-        "com.se100.bds.repositories.domains.search"
+        "com.se100.bds.repositories.domains.mongo"
 })
 public class MongoConfig {
 }

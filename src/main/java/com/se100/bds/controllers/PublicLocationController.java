@@ -4,7 +4,7 @@ import com.se100.bds.controllers.base.AbstractBaseController;
 import com.se100.bds.dtos.responses.PageResponse;
 import com.se100.bds.dtos.responses.SingleResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
-import com.se100.bds.entities.location.City;
+import com.se100.bds.models.entities.location.City;
 import com.se100.bds.services.domains.location.LocationService;
 import com.se100.bds.utils.Constants;
 import io.swagger.v3.oas.annotations.Operation;

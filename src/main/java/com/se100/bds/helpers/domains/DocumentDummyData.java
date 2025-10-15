@@ -1,8 +1,8 @@
 package com.se100.bds.helpers.domains;
 
-import com.se100.bds.entities.document.DocumentType;
-import com.se100.bds.entities.document.IdentificationDocument;
-import com.se100.bds.entities.property.Property;
+import com.se100.bds.models.entities.document.DocumentType;
+import com.se100.bds.models.entities.document.IdentificationDocument;
+import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.repositories.domains.document.DocumentTypeRepository;
 import com.se100.bds.repositories.domains.document.IdentificationDocumentRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;

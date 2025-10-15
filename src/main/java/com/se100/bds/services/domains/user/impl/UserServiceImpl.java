@@ -1,8 +1,8 @@
 package com.se100.bds.services.domains.user.impl;
 
 import com.se100.bds.dtos.requests.auth.RegisterRequest;
-import com.se100.bds.entities.user.Customer;
-import com.se100.bds.entities.user.User;
+import com.se100.bds.models.entities.user.Customer;
+import com.se100.bds.models.entities.user.User;
 import com.se100.bds.exceptions.NotFoundException;
 import com.se100.bds.repositories.domains.user.UserRepository;
 import com.se100.bds.securities.JwtUserDetails;

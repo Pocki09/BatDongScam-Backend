@@ -1,6 +1,6 @@
 package com.se100.bds.repositories.domains.document;
 
-import com.se100.bds.entities.document.DocumentType;
+import com.se100.bds.models.entities.document.DocumentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

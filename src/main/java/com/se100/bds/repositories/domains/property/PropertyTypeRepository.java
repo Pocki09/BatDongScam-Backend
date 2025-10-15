@@ -1,6 +1,6 @@
 package com.se100.bds.repositories.domains.property;
 
-import com.se100.bds.entities.property.PropertyType;
+import com.se100.bds.models.entities.property.PropertyType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

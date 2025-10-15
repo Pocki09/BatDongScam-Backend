@@ -1,7 +1,7 @@
 package com.se100.bds.services.domains.property.impl;
 
-import com.se100.bds.entities.property.Property;
-import com.se100.bds.entities.user.User;
+import com.se100.bds.models.entities.property.Property;
+import com.se100.bds.models.entities.user.User;
 import com.se100.bds.mappers.PropertyMapper;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.repositories.dtos.PropertyCardProtection;

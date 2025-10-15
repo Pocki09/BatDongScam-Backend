@@ -1,6 +1,6 @@
 package com.se100.bds.helpers.domains;
 
-import com.se100.bds.entities.property.PropertyType;
+import com.se100.bds.models.entities.property.PropertyType;
 import com.se100.bds.repositories.domains.property.PropertyTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

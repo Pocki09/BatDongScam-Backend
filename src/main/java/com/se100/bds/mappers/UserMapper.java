@@ -4,7 +4,7 @@ import com.se100.bds.dtos.responses.user.CustomerResponse;
 import com.se100.bds.dtos.responses.user.PropertyOwnerResponse;
 import com.se100.bds.dtos.responses.user.SalesAgentResponse;
 import com.se100.bds.dtos.responses.user.UserResponse;
-import com.se100.bds.entities.user.User;
+import com.se100.bds.models.entities.user.User;
 import com.se100.bds.utils.Constants;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;

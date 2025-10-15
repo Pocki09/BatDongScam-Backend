@@ -1,6 +1,6 @@
 package com.se100.bds.services.domains.property;
 
-import com.se100.bds.entities.property.Property;
+import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.services.dtos.results.PropertyCard;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

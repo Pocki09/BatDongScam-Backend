@@ -1,7 +1,7 @@
 package com.se100.bds.services.domains.auth;
 
 import com.se100.bds.dtos.responses.auth.TokenResponse;
-import com.se100.bds.entities.user.User;
+import com.se100.bds.models.entities.user.User;
 
 import java.util.UUID;
 

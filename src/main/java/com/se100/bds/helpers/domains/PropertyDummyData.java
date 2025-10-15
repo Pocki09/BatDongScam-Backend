@@ -1,10 +1,10 @@
 package com.se100.bds.helpers.domains;
 
-import com.se100.bds.entities.location.Ward;
-import com.se100.bds.entities.property.Property;
-import com.se100.bds.entities.property.PropertyType;
-import com.se100.bds.entities.user.PropertyOwner;
-import com.se100.bds.entities.user.SaleAgent;
+import com.se100.bds.models.entities.location.Ward;
+import com.se100.bds.models.entities.property.Property;
+import com.se100.bds.models.entities.property.PropertyType;
+import com.se100.bds.models.entities.user.PropertyOwner;
+import com.se100.bds.models.entities.user.SaleAgent;
 import com.se100.bds.repositories.domains.location.WardRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.repositories.domains.property.PropertyTypeRepository;

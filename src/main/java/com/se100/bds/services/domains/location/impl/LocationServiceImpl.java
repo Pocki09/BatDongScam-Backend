@@ -1,8 +1,8 @@
 package com.se100.bds.services.domains.location.impl;
 
-import com.se100.bds.entities.location.City;
-import com.se100.bds.entities.location.District;
-import com.se100.bds.entities.location.Ward;
+import com.se100.bds.models.entities.location.City;
+import com.se100.bds.models.entities.location.District;
+import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.repositories.domains.location.CityRepository;
 import com.se100.bds.repositories.domains.location.DistrictRepository;
 import com.se100.bds.repositories.domains.location.WardRepository;

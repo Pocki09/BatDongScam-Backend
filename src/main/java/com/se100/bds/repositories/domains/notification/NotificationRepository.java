@@ -1,6 +1,6 @@
 package com.se100.bds.repositories.domains.notification;
 
-import com.se100.bds.entities.notification.Notification;
+import com.se100.bds.models.entities.notification.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

@@ -1,7 +1,7 @@
 package com.se100.bds.services.domains.search.impl;
 
-import com.se100.bds.entities.search.SearchLog;
-import com.se100.bds.repositories.domains.search.SearchLogRepository;
+import com.se100.bds.models.schemas.search.SearchLog;
+import com.se100.bds.repositories.domains.mongo.search.SearchLogRepository;
 import com.se100.bds.services.domains.search.SearchService;
 import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;

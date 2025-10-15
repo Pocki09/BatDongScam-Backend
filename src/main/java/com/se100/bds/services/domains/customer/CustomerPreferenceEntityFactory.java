@@ -1,7 +1,7 @@
 package com.se100.bds.services.domains.customer;
 
-import com.se100.bds.entities.AbstractCustomerPreferenceEntity;
-import com.se100.bds.entities.customer.*;
+import com.se100.bds.models.schemas.customer.AbstractCustomerPreferenceMongoSchema;
+import com.se100.bds.models.schemas.customer.*;
 import com.se100.bds.utils.Constants;
 
 import java.util.UUID;
@@ -9,12 +9,12 @@ import java.util.function.BiFunction;
 
 public class CustomerPreferenceEntityFactory {
 
-    public static AbstractCustomerPreferenceEntity createEntity(
+    public static AbstractCustomerPreferenceMongoSchema createEntity(
             Constants.LikeTypeEnum likeType,
             UUID customerId,
             UUID refId) {
 
-        BiFunction<UUID, UUID, AbstractCustomerPreferenceEntity> constructor = switch (likeType) {
+        BiFunction<UUID, UUID, AbstractCustomerPreferenceMongoSchema> constructor = switch (likeType) {
             case PROPERTY -> CustomerFavoriteProperty::new;
             case CITY -> CustomerPreferredCity::new;
             case DISTRICT -> CustomerPreferredDistrict::new;

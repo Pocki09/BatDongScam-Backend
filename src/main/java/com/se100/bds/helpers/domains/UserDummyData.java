@@ -1,8 +1,8 @@
 package com.se100.bds.helpers.domains;
 
-import com.se100.bds.entities.user.Customer;
-import com.se100.bds.entities.user.SaleAgent;
-import com.se100.bds.entities.user.User;
+import com.se100.bds.models.entities.user.Customer;
+import com.se100.bds.models.entities.user.SaleAgent;
+import com.se100.bds.models.entities.user.User;
 import com.se100.bds.repositories.domains.user.UserRepository;
 import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
@@ -132,49 +132,17 @@ public class UserDummyData {
                 .employeeCode(employeeCode)
                 .maxProperties(50)
                 .hiredDate(LocalDateTime.now().minusMonths((long) (Math.random() * 24))) // Hired in last 2 years
-                .currentMonthRevenue(BigDecimal.ZERO)
-                .totalRevenue(BigDecimal.valueOf(Math.random() * 1000000))
-                .currentMonthDeals(0)
-                .totalDeals((int) (Math.random() * 50))
-                .activeProperties(0)
-                .performanceTier(Constants.PerformanceTierEnum.BRONZE)
-                .currentMonthRanking(0)
-                .careerRanking(0)
                 .assignedProperties(new ArrayList<>())
                 .appointments(new ArrayList<>())
                 .contracts(new ArrayList<>())
-                .rankings(new ArrayList<>())
                 .build();
     }
 
     private Customer createCustomer(User user, int index) {
-        // Vary customer tiers based on index
-        Constants.CustomerTierEnum tier;
-        if (index <= 10) {
-            tier = Constants.CustomerTierEnum.PLATINUM;
-        } else if (index <= 30) {
-            tier = Constants.CustomerTierEnum.GOLD;
-        } else if (index <= 60) {
-            tier = Constants.CustomerTierEnum.SILVER;
-        } else {
-            tier = Constants.CustomerTierEnum.BRONZE;
-        }
-
         return Customer.builder()
                 .user(user)
-                .currentMonthSpending(BigDecimal.ZERO)
-                .totalSpending(BigDecimal.valueOf(Math.random() * 500000))
-                .currentMonthPurchases(0)
-                .totalPurchases((int) (Math.random() * 5))
-                .currentMonthRentals(0)
-                .totalRentals((int) (Math.random() * 10))
-                .currentMonthSearches(0)
-                .currentMonthViewings(0)
-                .customerTier(tier)
-                .leadScore((int) (Math.random() * 100))
                 .appointments(new ArrayList<>())
                 .contracts(new ArrayList<>())
-                .customerLeads(new ArrayList<>())
                 .build();
     }
 }

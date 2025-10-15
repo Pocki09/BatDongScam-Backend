@@ -8,7 +8,7 @@ import com.se100.bds.dtos.responses.SuccessResponse;
 import com.se100.bds.dtos.responses.auth.TokenResponse;
 import com.se100.bds.dtos.responses.error.DetailedErrorResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
-import com.se100.bds.entities.user.User;
+import com.se100.bds.models.entities.user.User;
 import com.se100.bds.services.domains.auth.AuthService;
 import com.se100.bds.services.domains.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;

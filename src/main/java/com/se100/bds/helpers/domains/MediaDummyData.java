@@ -1,7 +1,7 @@
 package com.se100.bds.helpers.domains;
 
-import com.se100.bds.entities.property.Media;
-import com.se100.bds.entities.property.Property;
+import com.se100.bds.models.entities.property.Media;
+import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.repositories.domains.property.MediaRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.utils.Constants;

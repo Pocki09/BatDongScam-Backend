@@ -1,9 +1,9 @@
 package com.se100.bds.helpers.domains;
 
-import com.se100.bds.entities.appointment.Appointment;
-import com.se100.bds.entities.property.Property;
-import com.se100.bds.entities.user.Customer;
-import com.se100.bds.entities.user.SaleAgent;
+import com.se100.bds.models.entities.appointment.Appointment;
+import com.se100.bds.models.entities.property.Property;
+import com.se100.bds.models.entities.user.Customer;
+import com.se100.bds.models.entities.user.SaleAgent;
 import com.se100.bds.repositories.domains.appointment.AppointmentRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.repositories.domains.user.CustomerRepository;

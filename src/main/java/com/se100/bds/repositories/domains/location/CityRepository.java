@@ -1,6 +1,6 @@
 package com.se100.bds.repositories.domains.location;
 
-import com.se100.bds.entities.location.City;
+import com.se100.bds.models.entities.location.City;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,6 +1,6 @@
 package com.se100.bds.securities;
 
-import com.se100.bds.entities.user.User;
+import com.se100.bds.models.entities.user.User;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

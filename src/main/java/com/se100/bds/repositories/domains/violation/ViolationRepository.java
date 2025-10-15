@@ -1,6 +1,6 @@
 package com.se100.bds.repositories.domains.violation;
 
-import com.se100.bds.entities.violation.ViolationReport;
+import com.se100.bds.models.entities.violation.ViolationReport;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

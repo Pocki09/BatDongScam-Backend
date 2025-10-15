@@ -1,6 +1,6 @@
 package com.se100.bds.repositories.domains.review;
 
-import com.se100.bds.entities.review.Review;
+import com.se100.bds.models.entities.review.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

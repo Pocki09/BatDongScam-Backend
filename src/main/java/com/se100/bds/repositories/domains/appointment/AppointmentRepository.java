@@ -1,6 +1,6 @@
 package com.se100.bds.repositories.domains.appointment;
 
-import com.se100.bds.entities.appointment.Appointment;
+import com.se100.bds.models.entities.appointment.Appointment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

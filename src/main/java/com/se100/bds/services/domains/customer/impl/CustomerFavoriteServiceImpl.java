@@ -1,7 +1,7 @@
 package com.se100.bds.services.domains.customer.impl;
 
-import com.se100.bds.entities.AbstractCustomerPreferenceEntity;
-import com.se100.bds.repositories.domains.customer.*;
+import com.se100.bds.models.schemas.customer.AbstractCustomerPreferenceMongoSchema;
+import com.se100.bds.repositories.domains.mongo.customer.*;
 import com.se100.bds.services.domains.customer.CustomerFavoriteService;
 import com.se100.bds.services.domains.customer.CustomerPreferenceEntityFactory;
 import com.se100.bds.services.domains.user.UserService;
@@ -24,7 +24,7 @@ public class CustomerFavoriteServiceImpl implements CustomerFavoriteService {
     private final CustomerPreferredWardRepository customerPreferredWardRepository;
     private final UserService userService;
 
-    private Map<Constants.LikeTypeEnum, BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceEntity>> repositoryMap;
+    private Map<Constants.LikeTypeEnum, BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceMongoSchema>> repositoryMap;
 
     private void initRepositoryMap() {
         if (repositoryMap == null) {
@@ -38,7 +38,7 @@ public class CustomerFavoriteServiceImpl implements CustomerFavoriteService {
         }
     }
 
-    private BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceEntity> getRepository(Constants.LikeTypeEnum likeType) {
+    private BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceMongoSchema> getRepository(Constants.LikeTypeEnum likeType) {
         initRepositoryMap();
         return repositoryMap.get(likeType);
     }
@@ -46,7 +46,7 @@ public class CustomerFavoriteServiceImpl implements CustomerFavoriteService {
     @Override
     public boolean like(UUID id, Constants.LikeTypeEnum likeType) {
         UUID customerId = userService.getUserId();
-        BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceEntity> repository = getRepository(likeType);
+        BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceMongoSchema> repository = getRepository(likeType);
         if (repository == null) {
             log.error("Invalid like type: {}", likeType);
             return false;
@@ -58,7 +58,7 @@ public class CustomerFavoriteServiceImpl implements CustomerFavoriteService {
                 log.info("Removed {} preference {} for customer {}", likeType, id, customerId);
                 return false;
             } else {
-                AbstractCustomerPreferenceEntity entity = CustomerPreferenceEntityFactory.createEntity(
+                AbstractCustomerPreferenceMongoSchema entity = CustomerPreferenceEntityFactory.createEntity(
                         likeType, customerId, id);
                 saveEntity(repository, entity);
                 log.info("Added {} preference {} for customer {}", likeType, id, customerId);
@@ -72,7 +72,7 @@ public class CustomerFavoriteServiceImpl implements CustomerFavoriteService {
 
     @Override
     public boolean isLike(UUID refId, UUID customerId, Constants.LikeTypeEnum likeType) {
-        BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceEntity> repository = getRepository(likeType);
+        BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceMongoSchema> repository = getRepository(likeType);
         if (repository == null) {
             log.error("Invalid like type: {}", likeType);
             return false;
@@ -87,9 +87,9 @@ public class CustomerFavoriteServiceImpl implements CustomerFavoriteService {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends AbstractCustomerPreferenceEntity> void saveEntity(
-            BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceEntity> repository,
-            AbstractCustomerPreferenceEntity entity) {
+    private <T extends AbstractCustomerPreferenceMongoSchema> void saveEntity(
+            BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceMongoSchema> repository,
+            AbstractCustomerPreferenceMongoSchema entity) {
         ((BaseCustomerPreferenceRepository<T>) repository).save((T) entity);
     }
 }

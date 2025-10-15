@@ -1,6 +1,6 @@
 package com.se100.bds.repositories.domains.contract;
 
-import com.se100.bds.entities.contract.Contract;
+import com.se100.bds.models.entities.contract.Contract;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

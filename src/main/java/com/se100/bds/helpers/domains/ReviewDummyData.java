@@ -1,8 +1,8 @@
 package com.se100.bds.helpers.domains;
 
-import com.se100.bds.entities.appointment.Appointment;
-import com.se100.bds.entities.contract.Contract;
-import com.se100.bds.entities.review.Review;
+import com.se100.bds.models.entities.appointment.Appointment;
+import com.se100.bds.models.entities.contract.Contract;
+import com.se100.bds.models.entities.review.Review;
 import com.se100.bds.repositories.domains.appointment.AppointmentRepository;
 import com.se100.bds.repositories.domains.contract.ContractRepository;
 import com.se100.bds.repositories.domains.review.ReviewRepository;
