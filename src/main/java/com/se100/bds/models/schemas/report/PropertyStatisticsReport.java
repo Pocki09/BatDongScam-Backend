@@ -64,4 +64,10 @@ public class PropertyStatisticsReport extends AbstractBaseMongoReport {
 
     @Field("favorite_property_types")
     private Map<UUID, Integer> favoritePropertyTypes;
+
+    @Field("searched_properties_month")
+    private Map<UUID, Integer> searchedPropertiesMonth;
+
+    @Field("searched_properties")
+    private Map<UUID, Integer> searchedProperties;
 }

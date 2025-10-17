@@ -58,9 +58,11 @@ public class PropertyServiceImpl implements PropertyService {
 
         List<UUID> propertyIds = null;
         if (topK) {
-            // Get most searched property IDs sorted by search frequency
-            // Use a large limit to get enough results for filtering
-            propertyIds = searchService.getMostSearchedPropertyIds(1000);
+            // Lấy tháng và năm hiện tại
+            int currentYear = java.time.LocalDateTime.now().getYear();
+            int currentMonth = java.time.LocalDateTime.now().getMonthValue();
+
+            propertyIds = searchService.getMostSearchedPropertyIds(1000, currentYear, currentMonth);
             log.info("Found {} most searched properties", propertyIds.size());
         }
 

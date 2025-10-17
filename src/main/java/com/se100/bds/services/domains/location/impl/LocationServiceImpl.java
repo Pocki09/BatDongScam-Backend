@@ -32,7 +32,11 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public Page<City> topKCities(Pageable pageable, int topK) {
-        List<UUID> topKCityIds = searchService.topKSearchByUser(null, topK, Constants.SearchTypeEnum.CITY);
+        // Lấy tháng và năm hiện tại
+        int currentYear = java.time.LocalDateTime.now().getYear();
+        int currentMonth = java.time.LocalDateTime.now().getMonthValue();
+
+        List<UUID> topKCityIds = searchService.topKSearchByUser(null, topK, Constants.SearchTypeEnum.CITY, currentYear, currentMonth);
         return cityRepository.findAllByIdIn(topKCityIds, pageable);
     }
 

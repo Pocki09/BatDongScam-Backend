@@ -8,6 +8,6 @@ import java.util.UUID;
 public interface SearchService {
     void addSearch(UUID userId, UUID cityId, UUID districtId, UUID wardId, UUID propertyId, UUID propertyTypeId);
     void addSearchList(UUID userId, List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds, List<UUID> propertyTypeIds);
-    List<UUID> topKSearchByUser(UUID userId, int K, Constants.SearchTypeEnum searchType);
-    List<UUID> getMostSearchedPropertyIds(int limit);
+    List<UUID> topKSearchByUser(UUID userId, int K, Constants.SearchTypeEnum searchType, int year, int month);
+    List<UUID> getMostSearchedPropertyIds(int limit, int year, int month);
 }
