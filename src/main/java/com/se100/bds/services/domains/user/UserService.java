@@ -1,6 +1,7 @@
 package com.se100.bds.services.domains.user;
 
 import com.se100.bds.dtos.requests.auth.RegisterRequest;
+import com.se100.bds.dtos.responses.user.UserProfileResponse;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.securities.JwtUserDetails;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,8 @@ public interface UserService {
     User findByEmail(String email);
 
     UserDetails loadUserByEmail(String email);
+
+    UserProfileResponse<?> getUserProfileById(UUID id);
 
     User register(RegisterRequest request) throws BindException;
 

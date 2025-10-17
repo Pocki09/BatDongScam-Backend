@@ -17,8 +17,9 @@ public interface PropertyService {
                                               List<UUID> propertyTypeIds, UUID ownerId,
                                               BigDecimal minPrice, BigDecimal maxPrice, BigDecimal totalArea,
                                               Integer rooms, Integer bathrooms, Integer bedrooms, Integer floors, String houseOrientation, String balconyOrientation,
-                                              String transactionType, boolean topK,
+                                              String transactionType, String status, boolean topK,
                                               Pageable pageable);
     Page<PropertyType> getAllTypes(Pageable pageable);
     PropertyDetails getPropertyDetailsById(UUID propertyId);
+    List<Property> getAllByUserId(UUID ownerId, UUID customerId, UUID salesAgentId);
 }

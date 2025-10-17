@@ -1,16 +1,23 @@
 package com.se100.bds.services.domains.user.impl;
 
 import com.se100.bds.dtos.requests.auth.RegisterRequest;
+import com.se100.bds.dtos.responses.user.PropertyOwnerPropertyProfileResponse;
+import com.se100.bds.dtos.responses.user.SalesAgentResponse;
+import com.se100.bds.dtos.responses.user.UserProfileResponse;
+import com.se100.bds.mappers.UserMapper;
+import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.user.Customer;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.exceptions.NotFoundException;
 import com.se100.bds.repositories.domains.user.UserRepository;
 import com.se100.bds.securities.JwtUserDetails;
 import com.se100.bds.services.MessageSourceService;
+import com.se100.bds.services.domains.property.PropertyService;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.utils.Constants;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,6 +35,7 @@ import org.springframework.validation.FieldError;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -36,14 +44,20 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final MessageSourceService messageSourceService;
+    private final UserMapper userMapper;
+    private final PropertyService propertyService;
 
     public UserServiceImpl(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            MessageSourceService messageSourceService) {
+            MessageSourceService messageSourceService,
+            UserMapper userMapper,
+            @Lazy PropertyService propertyService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.messageSourceService = messageSourceService;
+        this.userMapper = userMapper;
+        this.propertyService = propertyService;
     }
 
     public Authentication getAuthentication() {
@@ -126,6 +140,113 @@ public class UserServiceImpl implements UserService {
                         new String[]{messageSourceService.get("user")})));
 
         return JwtUserDetails.create(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserProfileResponse<?> getUserProfileById(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(messageSourceService.get("not_found_with_param",
+                        new String[]{messageSourceService.get("user")})));
+
+        switch (user.getRole()) {
+            case ADMIN -> {
+                return UserProfileResponse.builder()
+                        .id(user.getId())
+                        .createdAt(user.getCreatedAt())
+                        .updatedAt(user.getUpdatedAt())
+                        .role(user.getRole().name())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .phoneNumber(user.getPhoneNumber())
+                        .zaloContact(user.getZaloContact())
+                        .status(user.getStatus().name())
+                        .build();
+            }
+            case CUSTOMER -> {
+                return UserProfileResponse.builder()
+                        .id(user.getId())
+                        .createdAt(user.getCreatedAt())
+                        .updatedAt(user.getUpdatedAt())
+                        .role(user.getRole().name())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .phoneNumber(user.getPhoneNumber())
+                        .zaloContact(user.getZaloContact())
+                        .status(user.getStatus().name())
+                        .build();
+            }
+            case SALESAGENT -> {
+                return UserProfileResponse.builder()
+                        .id(user.getId())
+                        .createdAt(user.getCreatedAt())
+                        .updatedAt(user.getUpdatedAt())
+                        .role(user.getRole().name())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .phoneNumber(user.getPhoneNumber())
+                        .zaloContact(user.getZaloContact())
+                        .status(user.getStatus().name())
+                        .build();
+            }
+            case PROPERTY_OWNER -> {
+                PropertyOwnerPropertyProfileResponse ownerPropertyProfileResponse = new PropertyOwnerPropertyProfileResponse();
+                List<Property> properties = propertyService.getAllByUserId(id, null, null)
+                        .stream()
+                        .filter(property ->
+                                property.getStatus() != Constants.PropertyStatusEnum.PENDING
+                                && property.getStatus() != Constants.PropertyStatusEnum.REJECTED
+                                && property.getStatus() != Constants.PropertyStatusEnum.DELETED
+                                && property.getStatus() != Constants.PropertyStatusEnum.APPROVED
+                                && property.getStatus() != Constants.PropertyStatusEnum.UNAVAILABLE
+                        )
+                        .toList();
+
+                // Filter properties for SALE transactions that are SOLD or AVAILABLE
+                List<Property> solds = properties.stream()
+                        .filter(property -> property.getTransactionType() == Constants.TransactionTypeEnum.SALE
+                                && (property.getStatus() == Constants.PropertyStatusEnum.SOLD
+                                || property.getStatus() == Constants.PropertyStatusEnum.AVAILABLE))
+                        .toList();
+
+                // Filter properties for INVESTMENT transactions (Projects) that are SOLD or AVAILABLE
+                List<Property> projects = properties.stream()
+                        .filter(property -> property.getTransactionType() == Constants.TransactionTypeEnum.INVESTMENT
+                                && (property.getStatus() == Constants.PropertyStatusEnum.SOLD
+                                || property.getStatus() == Constants.PropertyStatusEnum.AVAILABLE))
+                        .toList();
+
+                // Filter properties for RENTAL transactions that are RENTED or AVAILABLE
+                List<Property> rentals = properties.stream()
+                        .filter(property -> property.getTransactionType() == Constants.TransactionTypeEnum.RENTAL
+                                && (property.getStatus() == Constants.PropertyStatusEnum.RENTED
+                                || property.getStatus() == Constants.PropertyStatusEnum.AVAILABLE))
+                        .toList();
+
+                ownerPropertyProfileResponse.setTotalListings(properties.size());
+                ownerPropertyProfileResponse.setTotalSolds(solds.size());
+                ownerPropertyProfileResponse.setTotalProjects(projects.size());
+                ownerPropertyProfileResponse.setTotalRentals(rentals.size());
+
+                return UserProfileResponse.<PropertyOwnerPropertyProfileResponse>builder()
+                        .id(user.getId())
+                        .createdAt(user.getCreatedAt())
+                        .updatedAt(user.getUpdatedAt())
+                        .role(user.getRole().name())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .phoneNumber(user.getPhoneNumber())
+                        .zaloContact(user.getZaloContact())
+                        .status(user.getStatus().name())
+                        .propertyProfile(ownerPropertyProfileResponse)
+                        .build();
+            }
+            default -> throw new BadCredentialsException(messageSourceService.get("invalid_role"));
+        }
     }
 
     /**

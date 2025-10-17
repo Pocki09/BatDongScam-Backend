@@ -16,7 +16,7 @@ public final class Constants {
     @AllArgsConstructor
     public enum RoleEnum {
         ADMIN("ADMIN"),
-        SALESAGENT("SEER"),
+        SALESAGENT("SALESAGENT"),
         GUEST("GUEST"),
         PROPERTY_OWNER("UNVERIFIED_SEER"),
         CUSTOMER("CUSTOMER");

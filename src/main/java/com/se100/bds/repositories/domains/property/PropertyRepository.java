@@ -1,6 +1,7 @@
 package com.se100.bds.repositories.domains.property;
 
 import com.se100.bds.models.entities.property.Property;
+import com.se100.bds.models.entities.user.PropertyOwner;
 import com.se100.bds.repositories.dtos.MediaProjection;
 import com.se100.bds.repositories.dtos.PropertyCardProtection;
 import com.se100.bds.repositories.dtos.PropertyDetailsProjection;
@@ -72,9 +73,10 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
         AND (:bathrooms IS NULL OR p.bathrooms = :bathrooms)
         AND (:bedrooms IS NULL OR p.bedrooms = :bedrooms)
         AND (:floors IS NULL OR p.floors = :floors)
-        AND (:houseOrientation IS NULL OR p.houseOrientation = :houseOrientation)
-        AND (:balconyOrientation IS NULL OR p.balconyOrientation = :balconyOrientation)
-        AND (:transactionType IS NULL OR p.transactionType = :transactionType)
+        AND (:houseOrientation IS NULL OR CAST(p.houseOrientation AS string) = :houseOrientation)
+        AND (:balconyOrientation IS NULL OR CAST(p.balconyOrientation AS string) = :balconyOrientation)
+        AND (:transactionType IS NULL OR CAST(p.transactionType AS string) = :transactionType)
+        AND (:status IS NULL OR CAST(p.status AS string) = :status)
     """)
     Page<PropertyCardProtection> findAllPropertyCardsWithFilter(
             Pageable pageable,
@@ -94,6 +96,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
             @Param("houseOrientation") String houseOrientation,
             @Param("balconyOrientation") String balconyOrientation,
             @Param("transactionType") String transactionType,
+            @Param("status") String status,
             @Param("userId") UUID userId
     );
 
@@ -172,4 +175,20 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
         ORDER BY m.createdAt ASC
     """)
     List<MediaProjection> findMediaByPropertyId(@Param("propertyId") UUID propertyId);
+
+    List<Property> findAllByOwner(PropertyOwner owner);
+
+    List<Property> findAllByOwner_IdAndAssignedAgent_Id(UUID ownerId, UUID assignedAgentId);
+
+    @Query("""
+    SELECT DISTINCT p
+    FROM Property p
+    JOIN Contract c ON c.property.id = p.id
+    WHERE c.customer.id = :customerId
+    """)
+    List<Property> findAllByCustomer_Id(@Param("customerId") UUID customerId);
+
+    List<Property> findAllByOwner_Id(UUID ownerId);
+
+    List<Property> findAllByAssignedAgent_Id(UUID assignedAgentId);
 }

@@ -5,6 +5,7 @@ import com.se100.bds.dtos.responses.PageResponse;
 import com.se100.bds.dtos.responses.SingleResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
 import com.se100.bds.dtos.responses.user.UserResponse;
+import com.se100.bds.dtos.responses.user.UserProfileResponse;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.mappers.UserMapper;
 import com.se100.bds.services.domains.user.UserService;

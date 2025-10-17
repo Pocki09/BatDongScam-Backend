@@ -97,7 +97,7 @@ public class PublicPropertyController extends AbstractBaseController {
             @RequestParam(required = false) UUID ownerId,
 
             @Parameter(description = "Get top K property? This sorted by most popular property")
-            @RequestParam(required = false) Boolean topK,
+            @RequestParam(required = true, defaultValue = "false") Boolean topK,
 
             @Parameter(description = "Minimum price")
             @RequestParam(required = false) BigDecimal minPrice,
@@ -127,9 +127,12 @@ public class PublicPropertyController extends AbstractBaseController {
             @RequestParam(required = false) String balconyOrientation,
 
             @Parameter(description = "Transaction type (e.g., SALE, RENT)")
-            @RequestParam(required = false) String transactionType
+            @RequestParam(required = false) String transactionType,
+
+            @Parameter(description = "Property status (e.g., AVAILABLE, SOLD, RENTED, PENDING, APPROVED)")
+            @RequestParam(required = false) String status
     ) {
-        if (topK)
+        if (!topK)
             sortBy = null;
         Pageable pageable = createPageable(page, limit, sortType, sortBy);
 
@@ -149,6 +152,7 @@ public class PublicPropertyController extends AbstractBaseController {
                 houseOrientation,
                 balconyOrientation,
                 transactionType,
+                status,
                 topK,
                 pageable
         );

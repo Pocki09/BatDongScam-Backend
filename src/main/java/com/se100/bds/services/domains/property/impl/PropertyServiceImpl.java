@@ -45,7 +45,8 @@ public class PropertyServiceImpl implements PropertyService {
                                                      List<UUID> propertyTypeIds, UUID ownerId,
                                                      BigDecimal minPrice, BigDecimal maxPrice, BigDecimal totalArea,
                                                      Integer rooms, Integer bathrooms, Integer bedrooms, Integer floors,
-                                                     String houseOrientation, String balconyOrientation, String transactionType, boolean topK,
+                                                     String houseOrientation, String balconyOrientation, String transactionType,
+                                                     String status, boolean topK,
                                                      Pageable pageable) {
 
         User currentUser = null;
@@ -81,6 +82,7 @@ public class PropertyServiceImpl implements PropertyService {
                 houseOrientation,
                 balconyOrientation,
                 transactionType,
+                status,
                 currentUser != null ? currentUser.getId() : null
         );
 
@@ -107,5 +109,21 @@ public class PropertyServiceImpl implements PropertyService {
 
         // Use mapper to convert projection to DTO
         return propertyMapper.toPropertyDetails(projection, mediaProjections);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Property> getAllByUserId(UUID ownerId, UUID customerId, UUID salesAgentId) {
+        if (customerId == null) {
+            if (salesAgentId == null) {
+                return propertyRepository.findAllByOwner_Id(ownerId);
+            }
+            else if (ownerId == null) {
+                return propertyRepository.findAllByAssignedAgent_Id(salesAgentId);
+            }
+            return propertyRepository.findAllByOwner_IdAndAssignedAgent_Id(ownerId, salesAgentId);
+        } else {
+            return propertyRepository.findAllByCustomer_Id(customerId);
+        }
     }
 }
