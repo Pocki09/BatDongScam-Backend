@@ -76,7 +76,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
         AND (:houseOrientation IS NULL OR CAST(p.houseOrientation AS string) = :houseOrientation)
         AND (:balconyOrientation IS NULL OR CAST(p.balconyOrientation AS string) = :balconyOrientation)
         AND (:transactionType IS NULL OR CAST(p.transactionType AS string) = :transactionType)
-        AND (:status IS NULL OR CAST(p.status AS string) = :status)
+        AND (:statuses IS NULL OR CAST(p.status AS string) IN :statuses)
     """)
     Page<PropertyCardProtection> findAllPropertyCardsWithFilter(
             Pageable pageable,
@@ -96,7 +96,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
             @Param("houseOrientation") String houseOrientation,
             @Param("balconyOrientation") String balconyOrientation,
             @Param("transactionType") String transactionType,
-            @Param("status") String status,
+            @Param("statuses") List<String> statuses,
             @Param("userId") UUID userId
     );
 
@@ -192,3 +192,4 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
 
     List<Property> findAllByAssignedAgent_Id(UUID assignedAgentId);
 }
+

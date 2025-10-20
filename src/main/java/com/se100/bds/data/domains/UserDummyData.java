@@ -1,8 +1,10 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.models.entities.user.Customer;
 import com.se100.bds.models.entities.user.SaleAgent;
 import com.se100.bds.models.entities.user.User;
+import com.se100.bds.repositories.domains.location.WardRepository;
 import com.se100.bds.repositories.domains.user.UserRepository;
 import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class UserDummyData {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final WardRepository wardRepository;
 
     public void createDummy() {
         if (any()) {
@@ -40,6 +44,8 @@ public class UserDummyData {
         log.info("Creating dummy accounts");
 
         List<User> allUsers = new ArrayList<>();
+        List<Ward> wards = wardRepository.findAll();
+        Random random = new Random();
 
         // Create 1 Guest
         User guest = createUser(
@@ -47,7 +53,7 @@ public class UserDummyData {
                 "0901234567",
                 "Guest",
                 "User",
-                "123 Guest Street, Ho Chi Minh City",
+                wards.isEmpty() ? null : wards.get(random.nextInt(wards.size())),
                 Constants.RoleEnum.GUEST
         );
         allUsers.add(guest);
@@ -59,7 +65,7 @@ public class UserDummyData {
                 "0901234568",
                 "Admin",
                 "User",
-                "456 Admin Avenue, Ho Chi Minh City",
+                wards.isEmpty() ? null : wards.get(random.nextInt(wards.size())),
                 Constants.RoleEnum.ADMIN
         );
         allUsers.add(admin);
@@ -72,7 +78,7 @@ public class UserDummyData {
                     String.format("090123%04d", 4568 + i),
                     "Agent",
                     String.format("Number%d", i),
-                    String.format("%d Agent Street, District %d, Ho Chi Minh City", i, (i % 12) + 1),
+                    wards.isEmpty() ? null : wards.get(random.nextInt(wards.size())),
                     Constants.RoleEnum.SALESAGENT
             );
 
@@ -89,7 +95,7 @@ public class UserDummyData {
                     String.format("091%07d", i),
                     "Customer",
                     String.format("Number%d", i),
-                    String.format("%d Customer Street, District %d, Ho Chi Minh City", i, (i % 12) + 1),
+                    wards.isEmpty() ? null : wards.get(random.nextInt(wards.size())),
                     Constants.RoleEnum.CUSTOMER
             );
 
@@ -108,14 +114,14 @@ public class UserDummyData {
     }
 
     private User createUser(String email, String phoneNumber, String firstName, String lastName,
-                           String address, Constants.RoleEnum role) {
+                           Ward ward, Constants.RoleEnum role) {
         return User.builder()
                 .email(email)
                 .phoneNumber(phoneNumber)
                 .zaloContact(phoneNumber)
                 .firstName(firstName)
                 .lastName(lastName)
-                .address(address)
+                .ward(ward)
                 .password(passwordEncoder.encode("P@sswd123."))
                 .role(role)
                 .status(Constants.StatusProfileEnum.ACTIVE)

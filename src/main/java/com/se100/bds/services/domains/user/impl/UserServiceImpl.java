@@ -1,18 +1,21 @@
 package com.se100.bds.services.domains.user.impl;
 
 import com.se100.bds.dtos.requests.auth.RegisterRequest;
-import com.se100.bds.dtos.responses.user.PropertyOwnerPropertyProfileResponse;
-import com.se100.bds.dtos.responses.user.SalesAgentResponse;
-import com.se100.bds.dtos.responses.user.UserProfileResponse;
+import com.se100.bds.dtos.responses.user.meprofile.MeResponse;
+import com.se100.bds.dtos.responses.user.propertyprofile.PropertyOwnerPropertyProfileResponse;
+import com.se100.bds.dtos.responses.user.otherprofile.UserProfileResponse;
 import com.se100.bds.mappers.UserMapper;
+import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.user.Customer;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.exceptions.NotFoundException;
+import com.se100.bds.repositories.domains.location.WardRepository;
 import com.se100.bds.repositories.domains.user.UserRepository;
 import com.se100.bds.securities.JwtUserDetails;
 import com.se100.bds.services.MessageSourceService;
 import com.se100.bds.services.domains.property.PropertyService;
+import com.se100.bds.services.domains.ranking.RankingService;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.utils.Constants;
 import jakarta.persistence.EntityNotFoundException;
@@ -33,7 +36,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -46,18 +48,24 @@ public class UserServiceImpl implements UserService {
     private final MessageSourceService messageSourceService;
     private final UserMapper userMapper;
     private final PropertyService propertyService;
+    private final RankingService rankingService;
+    private final WardRepository wardRepository;
 
     public UserServiceImpl(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             MessageSourceService messageSourceService,
             UserMapper userMapper,
-            @Lazy PropertyService propertyService) {
+            @Lazy PropertyService propertyService,
+            RankingService rankingService,
+            WardRepository wardRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.messageSourceService = messageSourceService;
         this.userMapper = userMapper;
         this.propertyService = propertyService;
+        this.rankingService = rankingService;
+        this.wardRepository = wardRepository;
     }
 
     public Authentication getAuthentication() {
@@ -71,6 +79,32 @@ public class UserServiceImpl implements UserService {
         if (authentication.isAuthenticated()) {
             try {
                 return findById(UUID.fromString(getPrincipal(authentication).getId()));
+            } catch (ClassCastException e) {
+                log.warn("[JWT] User details not found!");
+                throw new BadCredentialsException("Bad credentials");
+            }
+        } else {
+            log.warn("[JWT] User not authenticated!");
+            throw new BadCredentialsException("Bad credentials");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MeResponse<?> getAccount() {
+        Authentication authentication = getAuthentication();
+        if (authentication.isAuthenticated()) {
+            try {
+                User user = userRepository.findByIdWithLocation(UUID.fromString(getPrincipal(authentication).getId()))
+                        .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + UUID.fromString(getPrincipal(authentication).getId())));
+
+                MeResponse<?> meResponse = userMapper.mapTo(user, MeResponse.class);
+                LocalDateTime now = LocalDateTime.now();
+                int month = now.getMonthValue();
+                int year = now.getYear();
+                meResponse.setTier(rankingService.getTier(user.getId(), user.getRole(), month, year));
+
+                return meResponse;
             } catch (ClassCastException e) {
                 log.warn("[JWT] User details not found!");
                 throw new BadCredentialsException("Bad credentials");
@@ -287,13 +321,20 @@ public class UserServiceImpl implements UserService {
             throw new BindException(bindingResult);
         }
 
+        Ward ward = null;
+        if (request.getWardId() != null) {
+            ward = wardRepository.findById(request.getWardId())
+                    .orElseThrow(() -> new NotFoundException(messageSourceService.get("not_found_with_param",
+                            new String[]{"Ward"})));
+        }
+
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhoneNumber(request.getPhoneNumber());
-        user.setAddress(request.getAddress());
+        user.setWard(ward);
         user.setRole(Constants.RoleEnum.CUSTOMER);
         user.setStatus(Constants.StatusProfileEnum.ACTIVE);
 

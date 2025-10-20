@@ -4,8 +4,7 @@ import com.se100.bds.controllers.base.AbstractBaseController;
 import com.se100.bds.dtos.responses.PageResponse;
 import com.se100.bds.dtos.responses.SingleResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
-import com.se100.bds.dtos.responses.user.UserResponse;
-import com.se100.bds.dtos.responses.user.UserProfileResponse;
+import com.se100.bds.dtos.responses.user.meprofile.MeResponse;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.mappers.UserMapper;
 import com.se100.bds.services.domains.user.UserService;
@@ -48,7 +47,7 @@ public class AccountController extends AbstractBaseController {
                             description = "Successful operation",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = UserResponse.class)
+                                    schema = @Schema(implementation = MeResponse.class)
                             )
                     ),
                     @ApiResponse(
@@ -61,9 +60,9 @@ public class AccountController extends AbstractBaseController {
                     )
             }
     )
-    public ResponseEntity<SingleResponse<UserResponse>> me() {
-        UserResponse userResponse = userMapper.mapTo(userService.getUser(), UserResponse.class);
-        return responseFactory.successSingle(userResponse, "Successful operation");
+    public ResponseEntity<SingleResponse<MeResponse>> me() {
+        MeResponse meResponse = userService.getAccount();
+        return responseFactory.successSingle(meResponse, "Successful operation");
     }
 
     @PostAuthorize("hasRole('ADMIN')")
@@ -90,7 +89,7 @@ public class AccountController extends AbstractBaseController {
                     )
             }
     )
-    public ResponseEntity<PageResponse<UserResponse>> getAllUsers(
+    public ResponseEntity<PageResponse<MeResponse>> getAllUsers(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "15") int limit,
             @RequestParam(defaultValue = "desc") String sortType,
@@ -98,7 +97,7 @@ public class AccountController extends AbstractBaseController {
     ) {
         Pageable pageable = createPageable(page, limit, sortType, sortBy);
         Page<User> userPage = userService.findAll(pageable);
-        Page<UserResponse> response = userMapper.mapToPage(userPage, UserResponse.class);
+        Page<MeResponse> response = userMapper.mapToPage(userPage, MeResponse.class);
         return responseFactory.successPage(response, "Users retrieved successfully");
     }
 
@@ -112,7 +111,7 @@ public class AccountController extends AbstractBaseController {
                             description = "Successful operation",
                             content = @Content(
                                     mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = UserResponse.class)
+                                    schema = @Schema(implementation = MeResponse.class)
                             )
                     ),
                     @ApiResponse(
@@ -133,12 +132,12 @@ public class AccountController extends AbstractBaseController {
                     )
             }
     )
-    public ResponseEntity<SingleResponse<UserResponse<?>>> getUserById(
+    public ResponseEntity<SingleResponse<MeResponse<?>>> getUserById(
             @Parameter(description = "User ID", required = true)
             @PathVariable UUID id
     ) {
         User user = userService.findById(id);
-        UserResponse<?> userResponse = userMapper.mapTo(user, UserResponse.class);
-        return responseFactory.successSingle(userResponse, "User retrieved successfully");
+        MeResponse<?> meResponse = userMapper.mapTo(user, MeResponse.class);
+        return responseFactory.successSingle(meResponse, "User retrieved successfully");
     }
 }

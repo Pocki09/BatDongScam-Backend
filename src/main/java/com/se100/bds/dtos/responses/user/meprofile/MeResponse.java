@@ -1,4 +1,4 @@
-package com.se100.bds.dtos.responses.user;
+package com.se100.bds.dtos.responses.user.meprofile;
 
 import com.se100.bds.dtos.responses.AbstractBaseDataResponse;
 import lombok.Getter;
@@ -7,21 +7,27 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @SuperBuilder
-public class UserResponse<T> extends AbstractBaseDataResponse {
+public class MeResponse<T> extends AbstractBaseDataResponse {
     private String role;
     private String email;
+    private String tier;
     private String phoneNumber;
-    private String address;
+    private String zaloContact;
+    private UUID wardId;
+    private String wardName;
+    private UUID districtId;
+    private String districtName;
+    private UUID cityId;
+    private String cityName;
     private String firstName;
     private String lastName;
     private String avatarUrl;
-    private String profileDescription;
-    private String birthDate;
     private String status;
     private LocalDateTime lastLoginAt;
     private T profile;

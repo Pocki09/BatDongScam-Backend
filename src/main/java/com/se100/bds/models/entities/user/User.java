@@ -1,6 +1,7 @@
 package com.se100.bds.models.entities.user;
 
 import com.se100.bds.models.entities.AbstractBaseEntity;
+import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.models.entities.violation.ViolationReport;
 import com.se100.bds.models.entities.notification.Notification;
 import jakarta.persistence.*;
@@ -35,9 +36,9 @@ public class User extends AbstractBaseEntity {
     @Column(name = "zalo_contact")
     private String zaloContact;
 
-    // TODO: Change to use city and district id
-    @Column(name = "address", nullable = false)
-    private String address;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ward_id", nullable = false)
+    private Ward ward;
 
     @Column(name = "password", nullable = false)
     private String password;

@@ -1,7 +1,9 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.models.entities.user.PropertyOwner;
 import com.se100.bds.models.entities.user.User;
+import com.se100.bds.repositories.domains.location.WardRepository;
 import com.se100.bds.repositories.domains.user.UserRepository;
 import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -20,6 +23,7 @@ public class PropertyOwnerDummyData {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final WardRepository wardRepository;
 
     public void createDummy() {
         createDummyPropertyOwners();
@@ -29,6 +33,8 @@ public class PropertyOwnerDummyData {
         log.info("Creating dummy property owners");
 
         List<User> owners = new ArrayList<>();
+        List<Ward> wards = wardRepository.findAll();
+        Random random = new Random();
 
         // Create 20 Property Owners
         for (int i = 1; i <= 20; i++) {
@@ -37,7 +43,7 @@ public class PropertyOwnerDummyData {
                     String.format("092%07d", i),
                     "Owner",
                     String.format("Number%d", i),
-                    String.format("%d Owner Street, District %d, Ho Chi Minh City", i, (i % 7) + 1)
+                    wards.isEmpty() ? null : wards.get(random.nextInt(wards.size()))
             );
 
             PropertyOwner propertyOwner = createPropertyOwner(user, String.format("ID%09d", 100000000 + i));
@@ -49,14 +55,14 @@ public class PropertyOwnerDummyData {
         log.info("Saved {} property owners to database", owners.size());
     }
 
-    private User createUser(String email, String phoneNumber, String firstName, String lastName, String address) {
+    private User createUser(String email, String phoneNumber, String firstName, String lastName, Ward ward) {
         return User.builder()
                 .email(email)
                 .phoneNumber(phoneNumber)
                 .zaloContact(phoneNumber)
                 .firstName(firstName)
                 .lastName(lastName)
-                .address(address)
+                .ward(ward)
                 .password(passwordEncoder.encode("P@sswd123."))
                 .role(Constants.RoleEnum.PROPERTY_OWNER)
                 .status(Constants.StatusProfileEnum.ACTIVE)
@@ -80,4 +86,3 @@ public class PropertyOwnerDummyData {
                 .build();
     }
 }
-

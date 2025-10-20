@@ -1,4 +1,4 @@
-package com.se100.bds.dtos.responses.user;
+package com.se100.bds.dtos.responses.user.meprofile;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

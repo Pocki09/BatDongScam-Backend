@@ -1,10 +1,9 @@
 package com.se100.bds.controllers;
 
 import com.se100.bds.controllers.base.AbstractBaseController;
-import com.se100.bds.dtos.responses.AbstractBaseResponse;
 import com.se100.bds.dtos.responses.SingleResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
-import com.se100.bds.dtos.responses.user.UserProfileResponse;
+import com.se100.bds.dtos.responses.user.otherprofile.UserProfileResponse;
 import com.se100.bds.services.domains.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

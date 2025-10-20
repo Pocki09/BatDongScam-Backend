@@ -129,8 +129,8 @@ public class PublicPropertyController extends AbstractBaseController {
             @Parameter(description = "Transaction type (e.g., SALE, RENT)")
             @RequestParam(required = false) String transactionType,
 
-            @Parameter(description = "Property status (e.g., AVAILABLE, SOLD, RENTED, PENDING, APPROVED)")
-            @RequestParam(required = false) String status
+            @Parameter(description = "Property statuses (e.g., AVAILABLE, SOLD, RENTED, PENDING, APPROVED)")
+            @RequestParam(required = false) List<String> statuses
     ) {
         if (!topK)
             sortBy = null;
@@ -152,7 +152,7 @@ public class PublicPropertyController extends AbstractBaseController {
                 houseOrientation,
                 balconyOrientation,
                 transactionType,
-                status,
+                statuses,
                 topK,
                 pageable
         );

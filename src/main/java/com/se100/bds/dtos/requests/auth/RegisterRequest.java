@@ -10,6 +10,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -58,11 +59,11 @@ public class RegisterRequest {
     private String phoneNumber;
 
     @Schema(
-            name = "address",
+            name = "wardId",
             requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-            example = "123 Main St, City, Country"
+            example = "123e4567-e89b-12d3-a456-426614174000"
     )
-    private String address;
+    private UUID wardId;
 
     @NotBlank(message = "{not_blank}")
     @Schema(

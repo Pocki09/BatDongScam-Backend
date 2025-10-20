@@ -1,7 +1,8 @@
 package com.se100.bds.services.domains.user;
 
 import com.se100.bds.dtos.requests.auth.RegisterRequest;
-import com.se100.bds.dtos.responses.user.UserProfileResponse;
+import com.se100.bds.dtos.responses.user.meprofile.MeResponse;
+import com.se100.bds.dtos.responses.user.otherprofile.UserProfileResponse;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.securities.JwtUserDetails;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,8 @@ import java.util.UUID;
 
 public interface UserService {
     User getUser();
+
+    MeResponse<?> getAccount();
 
     UUID getUserId();
 

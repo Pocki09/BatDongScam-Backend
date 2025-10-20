@@ -46,7 +46,7 @@ public class PropertyServiceImpl implements PropertyService {
                                                      BigDecimal minPrice, BigDecimal maxPrice, BigDecimal totalArea,
                                                      Integer rooms, Integer bathrooms, Integer bedrooms, Integer floors,
                                                      String houseOrientation, String balconyOrientation, String transactionType,
-                                                     String status, boolean topK,
+                                                     List<String> statuses, boolean topK,
                                                      Pageable pageable) {
 
         User currentUser = null;
@@ -84,7 +84,7 @@ public class PropertyServiceImpl implements PropertyService {
                 houseOrientation,
                 balconyOrientation,
                 transactionType,
-                status,
+                statuses,
                 currentUser != null ? currentUser.getId() : null
         );
 
