@@ -50,8 +50,7 @@ public class PaymentDummyData {
                     .installmentNumber(null)
                     .paymentMethod("Bank Transfer")
                     .transactionReference(String.format("TXN%012d", random.nextInt(999999999)))
-                    .status("PAID")
-                    .overdueDays(0)
+                    .status(Constants.PaymentStatusEnum.SUCCESS)
                     .penaltyAmount(BigDecimal.ZERO)
                     .notes("Initial deposit payment")
                     .build();
@@ -74,8 +73,7 @@ public class PaymentDummyData {
                             .installmentNumber(i + 1)
                             .paymentMethod(paidDate != null ? "Bank Transfer" : null)
                             .transactionReference(paidDate != null ? String.format("TXN%012d", random.nextInt(999999999)) : null)
-                            .status(paidDate != null ? "PAID" : "PENDING")
-                            .overdueDays(paidDate != null && paidDate.isAfter(dueDate) ? (int) (paidDate.toEpochDay() - dueDate.toEpochDay()) : 0)
+                            .status(paidDate != null ? Constants.PaymentStatusEnum.SUCCESS : Constants.PaymentStatusEnum.PENDING)
                             .penaltyAmount(BigDecimal.ZERO)
                             .notes(String.format("Monthly payment %d/%d", i + 1, months))
                             .build();
@@ -92,8 +90,7 @@ public class PaymentDummyData {
                         .installmentNumber(null)
                         .paymentMethod("Bank Transfer")
                         .transactionReference(String.format("TXN%012d", random.nextInt(999999999)))
-                        .status(random.nextBoolean() ? "PAID" : "PENDING")
-                        .overdueDays(0)
+                        .status(random.nextBoolean() ? Constants.PaymentStatusEnum.SUCCESS : Constants.PaymentStatusEnum.PENDING)
                         .penaltyAmount(BigDecimal.ZERO)
                         .notes("Full payment for property purchase")
                         .build();

@@ -48,9 +48,6 @@ public class Payment extends AbstractBaseEntity {
     @Column(name = "status")
     private Constants.PaymentStatusEnum status;
 
-    @Column(name = "overdue_days")
-    private Integer overdueDays;
-
     @Column(name = "penalty_amount", precision = 15, scale = 2)
     private BigDecimal penaltyAmount;
 

@@ -8,6 +8,7 @@ import com.se100.bds.repositories.domains.appointment.AppointmentRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.repositories.domains.user.CustomerRepository;
 import com.se100.bds.repositories.domains.user.SaleAgentRepository;
+import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -56,11 +57,16 @@ public class AppointmentDummyData {
             LocalDateTime requestedDate = LocalDateTime.now()
                     .plusDays(random.nextInt(60) - 30); // Between 30 days ago and 30 days ahead
 
-            String[] statuses = {"PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"};
-            String status = statuses[random.nextInt(statuses.length)];
+            Constants.AppointmentStatusEnum[] statuses = {
+                    Constants.AppointmentStatusEnum.PENDING,
+                    Constants.AppointmentStatusEnum.CONFIRMED,
+                    Constants.AppointmentStatusEnum.COMPLETED,
+                    Constants.AppointmentStatusEnum.CANCELLED
+            };
+            Constants.AppointmentStatusEnum status = statuses[random.nextInt(statuses.length)];
 
             LocalDateTime confirmedDate = null;
-            if (!status.equals("PENDING")) {
+            if (status != Constants.AppointmentStatusEnum.PENDING) {
                 confirmedDate = requestedDate.plusHours(random.nextInt(48));
             }
 
@@ -74,9 +80,9 @@ public class AppointmentDummyData {
                     .confirmedDate(confirmedDate)
                     .status(status)
                     .customerRequirements(generateCustomerRequirements())
-                    .agentNotes(status.equals("COMPLETED") ? generateAgentNotes() : null)
-                    .viewingOutcome(status.equals("COMPLETED") ? generateViewingOutcome() : null)
-                    .customerInterestLevel(status.equals("COMPLETED") ? interestLevels[random.nextInt(interestLevels.length)] : null)
+                    .agentNotes(status == Constants.AppointmentStatusEnum.COMPLETED ? generateAgentNotes() : null)
+                    .viewingOutcome(status == Constants.AppointmentStatusEnum.COMPLETED ? generateViewingOutcome() : null)
+                    .customerInterestLevel(status == Constants.AppointmentStatusEnum.COMPLETED ? interestLevels[random.nextInt(interestLevels.length)] : null)
                     .build();
 
             appointments.add(appointment);
