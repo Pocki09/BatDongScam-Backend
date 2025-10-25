@@ -16,6 +16,9 @@ public class PropertyStatisticsReport extends AbstractBaseMongoReport {
     @Field("total_active_properties")
     private Integer totalActiveProperties;
 
+    @Field("new_this_month")
+    private Integer newThisMonth;
+
     @Field("total_sold_properties_current_month")
     private Integer totalSoldPropertiesCurrentMonth;
 

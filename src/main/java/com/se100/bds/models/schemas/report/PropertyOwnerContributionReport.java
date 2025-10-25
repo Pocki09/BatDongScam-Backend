@@ -19,6 +19,9 @@ public class PropertyOwnerContributionReport extends AbstractBaseMongoReport {
     @Field("total_owners")
     private Integer totalOwners;
 
+    @Field("new_this_month")
+    private Integer newThisMonth;
+
     @Field("contribution_value")
     private BigDecimal contributionValue;
 

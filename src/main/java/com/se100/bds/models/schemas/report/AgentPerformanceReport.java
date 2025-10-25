@@ -19,6 +19,9 @@ public class AgentPerformanceReport extends AbstractBaseMongoReport {
     @Field("total_agents")
     private Integer totalAgents;
 
+    @Field("new_this_month")
+    private Integer newThisMonth;
+
     @Field("avg_revenue_per_agent")
     private BigDecimal avgRevenuePerAgent;
 
