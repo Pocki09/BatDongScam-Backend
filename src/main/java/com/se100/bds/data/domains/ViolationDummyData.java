@@ -227,11 +227,6 @@ public class ViolationDummyData {
             baseReportData.setYear(year);
             baseReportData.setTitle("Violation Report - " + reportMonth.getMonth() + " " + year);
             baseReportData.setDescription("Monthly violation statistics and resolution metrics");
-            baseReportData.setStartDate(reportMonth.atDay(1).atStartOfDay());
-            baseReportData.setEndDate(reportMonth.atEndOfMonth().atTime(23, 59, 59));
-            baseReportData.setFilePath("/reports/violation/" + year + "/" + month + "/violation-report.pdf");
-            baseReportData.setFileName("violation-report-" + year + "-" + String.format("%02d", month) + ".pdf");
-            baseReportData.setFileFormat("PDF");
 
             // Create violation report details
             ViolationReportDetails reportDetails = ViolationReportDetails.builder()

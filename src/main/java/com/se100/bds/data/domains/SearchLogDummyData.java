@@ -350,8 +350,6 @@ public class SearchLogDummyData {
         baseReportData.setYear(year);
         baseReportData.setTitle("Property Statistics Report - " + month + "/" + year);
         baseReportData.setDescription("Monthly property statistics and search analytics");
-        baseReportData.setStartDate(monthStart);
-        baseReportData.setEndDate(monthEnd);
 
         // Build and save the report
         PropertyStatisticsReport report = PropertyStatisticsReport.builder()
