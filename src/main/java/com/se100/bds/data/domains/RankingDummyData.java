@@ -417,23 +417,23 @@ public class RankingDummyData {
     }
 
     private Constants.ContributionTierEnum calculateContributionTier(int points) {
-        if (points >= 100) return Constants.ContributionTierEnum.PLATINUM;
-        if (points >= 70) return Constants.ContributionTierEnum.GOLD;
-        if (points >= 40) return Constants.ContributionTierEnum.SILVER;
+        if (points >= 90) return Constants.ContributionTierEnum.PLATINUM;
+        if (points >= 75) return Constants.ContributionTierEnum.GOLD;
+        if (points >= 60) return Constants.ContributionTierEnum.SILVER;
         return Constants.ContributionTierEnum.BRONZE;
     }
 
     private Constants.PerformanceTierEnum calculatePerformanceTier(int points) {
-        if (points >= 150) return Constants.PerformanceTierEnum.PLATINUM;
-        if (points >= 100) return Constants.PerformanceTierEnum.GOLD;
+        if (points >= 90) return Constants.PerformanceTierEnum.PLATINUM;
+        if (points >= 75) return Constants.PerformanceTierEnum.GOLD;
         if (points >= 60) return Constants.PerformanceTierEnum.SILVER;
         return Constants.PerformanceTierEnum.BRONZE;
     }
 
     private Constants.CustomerTierEnum calculateCustomerTier(int score) {
-        if (score >= 200) return Constants.CustomerTierEnum.PLATINUM;
-        if (score >= 150) return Constants.CustomerTierEnum.GOLD;
-        if (score >= 100) return Constants.CustomerTierEnum.SILVER;
+        if (score >= 90) return Constants.CustomerTierEnum.PLATINUM;
+        if (score >= 75) return Constants.CustomerTierEnum.GOLD;
+        if (score >= 60) return Constants.CustomerTierEnum.SILVER;
         return Constants.CustomerTierEnum.BRONZE;
     }
 }
