@@ -25,7 +25,7 @@ public class PropertyOwner extends AbstractBaseEntity {
     @JoinColumn(name = "owner_id", referencedColumnName = "user_id")
     private User user;
 
-    @Column(name = "approved_at", nullable = false)
+    @Column(name = "approved_at", nullable = true)
     private LocalDateTime approvedAt;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)

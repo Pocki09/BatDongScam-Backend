@@ -35,12 +35,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +102,7 @@ public class PublicController extends AbstractBaseController {
         return responseFactory.successSingle(tokenResponse, "Login successful");
     }
 
-    @PostMapping("/auth/register")
+    @PostMapping(path = "/auth/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Register endpoint",
             responses = {
@@ -122,10 +125,21 @@ public class PublicController extends AbstractBaseController {
             }
     )
     public ResponseEntity<SingleResponse<SuccessResponse>> register(
-            @Parameter(description = "Request body to register", required = true)
-            @RequestBody @Valid RegisterRequest request
-    ) throws BindException {
-        userService.register(request);
+            @Parameter(description = "Request body to register (multipart/form-data)", required = true)
+            @Valid @ModelAttribute RegisterRequest request,
+            BindingResult bindingResult,
+
+            @Parameter(description = "Role to create")
+            @RequestParam Constants.RoleEnum roleEnum
+    ) throws BindException, IOException {
+        if (bindingResult.hasErrors()) {
+            throw new BindException(bindingResult);
+        }
+
+        if (roleEnum.equals(Constants.RoleEnum.ADMIN) || roleEnum.equals(Constants.RoleEnum.SALESAGENT))
+            return responseFactory.failedSingle(null, "Hell nah");
+
+        userService.register(request, roleEnum);
         return responseFactory.successSingle(null, "Register successful");
     }
 

@@ -9,6 +9,7 @@ import com.se100.bds.mappers.UserMapper;
 import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.user.Customer;
+import com.se100.bds.models.entities.user.PropertyOwner;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.exceptions.NotFoundException;
 import com.se100.bds.repositories.domains.location.WardRepository;
@@ -18,6 +19,7 @@ import com.se100.bds.services.MessageSourceService;
 import com.se100.bds.services.domains.property.PropertyService;
 import com.se100.bds.services.domains.ranking.RankingService;
 import com.se100.bds.services.domains.user.UserService;
+import com.se100.bds.services.fileupload.CloudinaryService;
 import com.se100.bds.utils.Constants;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -52,6 +55,7 @@ public class UserServiceImpl implements UserService {
     private final PropertyService propertyService;
     private final RankingService rankingService;
     private final WardRepository wardRepository;
+    private final CloudinaryService cloudinaryService;
 
     public UserServiceImpl(
             UserRepository userRepository,
@@ -60,12 +64,14 @@ public class UserServiceImpl implements UserService {
             UserMapper userMapper,
             @Lazy PropertyService propertyService,
             RankingService rankingService,
+            CloudinaryService cloudinaryService,
             WardRepository wardRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.messageSourceService = messageSourceService;
         this.userMapper = userMapper;
         this.propertyService = propertyService;
+        this.cloudinaryService = cloudinaryService;
         this.rankingService = rankingService;
         this.wardRepository = wardRepository;
     }
@@ -361,7 +367,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User register(final RegisterRequest request) throws BindException {
+    public User register(final RegisterRequest request, Constants.RoleEnum roleEnum) throws BindException, IOException {
         if (userRepository.existsByEmail(request.getEmail())) {
             BindingResult bindingResult = new BeanPropertyBindingResult(request, "request");
             bindingResult.addError(new FieldError(bindingResult.getObjectName(), "email",
@@ -376,19 +382,28 @@ public class UserServiceImpl implements UserService {
                             new String[]{"Ward"})));
         }
 
-        User user = new User();
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setWard(ward);
-        user.setRole(Constants.RoleEnum.CUSTOMER);
-        user.setStatus(Constants.StatusProfileEnum.ACTIVE);
+        User user = userMapper.mapTo(request, User.class);
 
-        Customer customer = new Customer();
-        customer.setUser(user);
-        user.setCustomer(customer);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setWard(ward);
+        user.setFrontIdPicturePath(cloudinaryService.uploadFile(request.getFrontIdPicture(), "Identification Picture"));
+        user.setBackIdPicturePath(cloudinaryService.uploadFile(request.getBackIdPicture(), "Identification Picture"));
+
+        if (roleEnum.equals(Constants.RoleEnum.CUSTOMER)) {
+            user.setStatus(Constants.StatusProfileEnum.ACTIVE);
+            user.setRole(Constants.RoleEnum.CUSTOMER);
+
+            Customer customer = new Customer();
+            customer.setUser(user);
+            user.setCustomer(customer);
+        } else {
+            user.setStatus(Constants.StatusProfileEnum.PENDING_APPROVAL);
+            user.setRole(Constants.RoleEnum.PROPERTY_OWNER);
+
+            PropertyOwner propertyOwner = new PropertyOwner();
+            propertyOwner.setUser(user);
+            user.setPropertyOwner(propertyOwner);
+        }
 
         userRepository.save(user);
 

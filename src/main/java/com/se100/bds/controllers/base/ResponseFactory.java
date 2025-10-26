@@ -50,6 +50,15 @@ public class ResponseFactory {
         );
     }
 
+    public <T> ResponseEntity<SingleResponse<T>> failedSingle(
+            T data,
+            String message
+    ) {
+        return ResponseEntity.ok(
+                createSingleResponse(HttpStatus.BAD_REQUEST, message, data)
+        );
+    }
+
     public <T> ResponseEntity<PageResponse<T>> successPage(
             Page<T> page,
             String message

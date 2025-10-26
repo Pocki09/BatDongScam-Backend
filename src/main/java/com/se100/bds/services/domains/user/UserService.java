@@ -5,12 +5,14 @@ import com.se100.bds.dtos.responses.user.meprofile.MeResponse;
 import com.se100.bds.dtos.responses.user.otherprofile.UserProfileResponse;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.securities.JwtUserDetails;
+import com.se100.bds.utils.Constants;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindException;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,7 +41,7 @@ public interface UserService {
 
     UserProfileResponse<?> getUserProfileById(UUID id);
 
-    User register(RegisterRequest request) throws BindException;
+    User register(RegisterRequest request, Constants.RoleEnum roleEnum) throws BindException, IOException;
 
     void delete(String id);
 

@@ -8,8 +8,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
@@ -64,6 +65,68 @@ public class RegisterRequest {
             example = "123e4567-e89b-12d3-a456-426614174000"
     )
     private UUID wardId;
+
+    @Schema(
+            name = "identificationNumber",
+            description = "CCCD number",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            example = "123452134"
+    )
+    private String identificationNumber;
+
+    @Schema(
+            name = "dayOfBirth",
+            description = "Day of Birth",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            example = "2000-01-15"
+    )
+    private LocalDate dayOfBirth;
+
+    @Schema(
+            name = "gender",
+            description = "Gender",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            example = "MALE"
+    )
+    private String gender;
+
+    @Schema(
+            name = "nation",
+            description = "Nation",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            example = "Vietnamese"
+    )
+    private String nation;
+
+    @Schema(
+            name = "issuedDate",
+            description = "The date that you received your CCCD",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            example = "2020-01-15"
+    )
+    private LocalDate issuedDate;
+
+    @Schema(
+            name = "issuingAuthority",
+            description = "Where did you receive your CCCD",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            example = "Public Security Department"
+    )
+    private String issuingAuthority;
+
+    @Schema(
+            name = "frontIdPicture",
+            description = "Front photo of CCCD",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    private MultipartFile frontIdPicture;
+
+    @Schema(
+            name = "backIdPicture",
+            description = "Back photo of CCCD",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    private MultipartFile backIdPicture;
 
     @NotBlank(message = "{not_blank}")
     @Schema(
