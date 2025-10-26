@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +44,11 @@ public class PropertyOwnerDummyData {
                     String.format("092%07d", i),
                     "Owner",
                     String.format("Number%d", i),
-                    wards.isEmpty() ? null : wards.get(random.nextInt(wards.size()))
+                    wards.isEmpty() ? null : wards.get(random.nextInt(wards.size())),
+                    String.format("ID%09d", 100000000 + i)
             );
 
-            PropertyOwner propertyOwner = createPropertyOwner(user, String.format("ID%09d", 100000000 + i));
+            PropertyOwner propertyOwner = createPropertyOwner(user);
             user.setPropertyOwner(propertyOwner);
             owners.add(user);
         }
@@ -55,7 +57,23 @@ public class PropertyOwnerDummyData {
         log.info("Saved {} property owners to database", owners.size());
     }
 
-    private User createUser(String email, String phoneNumber, String firstName, String lastName, Ward ward) {
+    private User createUser(String email, String phoneNumber, String firstName, String lastName, Ward ward, String identificationNumber) {
+        Random random = new Random();
+
+        // Generate random date of birth (age between 25 and 70 years old for property owners)
+        int yearsOld = 25 + random.nextInt(46);
+        LocalDate dayOfBirth = LocalDate.now().minusYears(yearsOld).minusDays(random.nextInt(365));
+
+        // Random gender
+        String gender = random.nextBoolean() ? "Male" : "Female";
+
+        // Issue date should be after 18 years old and before now
+        LocalDate issueDate = dayOfBirth.plusYears(18).plusDays(random.nextInt(365 * (yearsOld - 18)));
+
+        // Generate avatar URL based on gender
+        String avatarUrl = String.format("https://avatar.iran.liara.run/public/%s?username=%s",
+                gender.toLowerCase(), email.split("@")[0]);
+
         return User.builder()
                 .email(email)
                 .phoneNumber(phoneNumber)
@@ -66,20 +84,23 @@ public class PropertyOwnerDummyData {
                 .password(passwordEncoder.encode("P@sswd123."))
                 .role(Constants.RoleEnum.PROPERTY_OWNER)
                 .status(Constants.StatusProfileEnum.ACTIVE)
-                .avatarUrl(null)
-                .lastLoginAt(null)
+                .avatarUrl(avatarUrl)
+                .identificationNumber(identificationNumber)
+                .dayOfBirth(dayOfBirth)
+                .gender(gender)
+                .nation("Vietnam")
+                .issueDate(issueDate)
+                .issuingAuthority("Public Security Department")
+                .frontIdPicturePath(String.format("/uploads/id_cards/%s_front.jpg", identificationNumber))
+                .backIdPicturePath(String.format("/uploads/id_cards/%s_back.jpg", identificationNumber))
+                .lastLoginAt(LocalDateTime.now().minusDays(random.nextInt(30)))
                 .notifications(new ArrayList<>())
                 .build();
     }
 
-    private PropertyOwner createPropertyOwner(User user, String identificationNumber) {
+    private PropertyOwner createPropertyOwner(User user) {
         return PropertyOwner.builder()
                 .user(user)
-                .identificationNumber(identificationNumber)
-                .forRent(0)
-                .forSale(0)
-                .renting(0)
-                .sold(0)
                 .approvedAt(LocalDateTime.now().minusDays((long) (Math.random() * 365)))
                 .properties(new ArrayList<>())
                 .build();

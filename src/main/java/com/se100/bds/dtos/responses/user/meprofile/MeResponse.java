@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -29,6 +30,14 @@ public class MeResponse<T> extends AbstractBaseDataResponse {
     private String lastName;
     private String avatarUrl;
     private String status;
+    private String identificationNumber;
+    private LocalDate dayOfBirth;
+    private String gender;
+    private String nation;
+    private LocalDate issueDate;
+    private String issuingAuthority;
+    private String frontIdPicturePath;
+    private String backIdPicturePath;
     private LocalDateTime lastLoginAt;
     private T profile;
 }

@@ -12,10 +12,5 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @SuperBuilder
 public class PropertyOwnerResponse {
-    private String identificationNumber;
-    private int forRent;
-    private int forSale;
-    private int renting;
-    private int sold;
     private LocalDateTime approvedAt;
 }

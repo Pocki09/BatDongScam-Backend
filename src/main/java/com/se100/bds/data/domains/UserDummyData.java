@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -115,6 +116,25 @@ public class UserDummyData {
 
     private User createUser(String email, String phoneNumber, String firstName, String lastName,
                            Ward ward, Constants.RoleEnum role) {
+        Random random = new Random();
+
+        // Generate random identification number (9 digits)
+        String identificationNumber = String.format("%09d", 100000000 + random.nextInt(900000000));
+
+        // Generate random date of birth (age between 22 and 65 years old)
+        int yearsOld = 22 + random.nextInt(44);
+        LocalDate dayOfBirth = LocalDate.now().minusYears(yearsOld).minusDays(random.nextInt(365));
+
+        // Random gender
+        String gender = random.nextBoolean() ? "Male" : "Female";
+
+        // Issue date should be after 18 years old and before now
+        LocalDate issueDate = dayOfBirth.plusYears(18).plusDays(random.nextInt(365 * (yearsOld - 18)));
+
+        // Generate avatar URL based on gender
+        String avatarUrl = String.format("https://avatar.iran.liara.run/public/%s?username=%s",
+                gender.toLowerCase(), email.split("@")[0]);
+
         return User.builder()
                 .email(email)
                 .phoneNumber(phoneNumber)
@@ -125,8 +145,16 @@ public class UserDummyData {
                 .password(passwordEncoder.encode("P@sswd123."))
                 .role(role)
                 .status(Constants.StatusProfileEnum.ACTIVE)
-                .avatarUrl(null)
-                .lastLoginAt(null)
+                .avatarUrl(avatarUrl)
+                .identificationNumber(identificationNumber)
+                .dayOfBirth(dayOfBirth)
+                .gender(gender)
+                .nation("Vietnam")
+                .issueDate(issueDate)
+                .issuingAuthority("Public Security Department")
+                .frontIdPicturePath(String.format("/uploads/id_cards/%s_front.jpg", identificationNumber))
+                .backIdPicturePath(String.format("/uploads/id_cards/%s_back.jpg", identificationNumber))
+                .lastLoginAt(LocalDateTime.now().minusDays(random.nextInt(30)))
                 .notifications(new ArrayList<>())
                 .build();
     }

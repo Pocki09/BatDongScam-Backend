@@ -7,6 +7,7 @@ import com.se100.bds.models.entities.notification.Notification;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +55,30 @@ public class User extends AbstractBaseEntity {
 
     @Column(name = "status", nullable = false)
     private Constants.StatusProfileEnum status;
+
+    @Column(name = "identification_number")
+    private String identificationNumber;
+
+    @Column(name = "day_of_birth")
+    private LocalDate dayOfBirth;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "nation")
+    private String nation;
+
+    @Column(name = "issue_date")
+    private LocalDate issueDate;
+
+    @Column(name = "issuing_authority")
+    private String issuingAuthority;
+
+    @Column(name = "front_id_picture_path")
+    private String frontIdPicturePath;
+
+    @Column(name = "back_id_picture_path")
+    private String backIdPicturePath;
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;

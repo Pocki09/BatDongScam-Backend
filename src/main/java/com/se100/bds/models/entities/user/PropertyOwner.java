@@ -16,28 +16,16 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@AttributeOverrides({
+        @AttributeOverride(name = "id", column = @Column(name = "owner_id", nullable = false)),
+})
 public class PropertyOwner extends AbstractBaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
-    @JoinColumn(name = "property_owner_id", referencedColumnName = "user_id")
+    @JoinColumn(name = "owner_id", referencedColumnName = "user_id")
     private User user;
 
-    @Column(name = "identification_number", nullable = false, unique = true)
-    private String identificationNumber;
-
-    @Column(name = "for_rent", nullable = false)
-    private int forRent;
-
-    @Column(name = "for_sale", nullable = false)
-    private int forSale;
-
-    @Column(name = "renting", nullable = false)
-    private int renting;
-
-    @Column(name = "sold", nullable = false)
-    private int sold;
-
-    @Column(name = "approved_at")
+    @Column(name = "approved_at", nullable = false)
     private LocalDateTime approvedAt;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)

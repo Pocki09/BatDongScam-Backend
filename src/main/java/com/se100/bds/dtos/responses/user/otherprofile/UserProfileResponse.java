@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
@@ -27,5 +28,9 @@ public class UserProfileResponse<T> extends AbstractBaseDataResponse {
     private String districtName;
     private UUID cityId;
     private String cityName;
+    private String avatarUrl;
+    private String identificationNumber;
+    private LocalDate dayOfBirth;
+    private String gender;
     private T propertyProfile;
 }
