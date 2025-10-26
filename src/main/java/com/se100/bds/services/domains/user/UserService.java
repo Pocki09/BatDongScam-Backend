@@ -11,10 +11,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindException;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface UserService {
     User getUser();
+
+    List<User> getAllByName(String name);
 
     MeResponse<?> getAccount();
 

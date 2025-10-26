@@ -26,4 +26,7 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
     @EntityGraph(attributePaths = {"ward", "ward.district", "ward.district.city"})
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdWithLocation(@Param("id") UUID id);
+
+    @Query("SELECT u FROM User u WHERE LOWER(CAST(CONCAT(u.lastName, ' ', u.firstName) AS string)) LIKE LOWER(CONCAT('%', CAST(:name AS string), '%'))")
+    List<User> findAllByFullNameIsLikeIgnoreCase(String name);
 }

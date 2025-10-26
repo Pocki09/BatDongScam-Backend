@@ -38,6 +38,7 @@ import org.springframework.validation.FieldError;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -87,6 +88,12 @@ public class UserServiceImpl implements UserService {
             log.warn("[JWT] User not authenticated!");
             throw new BadCredentialsException("Bad credentials");
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> getAllByName(String name) {
+        return Objects.equals(name, "") || name == null ? userRepository.findAll() : userRepository.findAllByFullNameIsLikeIgnoreCase(name);
     }
 
     @Override

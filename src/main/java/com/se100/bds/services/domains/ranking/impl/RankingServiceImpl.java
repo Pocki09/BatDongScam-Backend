@@ -24,19 +24,28 @@ public class RankingServiceImpl implements RankingService {
     public String getTier(UUID userId, Constants.RoleEnum role, int month, int year) {
         switch(role){
             case CUSTOMER -> {
-                return individualCustomerPotentialMonthRepository.findByCustomerIdAndMonthAndYear(
+                var ranking = individualCustomerPotentialMonthRepository.findByCustomerIdAndMonthAndYear(
                         userId, month, year
-                ).getCustomerTier().name();
+                );
+                return ranking != null && ranking.getCustomerTier() != null
+                        ? ranking.getCustomerTier().name()
+                        : null;
             }
             case SALESAGENT -> {
-                return individualSalesAgentPerformanceMonthRepository.findByAgentIdAndMonthAndYear(
+                var ranking = individualSalesAgentPerformanceMonthRepository.findByAgentIdAndMonthAndYear(
                         userId, month, year
-                ).getPerformanceTier().name();
+                );
+                return ranking != null && ranking.getPerformanceTier() != null
+                        ? ranking.getPerformanceTier().name()
+                        : null;
             }
             case PROPERTY_OWNER -> {
-                return individualPropertyOwnerContributionMonthRepository.findByOwnerIdAndMonthAndYear(
+                var ranking = individualPropertyOwnerContributionMonthRepository.findByOwnerIdAndMonthAndYear(
                         userId, month, year
-                ).getContributionTier().name();
+                );
+                return ranking != null && ranking.getContributionTier() != null
+                        ? ranking.getContributionTier().name()
+                        : null;
             }
             default -> {
                 return null;

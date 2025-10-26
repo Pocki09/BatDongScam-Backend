@@ -71,4 +71,7 @@ public class User extends AbstractBaseEntity {
     @Builder.Default
     private List<Notification> notifications = new ArrayList<>();
 
+    public String getFullName() {
+        return lastName + " " + firstName;
+    }
 }

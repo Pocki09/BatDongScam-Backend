@@ -61,6 +61,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
     JOIN District d ON w.district.id = d.id
     JOIN City c ON d.city.id = c.id
     LEFT JOIN PropertyOwner po ON p.owner.id = po.id
+    LEFT JOIN User u ON po.user.id = u.id
     LEFT JOIN Media m ON m.property.id = p.id
     WHERE
         (COALESCE(:propertyIds, NULL) IS NULL OR p.id IN :propertyIds)
@@ -68,7 +69,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
         AND (COALESCE(:districtIds, NULL) IS NULL OR d.id IN :districtIds)
         AND (COALESCE(:wardIds, NULL) IS NULL OR w.id IN :wardIds)
         AND (COALESCE(:propertyTypeIds, NULL) IS NULL OR p.propertyType.id IN :propertyTypeIds)
-        AND (:ownerId IS NULL OR po.id = :ownerId)
+        AND (COALESCE(:ownerIds, NULL) IS NULL OR po.id IN :ownerIds)
         AND (:minPrice IS NULL OR p.priceAmount >= :minPrice)
         AND (:maxPrice IS NULL OR p.priceAmount <= :maxPrice)
         AND (:minArea IS NULL OR p.area >= :minArea)
@@ -79,7 +80,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
         AND (:floors IS NULL OR p.floors = :floors)
         AND (:houseOrientation IS NULL OR CAST(p.houseOrientation AS string) = :houseOrientation)
         AND (:balconyOrientation IS NULL OR CAST(p.balconyOrientation AS string) = :balconyOrientation)
-        AND (:transactionType IS NULL OR CAST(p.transactionType AS string) = :transactionType)
+        AND (COALESCE(:transactionType, NULL) IS NULL OR CAST(p.transactionType AS string) IN :transactionType)
         AND (:statuses IS NULL OR CAST(p.status AS string) IN :statuses)
     GROUP BY p.id, p.title, p.fullAddress, d.districtName, c.cityName, p.status, p.priceAmount, p.area
     """)
@@ -90,7 +91,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
             @Param("districtIds") List<UUID> districtIds,
             @Param("wardIds") List<UUID> wardIds,
             @Param("propertyTypeIds") List<UUID> propertyTypeIds,
-            @Param("ownerId")  UUID ownerId,
+            @Param("ownerIds") List<UUID> ownerIds,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("minArea") BigDecimal minArea,
@@ -101,7 +102,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
             @Param("floors") Integer floors,
             @Param("houseOrientation") String houseOrientation,
             @Param("balconyOrientation") String balconyOrientation,
-            @Param("transactionType") String transactionType,
+            @Param("transactionType") List<String> transactionType,
             @Param("statuses") List<String> statuses,
             @Param("userId") UUID userId
     );

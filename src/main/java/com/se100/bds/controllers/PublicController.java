@@ -220,6 +220,12 @@ public class PublicController extends AbstractBaseController {
             @Parameter(description = "Property owner ID")
             @RequestParam(required = false) UUID ownerId,
 
+            @Parameter(description = "Property owner's name")
+            @RequestParam(required = false) String ownerName,
+
+            @Parameter(description = "Property owner's tier")
+            @RequestParam(required = false) List<Constants.ContributionTierEnum> ownerTier,
+
             @Parameter(description = "Get top K property? This sorted by most popular property")
             @RequestParam(required = true, defaultValue = "false") Boolean topK,
 
@@ -253,11 +259,11 @@ public class PublicController extends AbstractBaseController {
             @Parameter(description = "Balcony orientation (e.g., EAST, WEST, NORTH, SOUTH)")
             @RequestParam(required = false) String balconyOrientation,
 
-            @Parameter(description = "Transaction type (e.g., SALE, RENT)")
-            @RequestParam(required = false) String transactionType,
+            @Parameter(description = "List of desire Transaction type (e.g., SALE, RENT)")
+            @RequestParam(required = false) List<Constants.TransactionTypeEnum> transactionType,
 
             @Parameter(description = "Property statuses (e.g., AVAILABLE, SOLD, RENTED, PENDING, APPROVED)")
-            @RequestParam(required = false) List<String> statuses
+            @RequestParam(required = false) List<Constants.PropertyStatusEnum> statuses
     ) {
         if (!topK)
             sortBy = null;
@@ -269,6 +275,8 @@ public class PublicController extends AbstractBaseController {
                 wardIds,
                 propertyTypeIds,
                 ownerId,
+                ownerName,
+                ownerTier,
                 minPrice,
                 maxPrice,
                 minArea,

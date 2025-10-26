@@ -26,6 +26,7 @@ public class DummyData implements CommandLineRunner {
     private final ViolationDummyData violationDummyData;
     private final DocumentDummyData documentDummyData;
     private final SearchLogDummyData searchLogDummyData;
+    private final RankingDummyData rankingDummyData;
 
     @Override
     public void run(String... args) throws Exception {
@@ -35,6 +36,16 @@ public class DummyData implements CommandLineRunner {
         if (userDummyData.any())
         {
             log.info("Data already exists, skipping dummy data creation.");
+
+            // But check if ranking data exists, create it if missing
+            log.info("Checking if ranking data exists...");
+            if (!rankingDummyData.rankingDataExists()) {
+                log.info("Ranking data missing, creating it now...");
+                rankingDummyData.createDummy();
+            } else {
+                log.info("Ranking data already exists.");
+            }
+
             return;
         }
 
@@ -84,6 +95,9 @@ public class DummyData implements CommandLineRunner {
 
         // 15. Create search logs (100k logs with proper hierarchical relationships)
         searchLogDummyData.createDummy();
+
+        // 16. Create ranking data (monthly and all-time rankings for owners, agents, customers)
+        rankingDummyData.createDummy();
 
         log.info("Done initializing dummy data");
     }

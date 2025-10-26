@@ -11,9 +11,11 @@ import com.se100.bds.repositories.dtos.MediaProjection;
 import com.se100.bds.repositories.dtos.PropertyCardProtection;
 import com.se100.bds.repositories.dtos.PropertyDetailsProjection;
 import com.se100.bds.services.domains.property.PropertyService;
+import com.se100.bds.services.domains.ranking.RankingService;
 import com.se100.bds.services.domains.search.SearchService;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.services.dtos.results.PropertyCard;
+import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +37,7 @@ public class PropertyServiceImpl implements PropertyService {
     private final PropertyMapper propertyMapper;
     private final UserService userService;
     private final SearchService searchService;
+    private final RankingService rankingService;
 
     @Override
     public Page<Property> getAll(Pageable pageable) {
@@ -42,11 +46,13 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     public Page<PropertyCard> getAllCardsWithFilters(List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds,
-                                                     List<UUID> propertyTypeIds, UUID ownerId,
+                                                     List<UUID> propertyTypeIds, UUID ownerId, String ownerName,
+                                                     List<Constants.ContributionTierEnum> ownerTier,
                                                      BigDecimal minPrice, BigDecimal maxPrice, BigDecimal minArea, BigDecimal maxArea,
                                                      Integer rooms, Integer bathrooms, Integer bedrooms, Integer floors,
-                                                     String houseOrientation, String balconyOrientation, String transactionType,
-                                                     List<String> statuses, boolean topK,
+                                                     String houseOrientation, String balconyOrientation,
+                                                     List<Constants.TransactionTypeEnum> transactionType,
+                                                     List<Constants.PropertyStatusEnum> statuses, boolean topK,
                                                      Pageable pageable) {
 
         User currentUser = null;
@@ -66,6 +72,45 @@ public class PropertyServiceImpl implements PropertyService {
             log.info("Found {} most searched properties", propertyIds.size());
         }
 
+        List<String> transactionTypeStrings = null;
+        if (transactionType != null && !transactionType.isEmpty()) {
+            transactionTypeStrings = transactionType.stream()
+                    .map(Enum::name)
+                    .toList();
+        }
+
+        List<UUID> ownerIds;
+        if (ownerId != null) {
+            ownerIds = List.of(ownerId);
+        } else {
+            String searchName = ownerName != null ? ownerName : "";
+            List<User> owners = userService.getAllByName(searchName);
+
+            if (ownerTier != null && !ownerTier.isEmpty()) {
+                int currentMonth = LocalDateTime.now().getMonthValue();
+                int currentYear = LocalDateTime.now().getYear();
+
+                ownerIds = owners.stream()
+                        .map(User::getId)
+                        .filter(id -> {
+                            String tier = rankingService.getTier(id, Constants.RoleEnum.PROPERTY_OWNER, currentMonth, currentYear);
+                            return tier != null && ownerTier.stream().anyMatch(filter -> filter.name().equals(tier));
+                        })
+                        .toList();
+            } else {
+                ownerIds = owners.stream()
+                        .map(User::getId)
+                        .toList();
+            }
+        }
+
+        List<String> statusStrings = null;
+        if (statuses != null && !statuses.isEmpty()) {
+            statusStrings = statuses.stream()
+                    .map(Enum::name)
+                    .toList();
+        }
+
         Page<PropertyCardProtection> cardProtections = propertyRepository.findAllPropertyCardsWithFilter(
                 pageable,
                 propertyIds,
@@ -73,7 +118,7 @@ public class PropertyServiceImpl implements PropertyService {
                 districtIds,
                 wardIds,
                 propertyTypeIds,
-                ownerId,
+                ownerIds,
                 minPrice,
                 maxPrice,
                 minArea,
@@ -84,11 +129,10 @@ public class PropertyServiceImpl implements PropertyService {
                 floors,
                 houseOrientation,
                 balconyOrientation,
-                transactionType,
-                statuses,
+                transactionTypeStrings,
+                statusStrings,
                 currentUser != null ? currentUser.getId() : null
         );
-
 
         return propertyMapper.mapToPage(cardProtections, PropertyCard.class);
     }
