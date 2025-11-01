@@ -31,6 +31,8 @@ public interface UserService {
 
     MeResponse<?> getAccount();
 
+    MeResponse<?> getUserById(UUID userId);
+
     UUID getUserId();
 
     UserDetails loadUserById(String id);

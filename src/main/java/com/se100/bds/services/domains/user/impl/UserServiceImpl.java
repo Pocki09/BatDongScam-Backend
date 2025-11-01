@@ -145,84 +145,8 @@ public class UserServiceImpl implements UserService {
         Authentication authentication = getAuthentication();
         if (authentication.isAuthenticated()) {
             try {
-                User user = userRepository.findByIdWithLocation(UUID.fromString(getPrincipal(authentication).getId()))
-                        .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + UUID.fromString(getPrincipal(authentication).getId())));
-
-                @SuppressWarnings("unchecked")
-                MeResponse<Object> meResponse = userMapper.mapTo(user, MeResponse.class);
-                LocalDateTime now = LocalDateTime.now();
-                int month = now.getMonthValue();
-                int year = now.getYear();
-                meResponse.setTier(rankingService.getTier(user.getId(), user.getRole(), month, year));
-
-                switch (user.getRole()) {
-                    case ADMIN -> {
-                        return null;
-                    }
-                    case CUSTOMER -> {
-                        List<Property> properties = propertyService.getAllByUserIdAndStatus(null, user.getId(), null, null);
-                        int bought = 0;
-                        int rent = 0;
-                        int invest = 0;
-                        int total = properties.size();
-
-                        for (Property property : properties) {
-                           if (property.getTransactionType() == Constants.TransactionTypeEnum.INVESTMENT) {
-                               invest++;
-                           }
-                           if (property.getTransactionType() == Constants.TransactionTypeEnum.SALE) {
-                               bought++;
-                           }
-                           if (property.getTransactionType() == Constants.TransactionTypeEnum.RENTAL) {
-                               rent++;
-                           }
-                        }
-
-                        meResponse.setProfile(
-                                CustomerPropertyProfileResponse.builder()
-                                        .totalListings(total)
-                                        .totalBought(bought)
-                                        .totalRented(rent)
-                                        .totalInvested(invest)
-                                        .build()
-                        );
-                    }
-                    case SALESAGENT -> {
-
-                    }
-                    case PROPERTY_OWNER -> {
-                        List<Property> properties = propertyService.getAllByUserIdAndStatus(user.getId(), null, null, null);
-                        int totalSolds = 0;
-                        int totalProjects = 0;
-                        int totalRentals = 0;
-
-                        for (Property property : properties) {
-                            Constants.TransactionTypeEnum transactionType = property.getTransactionType();
-
-                            if (transactionType == Constants.TransactionTypeEnum.SALE) {
-                                totalSolds++;
-                            }
-                            else if (transactionType == Constants.TransactionTypeEnum.INVESTMENT) {
-                                totalProjects++;
-                            }
-                            else if (transactionType == Constants.TransactionTypeEnum.RENTAL) {
-                                totalRentals++;
-                            }
-                        }
-
-                        meResponse.setProfile(
-                                PropertyOwnerPropertyProfileResponse.builder()
-                                        .totalListings(properties.size())
-                                        .totalSolds(totalSolds)
-                                        .totalProjects(totalProjects)
-                                        .totalRentals(totalRentals)
-                                        .build()
-                        );
-                    }
-                    default -> throw new BadCredentialsException("Bad credentials");
-                }
-
-                return meResponse;
+                UUID userId = UUID.fromString(getPrincipal(authentication).getId());
+                return getUserById(userId);
             } catch (ClassCastException e) {
                 log.warn("[JWT] User details not found!");
                 throw new BadCredentialsException("Bad credentials");
@@ -231,6 +155,111 @@ public class UserServiceImpl implements UserService {
             log.warn("[JWT] User not authenticated!");
             throw new BadCredentialsException("Bad credentials");
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MeResponse<?> getUserById(UUID userId) {
+        User user = userRepository.findByIdWithLocation(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+        @SuppressWarnings("unchecked")
+        MeResponse<Object> meResponse = userMapper.mapTo(user, MeResponse.class);
+        LocalDateTime now = LocalDateTime.now();
+        int month = now.getMonthValue();
+        int year = now.getYear();
+        meResponse.setTier(rankingService.getTier(user.getId(), user.getRole(), month, year));
+
+        switch (user.getRole()) {
+            case ADMIN -> {
+                return null;
+            }
+            case CUSTOMER -> {
+                List<Property> properties = propertyService.getAllByUserIdAndStatus(null, user.getId(), null, null);
+                int bought = 0;
+                int rent = 0;
+                int invest = 0;
+                int total = properties.size();
+
+                for (Property property : properties) {
+                   if (property.getTransactionType() == Constants.TransactionTypeEnum.INVESTMENT) {
+                       invest++;
+                   }
+                   if (property.getTransactionType() == Constants.TransactionTypeEnum.SALE) {
+                       bought++;
+                   }
+                   if (property.getTransactionType() == Constants.TransactionTypeEnum.RENTAL) {
+                       rent++;
+                   }
+                }
+
+                meResponse.setProfile(
+                        CustomerPropertyProfileResponse.builder()
+                                .totalListings(total)
+                                .totalBought(bought)
+                                .totalRented(rent)
+                                .totalInvested(invest)
+                                .build()
+                );
+
+                // Get month statistics
+                IndividualCustomerPotentialMonth customerPotentialMonth = rankingService.getCustomerMonth(user.getId(), month, year);
+                meResponse.setStatisticMonth(customerPotentialMonth);
+
+                // Get all-time statistics
+                IndividualCustomerPotentialAll customerPotentialAll = rankingService.getCustomerAll(user.getId());
+                meResponse.setStatisticAll(customerPotentialAll);
+            }
+            case SALESAGENT -> {
+                // Get month statistics
+                IndividualSalesAgentPerformanceMonth agentPerformanceMonth = rankingService.getSaleAgentMonth(user.getId(), month, year);
+                meResponse.setStatisticMonth(agentPerformanceMonth);
+
+                // Get all-time statistics
+                IndividualSalesAgentPerformanceCareer agentPerformanceCareer = rankingService.getSaleAgentCareer(user.getId());
+                meResponse.setStatisticAll(agentPerformanceCareer);
+            }
+            case PROPERTY_OWNER -> {
+                List<Property> properties = propertyService.getAllByUserIdAndStatus(user.getId(), null, null, null);
+                int totalSolds = 0;
+                int totalProjects = 0;
+                int totalRentals = 0;
+
+                for (Property property : properties) {
+                    Constants.TransactionTypeEnum transactionType = property.getTransactionType();
+
+                    if (transactionType == Constants.TransactionTypeEnum.SALE) {
+                        totalSolds++;
+                    }
+                    else if (transactionType == Constants.TransactionTypeEnum.INVESTMENT) {
+                        totalProjects++;
+                    }
+                    else if (transactionType == Constants.TransactionTypeEnum.RENTAL) {
+                        totalRentals++;
+                    }
+                }
+
+                meResponse.setProfile(
+                        PropertyOwnerPropertyProfileResponse.builder()
+                                .totalListings(properties.size())
+                                .totalSolds(totalSolds)
+                                .totalProjects(totalProjects)
+                                .totalRentals(totalRentals)
+                                .build()
+                );
+
+                // Get month statistics
+                IndividualPropertyOwnerContributionMonth ownerContributionMonth = rankingService.getPropertyOwnerMonth(user.getId(), month, year);
+                meResponse.setStatisticMonth(ownerContributionMonth);
+
+                // Get all-time statistics
+                IndividualPropertyOwnerContributionAll ownerContributionAll = rankingService.getPropertyOwnerAll(user.getId());
+                meResponse.setStatisticAll(ownerContributionAll);
+            }
+            default -> throw new BadCredentialsException("Bad credentials");
+        }
+
+        return meResponse;
     }
 
     @Override

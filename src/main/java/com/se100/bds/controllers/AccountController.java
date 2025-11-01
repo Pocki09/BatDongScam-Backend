@@ -73,6 +73,44 @@ public class AccountController extends AbstractBaseController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{userId}")
+    @Operation(
+            summary = "Get user by ID with statistics",
+            description = "Get detailed user information including statistics for a specific user ID",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successful operation",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = MeResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "User not found",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<SingleResponse<MeResponse>> getUserById(@PathVariable UUID userId) {
+        MeResponse meResponse = userService.getUserById(userId);
+        return responseFactory.successSingle(meResponse, "Successful operation");
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     @Operation(
             summary = "Get all users with pagination",
