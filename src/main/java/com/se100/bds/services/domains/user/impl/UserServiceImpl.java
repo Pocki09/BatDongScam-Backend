@@ -1,5 +1,6 @@
 package com.se100.bds.services.domains.user.impl;
 
+import com.se100.bds.dtos.requests.account.UpdateAccountDto;
 import com.se100.bds.dtos.requests.auth.RegisterRequest;
 import com.se100.bds.dtos.responses.adminlistitem.CustomerListItem;
 import com.se100.bds.dtos.responses.adminlistitem.PropertyOwnerListItem;
@@ -23,6 +24,7 @@ import com.se100.bds.models.schemas.ranking.IndividualPropertyOwnerContributionM
 import com.se100.bds.models.schemas.ranking.IndividualSalesAgentPerformanceCareer;
 import com.se100.bds.models.schemas.ranking.IndividualSalesAgentPerformanceMonth;
 import com.se100.bds.repositories.domains.location.WardRepository;
+import com.se100.bds.repositories.domains.user.PropertyOwnerRepository;
 import com.se100.bds.repositories.domains.user.SaleAgentRepository;
 import com.se100.bds.repositories.domains.user.UserRepository;
 import com.se100.bds.securities.JwtUserDetails;
@@ -64,6 +66,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final SaleAgentRepository saleAgentRepository;
+    private final PropertyOwnerRepository propertyOwnerRepository;
 
     private final PasswordEncoder passwordEncoder;
     private final MessageSourceService messageSourceService;
@@ -76,6 +79,7 @@ public class UserServiceImpl implements UserService {
     public UserServiceImpl(
             UserRepository userRepository,
             SaleAgentRepository saleAgentRepository,
+            PropertyOwnerRepository propertyOwnerRepository,
             PasswordEncoder passwordEncoder,
             MessageSourceService messageSourceService,
             UserMapper userMapper,
@@ -86,6 +90,7 @@ public class UserServiceImpl implements UserService {
     ) {
         this.userRepository = userRepository;
         this.saleAgentRepository = saleAgentRepository;
+        this.propertyOwnerRepository = propertyOwnerRepository;
         this.passwordEncoder = passwordEncoder;
         this.messageSourceService = messageSourceService;
         this.userMapper = userMapper;
@@ -120,13 +125,25 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void approveAccount(UUID propOwnerId, boolean approve) {
         try {
-            User propertyOwner = findById(propOwnerId);
-            if (propertyOwner.getStatus() == Constants.StatusProfileEnum.PENDING_APPROVAL) {
-                if (approve)
-                    propertyOwner.setStatus(Constants.StatusProfileEnum.ACTIVE);
-                else
-                    propertyOwner.setStatus(Constants.StatusProfileEnum.REJECTED);
-                userRepository.save(propertyOwner);
+            User user = findById(propOwnerId);
+            if (user.getStatus() == Constants.StatusProfileEnum.PENDING_APPROVAL) {
+                if (approve) {
+                    user.setStatus(Constants.StatusProfileEnum.ACTIVE);
+                    PropertyOwner propertyOwner = propertyOwnerRepository.findById(propOwnerId).orElseThrow(
+                            () -> new EntityNotFoundException("User not found with id: " + propOwnerId)
+                    );
+                    propertyOwner.setApprovedAt(LocalDateTime.now());
+                    propertyOwnerRepository.save(propertyOwner);
+                }
+                else {
+                    user.setStatus(Constants.StatusProfileEnum.REJECTED);
+                    PropertyOwner propertyOwner = propertyOwnerRepository.findById(propOwnerId).orElseThrow(
+                            () -> new EntityNotFoundException("User not found with id: " + propOwnerId)
+                    );
+                    propertyOwner.setApprovedAt(null);
+                    propertyOwnerRepository.save(propertyOwner);
+                }
+                userRepository.save(user);
             }
         } catch (Exception exception) {
             log.warn("[JWT] User details not found!");
@@ -260,6 +277,155 @@ public class UserServiceImpl implements UserService {
         }
 
         return meResponse;
+    }
+
+    @Override
+    @Transactional
+    public MeResponse<?> updateUserById(UUID userId, UpdateAccountDto updateAccountDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+        // Update fields only if they are not null
+        if (updateAccountDto.getFirstName() != null) {
+            user.setFirstName(updateAccountDto.getFirstName());
+        }
+        if (updateAccountDto.getLastName() != null) {
+            user.setLastName(updateAccountDto.getLastName());
+        }
+        if (updateAccountDto.getPhoneNumber() != null) {
+            user.setPhoneNumber(updateAccountDto.getPhoneNumber());
+        }
+        if (updateAccountDto.getEmail() != null) {
+            user.setEmail(updateAccountDto.getEmail());
+        }
+        if (updateAccountDto.getDayOfBirth() != null) {
+            user.setDayOfBirth(updateAccountDto.getDayOfBirth());
+        }
+        if (updateAccountDto.getGender() != null) {
+            user.setGender(updateAccountDto.getGender());
+        }
+        if (updateAccountDto.getNation() != null) {
+            user.setNation(updateAccountDto.getNation());
+        }
+        if (updateAccountDto.getIdentificationNumber() != null) {
+            user.setIdentificationNumber(updateAccountDto.getIdentificationNumber());
+        }
+        if (updateAccountDto.getIssuedDate() != null) {
+            user.setIssueDate(updateAccountDto.getIssuedDate());
+        }
+        if (updateAccountDto.getIssuingAuthority() != null) {
+            user.setIssuingAuthority(updateAccountDto.getIssuingAuthority());
+        }
+        if (updateAccountDto.getZaloContract() != null) {
+            user.setZaloContact(updateAccountDto.getZaloContract());
+        }
+        if (updateAccountDto.getWardId() != null) {
+            user.setWard(wardRepository.findById(updateAccountDto.getWardId())
+                    .orElseThrow(() -> new EntityNotFoundException("Ward not found with id: " + updateAccountDto.getWardId())));
+        }
+
+        if (updateAccountDto.getAvatar() != null && !updateAccountDto.getAvatar().isEmpty()) {
+            try {
+                // Delete old avatar if exists
+                if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+                    cloudinaryService.deleteFile(user.getAvatarUrl());
+                }
+                // Upload new avatar
+                String avatarUrl = cloudinaryService.uploadFile(updateAccountDto.getAvatar(), "avatars");
+                user.setAvatarUrl(avatarUrl);
+            } catch (IOException e) {
+                log.error("Failed to upload avatar: {}", e.getMessage());
+                throw new RuntimeException("Failed to upload avatar");
+            }
+        }
+
+        if (updateAccountDto.getFrontIdPicture() != null && !updateAccountDto.getFrontIdPicture().isEmpty()) {
+            try {
+                // Delete old front ID picture if exists
+                if (user.getFrontIdPicturePath() != null && !user.getFrontIdPicturePath().isEmpty()) {
+                    cloudinaryService.deleteFile(user.getFrontIdPicturePath());
+                }
+                // Upload new front ID picture
+                String frontIdUrl = cloudinaryService.uploadFile(updateAccountDto.getFrontIdPicture(), "id_pictures");
+                user.setFrontIdPicturePath(frontIdUrl);
+            } catch (IOException e) {
+                log.error("Failed to upload front ID picture: {}", e.getMessage());
+                throw new RuntimeException("Failed to upload front ID picture");
+            }
+        }
+
+        if (updateAccountDto.getBackIdPicture() != null && !updateAccountDto.getBackIdPicture().isEmpty()) {
+            try {
+                // Delete old back ID picture if exists
+                if (user.getBackIdPicturePath() != null && !user.getBackIdPicturePath().isEmpty()) {
+                    cloudinaryService.deleteFile(user.getBackIdPicturePath());
+                }
+                // Upload new back ID picture
+                String backIdUrl = cloudinaryService.uploadFile(updateAccountDto.getBackIdPicture(), "id_pictures");
+                user.setBackIdPicturePath(backIdUrl);
+            } catch (IOException e) {
+                log.error("Failed to upload back ID picture: {}", e.getMessage());
+                throw new RuntimeException("Failed to upload back ID picture");
+            }
+        }
+
+        // Save updated user
+        userRepository.save(user);
+
+        // Return updated MeResponse
+        return getUserById(userId);
+    }
+
+    @Override
+    @Transactional
+    public MeResponse<?> updateMe(UpdateAccountDto updateAccountDto) {
+        Authentication authentication = getAuthentication();
+        if (authentication.isAuthenticated()) {
+            try {
+                UUID userId = UUID.fromString(getPrincipal(authentication).getId());
+                return updateUserById(userId, updateAccountDto);
+            } catch (ClassCastException e) {
+                log.warn("[JWT] User details not found!");
+                throw new BadCredentialsException("Bad credentials");
+            }
+        } else {
+            log.warn("[JWT] User not authenticated!");
+            throw new BadCredentialsException("Bad credentials");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteAccountById(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+        if (user.getRole() == Constants.RoleEnum.ADMIN) {
+            log.info("Hard deleting ADMIN user with id: {}", userId);
+            userRepository.delete(user);
+        } else {
+            log.info("Soft deleting user with id: {}, role: {}", userId, user.getRole());
+            user.setStatus(Constants.StatusProfileEnum.DELETED);
+            userRepository.save(user);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteMyAccount() {
+        Authentication authentication = getAuthentication();
+        if (authentication.isAuthenticated()) {
+            try {
+                UUID userId = UUID.fromString(getPrincipal(authentication).getId());
+                deleteAccountById(userId);
+            } catch (ClassCastException e) {
+                log.warn("[JWT] User details not found!");
+                throw new BadCredentialsException("Bad credentials");
+            }
+        } else {
+            log.warn("[JWT] User not authenticated!");
+            throw new BadCredentialsException("Bad credentials");
+        }
     }
 
     @Override

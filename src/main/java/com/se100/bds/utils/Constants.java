@@ -38,6 +38,7 @@ public final class Constants {
         ACTIVE("ACTIVE"),
         SUSPENDED("SUSPENDED"),
         PENDING_APPROVAL("PENDING_APPROVAL"),
+        DELETED("DELETED"),
         REJECTED("REJECTED");
 
         private final String value;

@@ -61,6 +61,12 @@ public class AppExceptionHandler {
         e.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
             String message = error.getDefaultMessage();
+
+            // Provide user-friendly message for MultipartFile conversion errors
+            if (message != null && message.contains("MultipartFile") && message.contains("String")) {
+                message = "Field '" + fieldName + "' should be a file upload. If you don't want to update this field, please omit it from the request instead of sending an empty string.";
+            }
+
             errors.put(fieldName, message);
         });
 

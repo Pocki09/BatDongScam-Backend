@@ -1,12 +1,14 @@
 package com.se100.bds.controllers;
 
 import com.se100.bds.controllers.base.AbstractBaseController;
+import com.se100.bds.dtos.requests.account.UpdateAccountDto;
 import com.se100.bds.dtos.responses.PageResponse;
 import com.se100.bds.dtos.responses.SingleResponse;
 import com.se100.bds.dtos.responses.adminlistitem.CustomerListItem;
 import com.se100.bds.dtos.responses.adminlistitem.PropertyOwnerListItem;
 import com.se100.bds.dtos.responses.adminlistitem.SaleAgentListItem;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
+import com.se100.bds.dtos.responses.SuccessResponse;
 import com.se100.bds.dtos.responses.user.meprofile.MeResponse;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.mappers.UserMapper;
@@ -26,8 +28,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.validation.Valid;
+import java.beans.PropertyEditorSupport;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,6 +51,19 @@ import static com.se100.bds.utils.Constants.SECURITY_SCHEME_NAME;
 public class AccountController extends AbstractBaseController {
     private final UserService userService;
     private final UserMapper userMapper;
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(MultipartFile.class, new PropertyEditorSupport() {
+            @Override
+            public void setAsText(String text) {
+                // Convert empty string to null for MultipartFile fields
+                if (text == null || text.trim().isEmpty()) {
+                    setValue(null);
+                }
+            }
+        });
+    }
 
     @GetMapping("/me")
     @Operation(
@@ -105,9 +126,158 @@ public class AccountController extends AbstractBaseController {
                     )
             }
     )
-    public ResponseEntity<SingleResponse<MeResponse>> getUserById(@PathVariable UUID userId) {
-        MeResponse meResponse = userService.getUserById(userId);
+    public ResponseEntity<SingleResponse<MeResponse<?>>> getUserById(@PathVariable UUID userId) {
+        MeResponse<?> meResponse = userService.getUserById(userId);
         return responseFactory.successSingle(meResponse, "Successful operation");
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Update user by ID",
+            description = "Update user information for a specific user ID (Admin only)",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "User updated successfully",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = MeResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "User not found",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<SingleResponse<MeResponse<?>>> updateUserById(
+            @PathVariable UUID userId,
+            @Parameter(description = "Update account data (multipart/form-data)", required = true)
+            @Valid @ModelAttribute UpdateAccountDto updateAccountDto,
+            BindingResult bindingResult
+    ) throws BindException {
+        if (bindingResult.hasErrors()) {
+            throw new BindException(bindingResult);
+        }
+        MeResponse<?> meResponse = userService.updateUserById(userId, updateAccountDto);
+        return responseFactory.successSingle(meResponse, "User updated successfully");
+    }
+
+    @PatchMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Update my account",
+            description = "Update current authenticated user's account information",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Account updated successfully",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = MeResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<SingleResponse<MeResponse<?>>> updateMe(
+            @Parameter(description = "Update account data (multipart/form-data)", required = true)
+            @Valid @ModelAttribute UpdateAccountDto updateAccountDto,
+            BindingResult bindingResult
+    ) throws BindException {
+        if (bindingResult.hasErrors()) {
+            throw new BindException(bindingResult);
+        }
+        MeResponse<?> meResponse = userService.updateMe(updateAccountDto);
+        return responseFactory.successSingle(meResponse, "Account updated successfully");
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{userId}")
+    @Operation(
+            summary = "Delete user account by ID",
+            description = "Delete user account. If user is ADMIN, performs hard delete (removes from database). Otherwise, performs soft delete (sets status to DELETED).",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Account deleted successfully",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = SuccessResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "User not found",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<SingleResponse<Void>> deleteAccountById(@PathVariable UUID userId) {
+        userService.deleteAccountById(userId);
+        return responseFactory.successSingle(null, "Account deleted successfully");
+    }
+
+    @DeleteMapping("/me")
+    @Operation(
+            summary = "Delete my account",
+            description = "Delete current authenticated user's account. If user is ADMIN, performs hard delete. Otherwise, performs soft delete (sets status to DELETED).",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Account deleted successfully",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = SuccessResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ErrorResponse.class)
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<SingleResponse<Void>> deleteMyAccount() {
+        userService.deleteMyAccount();
+        return responseFactory.successSingle(null, "Account deleted successfully");
     }
 
     @PreAuthorize("hasRole('ADMIN')")

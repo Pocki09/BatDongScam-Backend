@@ -1,6 +1,7 @@
 package com.se100.bds.services.domains.user;
 
 import com.se100.bds.dtos.requests.auth.RegisterRequest;
+import com.se100.bds.dtos.requests.account.UpdateAccountDto;
 import com.se100.bds.dtos.responses.adminlistitem.CustomerListItem;
 import com.se100.bds.dtos.responses.adminlistitem.PropertyOwnerListItem;
 import com.se100.bds.dtos.responses.adminlistitem.SaleAgentListItem;
@@ -32,6 +33,14 @@ public interface UserService {
     MeResponse<?> getAccount();
 
     MeResponse<?> getUserById(UUID userId);
+
+    MeResponse<?> updateUserById(UUID userId, UpdateAccountDto updateAccountDto);
+
+    MeResponse<?> updateMe(UpdateAccountDto updateAccountDto);
+
+    void deleteAccountById(UUID userId);
+
+    void deleteMyAccount();
 
     UUID getUserId();
 
