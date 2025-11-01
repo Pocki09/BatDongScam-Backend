@@ -21,4 +21,5 @@ public class PropertyOwnerListItem extends AbstractBaseDataResponse {
     private String tier;
     private BigDecimal totalValue;
     private Integer totalProperties;
+    private String location;
 }

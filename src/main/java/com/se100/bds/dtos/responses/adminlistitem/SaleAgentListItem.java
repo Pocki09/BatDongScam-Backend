@@ -21,8 +21,11 @@ public class SaleAgentListItem extends AbstractBaseDataResponse {
     private Integer point;
     private String tier;
     private Integer totalAssignments;
+    private Integer propertiesAssigned;
+    private Integer appointmentsAssigned;
     private Integer totalContracts;
     private Double rating;
     private Integer totalRates;
     private LocalDateTime hiredDate;
+    private String location;
 }

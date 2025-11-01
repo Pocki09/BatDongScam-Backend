@@ -22,4 +22,5 @@ public class CustomerListItem extends AbstractBaseDataResponse {
     private BigDecimal totalSpending;
     private Integer totalViewings;
     private Integer totalContracts;
+    private String location;
 }

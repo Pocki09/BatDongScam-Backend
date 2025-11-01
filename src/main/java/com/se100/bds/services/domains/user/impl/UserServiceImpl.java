@@ -621,10 +621,15 @@ public class UserServiceImpl implements UserService {
                                 .point(performancePoint)
                                 .tier(agentPerformanceMonth.getPerformanceTier().getValue())
                                 .totalAssignments(assignments)
+                                .propertiesAssigned(assignedProperties)
+                                .appointmentsAssigned(assignedAppointments)
                                 .totalContracts(monthContracts)
                                 .rating(avgRating.doubleValue())
                                 .totalRates(agentPerformanceMonth.getMonthRates())
                                 .hiredDate(agentUser.getSaleAgent().getHiredDate())
+                                .location(agentUser.getWard().getWardName() + ", " +
+                                         agentUser.getWard().getDistrict().getDistrictName() + ", " +
+                                         agentUser.getWard().getDistrict().getCity().getCityName())
                                 .build()
                 );
             } else {
@@ -699,10 +704,15 @@ public class UserServiceImpl implements UserService {
                                 .point(performancePoint)
                                 .tier(null)
                                 .totalAssignments(assignments)
+                                .propertiesAssigned(assignedProperties)
+                                .appointmentsAssigned(assignedAppointments)
                                 .totalContracts(totalContracts)
                                 .rating(avgRating.doubleValue())
                                 .totalRates(agentPerformanceCareer.getTotalRates())
                                 .hiredDate(agentUser.getSaleAgent().getHiredDate())
+                                .location(agentUser.getWard().getWardName() + ", " +
+                                         agentUser.getWard().getDistrict().getDistrictName() + ", " +
+                                         agentUser.getWard().getDistrict().getCity().getCityName())
                                 .build()
                 );
             }
@@ -847,6 +857,9 @@ public class UserServiceImpl implements UserService {
                                 .totalContracts(monthContracts)
                                 .createdAt(customerUser.getCreatedAt())
                                 .updatedAt(customerUser.getUpdatedAt())
+                                .location(customerUser.getWard().getWardName() + ", " +
+                                         customerUser.getWard().getDistrict().getDistrictName() + ", " +
+                                         customerUser.getWard().getDistrict().getCity().getCityName())
                                 .build()
                 );
             } else {
@@ -938,6 +951,9 @@ public class UserServiceImpl implements UserService {
                                 .totalContracts(totalContracts)
                                 .createdAt(customerUser.getCreatedAt())
                                 .updatedAt(customerUser.getUpdatedAt())
+                                .location(customerUser.getWard().getWardName() + ", " +
+                                         customerUser.getWard().getDistrict().getDistrictName() + ", " +
+                                         customerUser.getWard().getDistrict().getCity().getCityName())
                                 .build()
                 );
             }
@@ -1065,6 +1081,9 @@ public class UserServiceImpl implements UserService {
                                 .totalProperties(totalProperties)
                                 .createdAt(ownerUser.getCreatedAt())
                                 .updatedAt(ownerUser.getUpdatedAt())
+                                .location(ownerUser.getWard().getWardName() + ", " +
+                                         ownerUser.getWard().getDistrict().getDistrictName() + ", " +
+                                         ownerUser.getWard().getDistrict().getCity().getCityName())
                                 .build()
                 );
             } else {
@@ -1134,6 +1153,9 @@ public class UserServiceImpl implements UserService {
                                 .totalProperties(totalProperties)
                                 .createdAt(ownerUser.getCreatedAt())
                                 .updatedAt(ownerUser.getUpdatedAt())
+                                .location(ownerUser.getWard().getWardName() + ", " +
+                                         ownerUser.getWard().getDistrict().getDistrictName() + ", " +
+                                         ownerUser.getWard().getDistrict().getCity().getCityName())
                                 .build()
                 );
             }
