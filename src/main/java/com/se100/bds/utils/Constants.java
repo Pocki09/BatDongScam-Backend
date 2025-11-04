@@ -188,7 +188,8 @@ public final class Constants {
         REFUND("REFUND"),
         MONEY_SALE("MONEY_SALE"),
         MONEY_RENTAL("MONEY_RENTAL"),
-        SALARY("SALARY");
+        SALARY("SALARY"),
+        SERVICE_FEE("SERVICE_FEE");
 
         private final String value;
 

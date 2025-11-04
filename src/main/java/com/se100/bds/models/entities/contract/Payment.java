@@ -1,12 +1,14 @@
 package com.se100.bds.models.entities.contract;
 
 import com.se100.bds.models.entities.AbstractBaseEntity;
+import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.utils.Constants;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Table(name = "payments")
@@ -22,6 +24,10 @@ public class Payment extends AbstractBaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id")
     private Contract contract;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "property_id")
+    private Property property;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_type", nullable = false)
@@ -53,4 +59,11 @@ public class Payment extends AbstractBaseEntity {
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "payos_order_code", unique = true)
+    private Long payosOrderCode;
+
+    @Column(name = "payee_user_id")
+    private UUID payeeUserId;
+
 }
