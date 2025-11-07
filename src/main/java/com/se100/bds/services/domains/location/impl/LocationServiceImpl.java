@@ -1,5 +1,7 @@
 package com.se100.bds.services.domains.location.impl;
 
+import com.se100.bds.dtos.requests.location.CreateLocationRequest;
+import com.se100.bds.dtos.requests.location.UpdateLocationRequest;
 import com.se100.bds.dtos.responses.location.LocationCardResponse;
 import com.se100.bds.dtos.responses.location.LocationDetailsResponse;
 import com.se100.bds.mappers.LocationMapper;
@@ -160,8 +162,8 @@ public class LocationServiceImpl implements LocationService {
                 locationDetailsResponse = locationMapper.mapTo(city, LocationDetailsResponse.class);
 
                 locationDetailsResponse.setActiveProperties(propertyRepository.countActivePropertiesByCityId(city.getId()));
-                locationDetailsResponse.setDistricts(cityRepository.countDistrictsByCityId(city.getId()));
-                locationDetailsResponse.setWards(cityRepository.countWardsByCityId(city.getId()));
+                locationDetailsResponse.setDistrictCount(cityRepository.countDistrictsByCityId(city.getId()));
+                locationDetailsResponse.setWardCount(cityRepository.countWardsByCityId(city.getId()));
             }
             case DISTRICT -> {
                 District district = districtRepository.findById(locationId)
@@ -169,8 +171,8 @@ public class LocationServiceImpl implements LocationService {
                 locationDetailsResponse = locationMapper.mapTo(district, LocationDetailsResponse.class);
 
                 locationDetailsResponse.setActiveProperties(propertyRepository.countActivePropertiesByDistrictId(district.getId()));
-                locationDetailsResponse.setDistricts(0);
-                locationDetailsResponse.setWards(districtRepository.countWardsByDistrictId(district.getId()));
+                locationDetailsResponse.setDistrictCount(0);
+                locationDetailsResponse.setWardCount(districtRepository.countWardsByDistrictId(district.getId()));
             }
             case WARD -> {
                 Ward ward = wardRepository.findById(locationId)
@@ -178,12 +180,30 @@ public class LocationServiceImpl implements LocationService {
                 locationDetailsResponse = locationMapper.mapTo(ward, LocationDetailsResponse.class);
 
                 locationDetailsResponse.setActiveProperties(propertyRepository.countActivePropertiesByWardId(ward.getId()));
-                locationDetailsResponse.setDistricts(0);
-                locationDetailsResponse.setWards(0);
+                locationDetailsResponse.setDistrictCount(0);
+                locationDetailsResponse.setWardCount(0);
             }
             default -> throw new IllegalArgumentException("Invalid locationTypeEnum");
         }
 
         return locationDetailsResponse;
+    }
+
+    @Override
+    @Transactional
+    public LocationCardResponse create(CreateLocationRequest createLocationRequest) {
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public LocationCardResponse update(UpdateLocationRequest updateLocationRequest) {
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public boolean delete(UUID locationId, Constants.LocationEnum locationTypeEnum) {
+        return false;
     }
 }

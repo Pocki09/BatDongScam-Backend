@@ -62,9 +62,6 @@ public class LocationMapper extends BaseMapper {
                         City city = (City) ctx.getSource();
                         return customerFavoriteService.isLikeByMe(city.getId(), Constants.LikeTypeEnum.CITY);
                     }).map(src -> src, LocationDetailsResponse::setIsFavorite);
-                    mapper.skip(LocationDetailsResponse::setDistricts);
-                    mapper.skip(LocationDetailsResponse::setWards);
-                    mapper.skip(LocationDetailsResponse::setActiveProperties);
                 });
 
         modelMapper.typeMap(District.class, LocationDetailsResponse.class)
@@ -75,9 +72,6 @@ public class LocationMapper extends BaseMapper {
                         District district = (District) ctx.getSource();
                         return customerFavoriteService.isLikeByMe(district.getId(), Constants.LikeTypeEnum.DISTRICT);
                     }).map(src -> src, LocationDetailsResponse::setIsFavorite);
-                    mapper.skip(LocationDetailsResponse::setDistricts);
-                    mapper.skip(LocationDetailsResponse::setWards);
-                    mapper.skip(LocationDetailsResponse::setActiveProperties);
                 });
 
         modelMapper.typeMap(Ward.class, LocationDetailsResponse.class)
@@ -88,9 +82,6 @@ public class LocationMapper extends BaseMapper {
                         Ward ward = (Ward) ctx.getSource();
                         return customerFavoriteService.isLikeByMe(ward.getId(), Constants.LikeTypeEnum.WARD);
                     }).map(src -> src, LocationDetailsResponse::setIsFavorite);
-                    mapper.skip(LocationDetailsResponse::setDistricts);
-                    mapper.skip(LocationDetailsResponse::setWards);
-                    mapper.skip(LocationDetailsResponse::setActiveProperties);
                 });
     }
 }

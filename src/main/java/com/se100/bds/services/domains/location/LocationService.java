@@ -1,5 +1,7 @@
 package com.se100.bds.services.domains.location;
 
+import com.se100.bds.dtos.requests.location.CreateLocationRequest;
+import com.se100.bds.dtos.requests.location.UpdateLocationRequest;
 import com.se100.bds.dtos.responses.location.LocationCardResponse;
 import com.se100.bds.dtos.responses.location.LocationDetailsResponse;
 import com.se100.bds.models.entities.location.City;
@@ -27,4 +29,7 @@ public interface LocationService {
             Integer minPopulation, Integer maxPopulation
     );
     LocationDetailsResponse getLocationDetails(UUID locationId, Constants.LocationEnum locationTypeEnum);
+    LocationCardResponse create(CreateLocationRequest createLocationRequest);
+    LocationCardResponse update(UpdateLocationRequest updateLocationRequest);
+    boolean delete(UUID locationId, Constants.LocationEnum locationTypeEnum);
 }

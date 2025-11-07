@@ -22,7 +22,7 @@ public class LocationDetailsResponse extends AbstractBaseDataResponse {
     private Integer population;
     private Boolean isActive;
     private Boolean isFavorite;
-    private Integer districts;
-    private Integer wards;
+    private Integer districtCount;
+    private Integer wardCount;
     private Integer activeProperties;
 }
