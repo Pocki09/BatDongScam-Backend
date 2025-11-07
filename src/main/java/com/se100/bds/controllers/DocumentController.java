@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -32,6 +33,7 @@ import java.util.UUID;
 public class DocumentController extends AbstractBaseController {
     private final DocumentService documentService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @Operation(
             summary = "Create a new document type",
@@ -64,7 +66,8 @@ public class DocumentController extends AbstractBaseController {
         return responseFactory.successSingle(response, "Document type created successfully");
     }
 
-    @PutMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping
     @Operation(
             summary = "Update an existing document type",
             description = "Update document type details including name, description, and compulsory flag",
@@ -104,6 +107,7 @@ public class DocumentController extends AbstractBaseController {
         return responseFactory.successSingle(response, "Document type updated successfully");
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete a document type by ID",
