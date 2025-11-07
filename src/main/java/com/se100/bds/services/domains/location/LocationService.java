@@ -9,6 +9,7 @@ import com.se100.bds.utils.Constants;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public interface LocationService {
             Integer minPopulation, Integer maxPopulation
     );
     LocationDetailsResponse getLocationDetails(UUID locationId, Constants.LocationEnum locationTypeEnum);
-    LocationCardResponse create(CreateLocationRequest createLocationRequest);
-    LocationCardResponse update(UpdateLocationRequest updateLocationRequest);
+    LocationDetailsResponse create(CreateLocationRequest createLocationRequest) throws IOException;
+    LocationDetailsResponse update(UpdateLocationRequest updateLocationRequest) throws IOException;
     boolean delete(UUID locationId, Constants.LocationEnum locationTypeEnum);
 }
