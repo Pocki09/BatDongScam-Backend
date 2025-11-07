@@ -14,6 +14,7 @@ import com.se100.bds.repositories.domains.location.WardRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.services.domains.location.LocationService;
 import com.se100.bds.services.domains.search.SearchService;
+import com.se100.bds.services.fileupload.CloudinaryService;
 import com.se100.bds.utils.Constants;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +41,7 @@ public class LocationServiceImpl implements LocationService {
     private final PropertyRepository propertyRepository;
     private final SearchService searchService;
     private final LocationMapper locationMapper;
+    private final CloudinaryService cloudinaryService;
 
 
     @Override
@@ -191,19 +194,263 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     @Transactional
-    public LocationCardResponse create(CreateLocationRequest createLocationRequest) {
-        return null;
+    public LocationDetailsResponse create(CreateLocationRequest createLocationRequest) throws IOException {
+        LocationDetailsResponse locationDetailsResponse;
+
+        String imgUrl = null;
+        if (createLocationRequest.getImage() != null) {
+            imgUrl = cloudinaryService.uploadFile(createLocationRequest.getImage(), "locations");
+        }
+
+        switch (createLocationRequest.getLocationTypeEnum()) {
+            case CITY -> {
+                City city = locationMapper.mapTo(createLocationRequest, City.class);
+                city.setImgUrl(imgUrl);
+                locationDetailsResponse = locationMapper.mapTo(
+                        cityRepository.save(city),
+                        LocationDetailsResponse.class
+                );
+            }
+            case DISTRICT -> {
+                City city = cityRepository.findById(createLocationRequest.getParentId())
+                        .orElseThrow(() -> new EntityNotFoundException("City not found with id: " + createLocationRequest.getParentId()));
+                District district = locationMapper.mapTo(createLocationRequest, District.class);
+                district.setCity(city);
+                district.setImgUrl(imgUrl);
+                locationDetailsResponse = locationMapper.mapTo(
+                        districtRepository.save(district),
+                        LocationDetailsResponse.class
+                );
+            }
+            case WARD -> {
+                District district = districtRepository.findById(createLocationRequest.getParentId())
+                        .orElseThrow(() -> new EntityNotFoundException("District not found with id: " + createLocationRequest.getParentId()));
+                Ward ward = locationMapper.mapTo(createLocationRequest, Ward.class);
+                ward.setDistrict(district);
+                ward.setImgUrl(imgUrl);
+                locationDetailsResponse = locationMapper.mapTo(
+                        wardRepository.save(ward),
+                        LocationDetailsResponse.class
+                );
+            }
+            default -> throw new IllegalArgumentException("Invalid locationTypeEnum");
+        }
+
+        locationDetailsResponse.setImgUrl(imgUrl);
+        locationDetailsResponse.setActiveProperties(0);
+        locationDetailsResponse.setDistrictCount(0);
+        locationDetailsResponse.setWardCount(0);
+
+        return locationDetailsResponse;
     }
 
     @Override
     @Transactional
-    public LocationCardResponse update(UpdateLocationRequest updateLocationRequest) {
-        return null;
+    public LocationDetailsResponse update(UpdateLocationRequest updateLocationRequest) throws IOException {
+        LocationDetailsResponse locationDetailsResponse;
+
+        String imgUrl = null;
+        if (updateLocationRequest.getImage() != null) {
+            imgUrl = cloudinaryService.uploadFile(updateLocationRequest.getImage(), "locations");
+        }
+
+        switch (updateLocationRequest.getLocationTypeEnum()) {
+            case CITY -> {
+                City city = cityRepository.findById(updateLocationRequest.getId())
+                        .orElseThrow(() -> new EntityNotFoundException("City not found with id: " + updateLocationRequest.getId()));
+
+                // Delete old image if exists and new image is provided
+                if (imgUrl != null && city.getImgUrl() != null) {
+                    cloudinaryService.deleteFile(city.getImgUrl());
+                }
+
+                // Update fields only if they are not null
+                if (updateLocationRequest.getName() != null) {
+                    city.setCityName(updateLocationRequest.getName());
+                }
+                if (updateLocationRequest.getDescription() != null) {
+                    city.setDescription(updateLocationRequest.getDescription());
+                }
+                if (imgUrl != null) {
+                    city.setImgUrl(imgUrl);
+                }
+                if (updateLocationRequest.getTotalArea() != null) {
+                    city.setTotalArea(updateLocationRequest.getTotalArea());
+                }
+                if (updateLocationRequest.getAvg_land_price() != null) {
+                    city.setAvgLandPrice(updateLocationRequest.getAvg_land_price());
+                }
+                if (updateLocationRequest.getPopulation() != null) {
+                    city.setPopulation(updateLocationRequest.getPopulation());
+                }
+                if (updateLocationRequest.getIsActive() != null) {
+                    city.setIsActive(updateLocationRequest.getIsActive());
+                }
+
+                City savedCity = cityRepository.save(city);
+                locationDetailsResponse = locationMapper.mapTo(savedCity, LocationDetailsResponse.class);
+                locationDetailsResponse.setActiveProperties(propertyRepository.countActivePropertiesByCityId(savedCity.getId()));
+                locationDetailsResponse.setDistrictCount(cityRepository.countDistrictsByCityId(savedCity.getId()));
+                locationDetailsResponse.setWardCount(cityRepository.countWardsByCityId(savedCity.getId()));
+            }
+            case DISTRICT -> {
+                District district = districtRepository.findById(updateLocationRequest.getId())
+                        .orElseThrow(() -> new EntityNotFoundException("District not found with id: " + updateLocationRequest.getId()));
+
+                // Delete old image if exists and new image is provided
+                if (imgUrl != null && district.getImgUrl() != null) {
+                    cloudinaryService.deleteFile(district.getImgUrl());
+                }
+
+                // Update parent city if provided
+                if (updateLocationRequest.getParentId() != null) {
+                    City city = cityRepository.findById(updateLocationRequest.getParentId())
+                            .orElseThrow(() -> new EntityNotFoundException("City not found with id: " + updateLocationRequest.getParentId()));
+                    district.setCity(city);
+                }
+
+                // Update fields only if they are not null
+                if (updateLocationRequest.getName() != null) {
+                    district.setDistrictName(updateLocationRequest.getName());
+                }
+                if (updateLocationRequest.getDescription() != null) {
+                    district.setDescription(updateLocationRequest.getDescription());
+                }
+                if (imgUrl != null) {
+                    district.setImgUrl(imgUrl);
+                }
+                if (updateLocationRequest.getTotalArea() != null) {
+                    district.setTotalArea(updateLocationRequest.getTotalArea());
+                }
+                if (updateLocationRequest.getAvg_land_price() != null) {
+                    district.setAvgLandPrice(updateLocationRequest.getAvg_land_price());
+                }
+                if (updateLocationRequest.getPopulation() != null) {
+                    district.setPopulation(updateLocationRequest.getPopulation());
+                }
+                if (updateLocationRequest.getIsActive() != null) {
+                    district.setIsActive(updateLocationRequest.getIsActive());
+                }
+
+                District savedDistrict = districtRepository.save(district);
+                locationDetailsResponse = locationMapper.mapTo(savedDistrict, LocationDetailsResponse.class);
+                locationDetailsResponse.setActiveProperties(propertyRepository.countActivePropertiesByDistrictId(savedDistrict.getId()));
+                locationDetailsResponse.setDistrictCount(0);
+                locationDetailsResponse.setWardCount(districtRepository.countWardsByDistrictId(savedDistrict.getId()));
+            }
+            case WARD -> {
+                Ward ward = wardRepository.findById(updateLocationRequest.getId())
+                        .orElseThrow(() -> new EntityNotFoundException("Ward not found with id: " + updateLocationRequest.getId()));
+
+                // Delete old image if exists and new image is provided
+                if (imgUrl != null && ward.getImgUrl() != null) {
+                    cloudinaryService.deleteFile(ward.getImgUrl());
+                }
+
+                // Update parent district if provided
+                if (updateLocationRequest.getParentId() != null) {
+                    District district = districtRepository.findById(updateLocationRequest.getParentId())
+                            .orElseThrow(() -> new EntityNotFoundException("District not found with id: " + updateLocationRequest.getParentId()));
+                    ward.setDistrict(district);
+                }
+
+                // Update fields only if they are not null
+                if (updateLocationRequest.getName() != null) {
+                    ward.setWardName(updateLocationRequest.getName());
+                }
+                if (updateLocationRequest.getDescription() != null) {
+                    ward.setDescription(updateLocationRequest.getDescription());
+                }
+                if (imgUrl != null) {
+                    ward.setImgUrl(imgUrl);
+                }
+                if (updateLocationRequest.getTotalArea() != null) {
+                    ward.setTotalArea(updateLocationRequest.getTotalArea());
+                }
+                if (updateLocationRequest.getAvg_land_price() != null) {
+                    ward.setAvgLandPrice(updateLocationRequest.getAvg_land_price());
+                }
+                if (updateLocationRequest.getPopulation() != null) {
+                    ward.setPopulation(updateLocationRequest.getPopulation());
+                }
+                if (updateLocationRequest.getIsActive() != null) {
+                    ward.setIsActive(updateLocationRequest.getIsActive());
+                }
+
+                Ward savedWard = wardRepository.save(ward);
+                locationDetailsResponse = locationMapper.mapTo(savedWard, LocationDetailsResponse.class);
+                locationDetailsResponse.setActiveProperties(propertyRepository.countActivePropertiesByWardId(savedWard.getId()));
+                locationDetailsResponse.setDistrictCount(0);
+                locationDetailsResponse.setWardCount(0);
+            }
+            default -> throw new IllegalArgumentException("Invalid locationTypeEnum");
+        }
+
+        return locationDetailsResponse;
     }
 
     @Override
     @Transactional
     public boolean delete(UUID locationId, Constants.LocationEnum locationTypeEnum) {
-        return false;
+        try {
+            switch (locationTypeEnum) {
+                case CITY -> {
+                    City city = cityRepository.findById(locationId)
+                            .orElseThrow(() -> new EntityNotFoundException("City not found with id: " + locationId));
+
+                    // Delete image from Cloudinary if exists
+                    if (city.getImgUrl() != null) {
+                        try {
+                            cloudinaryService.deleteFile(city.getImgUrl());
+                        } catch (IOException e) {
+                            log.error("Failed to delete city image from Cloudinary: {}", e.getMessage());
+                        }
+                    }
+
+                    cityRepository.delete(city);
+                    log.info("Successfully deleted city with id: {}", locationId);
+                }
+                case DISTRICT -> {
+                    District district = districtRepository.findById(locationId)
+                            .orElseThrow(() -> new EntityNotFoundException("District not found with id: " + locationId));
+
+                    // Delete image from Cloudinary if exists
+                    if (district.getImgUrl() != null) {
+                        try {
+                            cloudinaryService.deleteFile(district.getImgUrl());
+                        } catch (IOException e) {
+                            log.error("Failed to delete district image from Cloudinary: {}", e.getMessage());
+                        }
+                    }
+
+                    districtRepository.delete(district);
+                    log.info("Successfully deleted district with id: {}", locationId);
+                }
+                case WARD -> {
+                    Ward ward = wardRepository.findById(locationId)
+                            .orElseThrow(() -> new EntityNotFoundException("Ward not found with id: " + locationId));
+
+                    // Delete image from Cloudinary if exists
+                    if (ward.getImgUrl() != null) {
+                        try {
+                            cloudinaryService.deleteFile(ward.getImgUrl());
+                        } catch (IOException e) {
+                            log.error("Failed to delete ward image from Cloudinary: {}", e.getMessage());
+                        }
+                    }
+
+                    wardRepository.delete(ward);
+                    log.info("Successfully deleted ward with id: {}", locationId);
+                }
+                default -> throw new IllegalArgumentException("Invalid locationTypeEnum: " + locationTypeEnum);
+            }
+            return true;
+        } catch (EntityNotFoundException e) {
+            log.error("Entity not found: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to delete location: {}", e.getMessage());
+            return false;
+        }
     }
 }

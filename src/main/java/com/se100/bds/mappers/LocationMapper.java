@@ -1,5 +1,7 @@
 package com.se100.bds.mappers;
 
+import com.se100.bds.dtos.requests.location.CreateLocationRequest;
+import com.se100.bds.dtos.requests.location.UpdateLocationRequest;
 import com.se100.bds.dtos.responses.location.LocationCardResponse;
 import com.se100.bds.dtos.responses.location.LocationDetailsResponse;
 import com.se100.bds.models.entities.location.City;
@@ -82,6 +84,51 @@ public class LocationMapper extends BaseMapper {
                         Ward ward = (Ward) ctx.getSource();
                         return customerFavoriteService.isLikeByMe(ward.getId(), Constants.LikeTypeEnum.WARD);
                     }).map(src -> src, LocationDetailsResponse::setIsFavorite);
+                });
+
+        // CreateLocationRequest -> City
+        modelMapper.typeMap(CreateLocationRequest.class, City.class)
+                .addMappings(mapper -> {
+                    mapper.map(CreateLocationRequest::getName, City::setCityName);
+                    mapper.map(CreateLocationRequest::getAvg_land_price, City::setAvgLandPrice);
+                    mapper.skip(City::setId);
+                });
+
+        // CreateLocationRequest -> District
+        modelMapper.typeMap(CreateLocationRequest.class, District.class)
+                .addMappings(mapper -> {
+                    mapper.map(CreateLocationRequest::getName, District::setDistrictName);
+                    mapper.map(CreateLocationRequest::getAvg_land_price, District::setAvgLandPrice);
+                    mapper.skip(District::setId);
+                });
+
+        // CreateLocationRequest -> Ward
+        modelMapper.typeMap(CreateLocationRequest.class, Ward.class)
+                .addMappings(mapper -> {
+                    mapper.map(CreateLocationRequest::getName, Ward::setWardName);
+                    mapper.map(CreateLocationRequest::getAvg_land_price, Ward::setAvgLandPrice);
+                    mapper.skip(Ward::setId);
+                });
+
+        // UpdateLocationRequest -> City
+        modelMapper.typeMap(UpdateLocationRequest.class, City.class)
+                .addMappings(mapper -> {
+                    mapper.map(UpdateLocationRequest::getName, City::setCityName);
+                    mapper.map(UpdateLocationRequest::getAvg_land_price, City::setAvgLandPrice);
+                });
+
+        // UpdateLocationRequest -> District
+        modelMapper.typeMap(UpdateLocationRequest.class, District.class)
+                .addMappings(mapper -> {
+                    mapper.map(UpdateLocationRequest::getName, District::setDistrictName);
+                    mapper.map(UpdateLocationRequest::getAvg_land_price, District::setAvgLandPrice);
+                });
+
+        // UpdateLocationRequest -> Ward
+        modelMapper.typeMap(UpdateLocationRequest.class, Ward.class)
+                .addMappings(mapper -> {
+                    mapper.map(UpdateLocationRequest::getName, Ward::setWardName);
+                    mapper.map(UpdateLocationRequest::getAvg_land_price, Ward::setAvgLandPrice);
                 });
     }
 }
