@@ -1,6 +1,9 @@
 package com.se100.bds.services.domains.property.impl;
 
+import com.se100.bds.dtos.requests.property.CreatePropertyTypeRequest;
+import com.se100.bds.dtos.requests.property.UpdatePropertyTypeRequest;
 import com.se100.bds.dtos.responses.property.PropertyDetails;
+import com.se100.bds.dtos.responses.property.PropertyTypeResponse;
 import com.se100.bds.exceptions.NotFoundException;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.property.PropertyType;
@@ -17,7 +20,9 @@ import com.se100.bds.services.domains.ranking.RankingService;
 import com.se100.bds.services.domains.search.SearchService;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.services.dtos.results.PropertyCard;
+import com.se100.bds.services.fileupload.CloudinaryService;
 import com.se100.bds.utils.Constants;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,6 +30,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +46,7 @@ public class PropertyServiceImpl implements PropertyService {
     private final UserService userService;
     private final SearchService searchService;
     private final RankingService rankingService;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public Page<Property> getAll(Pageable pageable) {
@@ -249,6 +256,88 @@ public class PropertyServiceImpl implements PropertyService {
         Property assignedProperty = propertyRepository.findById(propertyId)
                 .orElseThrow(() -> new NotFoundException("Property not found with id: " + propertyId));
         assignedProperty.setAssignedAgent(salesAgent);
+    }
 
+    @Override
+    @Transactional
+    public PropertyTypeResponse createPropertyType(CreatePropertyTypeRequest request) throws IOException {
+        // Upload avatar if provided
+        String avatarUrl = null;
+        if (request.getAvatar() != null) {
+            avatarUrl = cloudinaryService.uploadFile(request.getAvatar(), "property-types");
+        }
+
+        // Create new PropertyType
+        PropertyType propertyType = PropertyType.builder()
+                .typeName(request.getTypeName())
+                .avatarUrl(avatarUrl)
+                .description(request.getDescription())
+                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+                .build();
+
+        PropertyType savedPropertyType = propertyTypeRepository.save(propertyType);
+        log.info("Created new property type with id: {}", savedPropertyType.getId());
+
+        return propertyMapper.mapTo(savedPropertyType, PropertyTypeResponse.class);
+    }
+
+    @Override
+    @Transactional
+    public PropertyTypeResponse updatePropertyType(UpdatePropertyTypeRequest request) throws IOException {
+        PropertyType propertyType = propertyTypeRepository.findById(request.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Property type not found with id: " + request.getId()));
+
+        // Upload new avatar if provided
+        String newAvatarUrl = null;
+        if (request.getAvatar() != null) {
+            newAvatarUrl = cloudinaryService.uploadFile(request.getAvatar(), "property-types");
+
+            // Delete old avatar if exists
+            if (propertyType.getAvatarUrl() != null) {
+                try {
+                    cloudinaryService.deleteFile(propertyType.getAvatarUrl());
+                } catch (IOException e) {
+                    log.error("Failed to delete old avatar from Cloudinary: {}", e.getMessage());
+                }
+            }
+        }
+
+        // Update fields only if they are not null
+        if (request.getTypeName() != null) {
+            propertyType.setTypeName(request.getTypeName());
+        }
+        if (newAvatarUrl != null) {
+            propertyType.setAvatarUrl(newAvatarUrl);
+        }
+        if (request.getDescription() != null) {
+            propertyType.setDescription(request.getDescription());
+        }
+        if (request.getIsActive() != null) {
+            propertyType.setIsActive(request.getIsActive());
+        }
+
+        PropertyType updatedPropertyType = propertyTypeRepository.save(propertyType);
+        log.info("Updated property type with id: {}", updatedPropertyType.getId());
+
+        return propertyMapper.mapTo(updatedPropertyType, PropertyTypeResponse.class);
+    }
+
+    @Override
+    @Transactional
+    public void deletePropertyType(UUID id) throws IOException {
+        PropertyType propertyType = propertyTypeRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Property type not found with id: " + id));
+
+        // Delete avatar from Cloudinary if exists
+        if (propertyType.getAvatarUrl() != null) {
+            try {
+                cloudinaryService.deleteFile(propertyType.getAvatarUrl());
+            } catch (IOException e) {
+                log.error("Failed to delete avatar from Cloudinary: {}", e.getMessage());
+            }
+        }
+
+        propertyTypeRepository.delete(propertyType);
+        log.info("Deleted property type with id: {}", id);
     }
 }
