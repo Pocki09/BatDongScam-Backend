@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+
+import static com.se100.bds.utils.Constants.SECURITY_SCHEME_NAME;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +40,7 @@ public class DocumentController extends AbstractBaseController {
     @PostMapping
     @Operation(
             summary = "Create a new document type",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME),
             description = "Create a new document type with name, description, and compulsory flag",
             responses = {
                     @ApiResponse(
@@ -71,6 +75,7 @@ public class DocumentController extends AbstractBaseController {
     @Operation(
             summary = "Update an existing document type",
             description = "Update document type details including name, description, and compulsory flag",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -112,6 +117,7 @@ public class DocumentController extends AbstractBaseController {
     @Operation(
             summary = "Delete a document type by ID",
             description = "Delete a document type by ID. This will also delete all associated documents.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
