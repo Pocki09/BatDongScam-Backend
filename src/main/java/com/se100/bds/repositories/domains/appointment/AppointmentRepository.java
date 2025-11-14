@@ -16,9 +16,9 @@ import java.util.UUID;
 public interface AppointmentRepository extends JpaRepository<Appointment, UUID>, JpaSpecificationExecutor<Appointment> {
     Page<Appointment> findAllByStatus(Constants.AppointmentStatusEnum status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"property", "property.ward", "property.ward.district", "property.ward.district.city"})
+    @EntityGraph(attributePaths = {"property", "property.ward", "property.ward.district", "property.ward.district.city", "property.mediaList"})
     List<Appointment> findAllByCustomer_Id(UUID customerId);
 
-    @EntityGraph(attributePaths = {"property", "property.ward", "property.ward.district", "property.ward.district.city"})
+    @EntityGraph(attributePaths = {"property", "property.ward", "property.ward.district", "property.ward.district.city", "property.mediaList"})
     List<Appointment> findAllByStatusAndCustomer_Id(Constants.AppointmentStatusEnum status, UUID customerId);
 }

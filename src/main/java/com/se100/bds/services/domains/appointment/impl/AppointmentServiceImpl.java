@@ -1,6 +1,7 @@
 package com.se100.bds.services.domains.appointment.impl;
 
 import com.se100.bds.dtos.responses.appointment.ViewingCardDto;
+import com.se100.bds.mappers.AppointmentMapper;
 import com.se100.bds.models.entities.appointment.Appointment;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.repositories.domains.appointment.AppointmentRepository;
@@ -26,6 +27,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final UserService userService;
+    private final AppointmentMapper appointmentMapper;
 
     @Override
     public Page<ViewingCardDto> myViewingCards(Pageable pageable, Constants.AppointmentStatusEnum statusEnum, Integer day, Integer month, Integer year) {
@@ -50,9 +52,24 @@ public class AppointmentServiceImpl implements AppointmentService {
             }
             return true;
         })
-        .map(appointment ->
-            ViewingCardDto.builder()
-                    .build()
+
+        .map(appointment -> {
+
+            String thumbnailUrl = appointment.getProperty().getMediaList().get(0).getFilePath();
+            String districtName = appointment.getProperty().getWard().getDistrict().getDistrictName();
+            String cityName = appointment.getProperty().getWard().getDistrict().getCity().getCityName();
+
+            ViewingCardDto viewingCardDto = appointmentMapper.mapTo(appointment, ViewingCardDto.class);
+
+            viewingCardDto.setTitle(appointment.getProperty().getTitle());
+            viewingCardDto.setThumbnailUrl(thumbnailUrl);
+            viewingCardDto.setDistrictName(districtName);
+            viewingCardDto.setCityName(cityName);
+            viewingCardDto.setPriceAmount(appointment.getProperty().getPriceAmount());
+            viewingCardDto.setArea(appointment.getProperty().getArea());
+
+            return viewingCardDto;
+        }
         ).collect(Collectors.toList());
 
         return new PageImpl<>(viewingCardDtos, pageable, viewingCardDtos.size());
