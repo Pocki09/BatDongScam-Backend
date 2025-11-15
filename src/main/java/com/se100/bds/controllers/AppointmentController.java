@@ -5,6 +5,7 @@ import com.se100.bds.dtos.responses.PageResponse;
 import com.se100.bds.dtos.responses.SingleResponse;
 import com.se100.bds.dtos.responses.appointment.ViewingCardDto;
 import com.se100.bds.dtos.responses.appointment.ViewingDetails;
+import com.se100.bds.dtos.responses.appointment.ViewingDetailsAdmin;
 import com.se100.bds.dtos.responses.appointment.ViewingListItemDto;
 import com.se100.bds.services.domains.appointment.AppointmentService;
 import com.se100.bds.utils.Constants;
@@ -17,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -59,7 +59,7 @@ public class AppointmentController extends AbstractBaseController {
 
     @GetMapping("/viewing-details/{id}")
     @Operation(
-            summary = "Get viewing details by appointment ID",
+            summary = "Customer Get viewing details by appointment ID",
             security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
     )
     public ResponseEntity<SingleResponse<ViewingDetails>> getViewingDetails(
@@ -69,10 +69,9 @@ public class AppointmentController extends AbstractBaseController {
         return responseFactory.successSingle(viewingDetails, "Viewing details retrieved successfully");
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/viewing-list")
+    @GetMapping("/admin/viewing-list")
     @Operation(
-            summary = "Get viewing list with filters",
+            summary = "Admin Get viewing list with filters",
             description = "Get paginated list of appointments with comprehensive filtering options",
             security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
     )
@@ -125,5 +124,18 @@ public class AppointmentController extends AbstractBaseController {
                 cityIds, districtIds, wardIds
         );
         return responseFactory.successPage(viewingListItems, "Viewing list retrieved successfully");
+    }
+
+    @GetMapping("/admin/viewing-details/{id}")
+    @Operation(
+            summary = "Admin Get viewing details by appointment ID",
+            description = "Get detailed appointment information including property, customer, owner, and agent details",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<SingleResponse<ViewingDetailsAdmin>> getViewingDetailsAdmin(
+            @Parameter(description = "Appointment ID")
+            @PathVariable UUID id) {
+        ViewingDetailsAdmin viewingDetails = appointmentService.getViewingDetailsAdmin(id);
+        return responseFactory.successSingle(viewingDetails, "Viewing details retrieved successfully");
     }
 }

@@ -1,12 +1,14 @@
 package com.se100.bds.mappers;
 
 import com.se100.bds.dtos.responses.appointment.ViewingDetails;
+import com.se100.bds.dtos.responses.appointment.ViewingDetailsAdmin;
 import com.se100.bds.dtos.responses.appointment.ViewingListItemDto;
 import com.se100.bds.dtos.responses.user.simple.PropertyOwnerSimpleCard;
 import com.se100.bds.dtos.responses.user.simple.SalesAgentSimpleCard;
 import com.se100.bds.models.entities.appointment.Appointment;
 import com.se100.bds.models.entities.user.PropertyOwner;
 import com.se100.bds.models.entities.user.SaleAgent;
+import com.se100.bds.models.entities.user.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -114,5 +116,56 @@ public class AppointmentMapper extends BaseMapper {
             !appointment.getProperty().getMediaList().isEmpty()) {
             dto.setThumbnailUrl(appointment.getProperty().getMediaList().get(0).getFilePath());
         }
+    }
+
+    /**
+     * Build PropertyCard for ViewingDetailsAdmin
+     */
+    public ViewingDetailsAdmin.PropertyCard buildPropertyCard(Appointment appointment) {
+        var propertyCard = new ViewingDetailsAdmin.PropertyCard();
+        propertyCard.setId(appointment.getProperty().getId());
+        propertyCard.setTitle(appointment.getProperty().getTitle());
+        propertyCard.setTransactionType(appointment.getProperty().getTransactionType());
+        propertyCard.setType(appointment.getProperty().getPropertyType().getTypeName());
+        propertyCard.setFullAddress(appointment.getProperty().getFullAddress());
+        propertyCard.setPrice(appointment.getProperty().getPriceAmount());
+        propertyCard.setArea(appointment.getProperty().getArea());
+
+        // Set thumbnail
+        if (appointment.getProperty().getMediaList() != null && !appointment.getProperty().getMediaList().isEmpty()) {
+            propertyCard.setThumbnailUrl(appointment.getProperty().getMediaList().get(0).getFilePath());
+        }
+
+        return propertyCard;
+    }
+
+    /**
+     * Build UserSimpleCard for ViewingDetailsAdmin
+     */
+    public ViewingDetailsAdmin.UserSimpleCard buildUserSimpleCard(
+            User user, String tier) {
+        var userCard = new ViewingDetailsAdmin.UserSimpleCard();
+        userCard.setId(user.getId());
+        userCard.setFullName(user.getFullName());
+        userCard.setTier(tier);
+        userCard.setPhoneNumber(user.getPhoneNumber());
+        userCard.setEmail(user.getEmail());
+        return userCard;
+    }
+
+    /**
+     * Build SalesAgentSimpleCard for ViewingDetailsAdmin
+     */
+    public ViewingDetailsAdmin.SalesAgentSimpleCard buildSalesAgentSimpleCard(
+            User agentUser, String tier, Double rating, Integer totalRates) {
+        var agentCard = new ViewingDetailsAdmin.SalesAgentSimpleCard();
+        agentCard.setId(agentUser.getId());
+        agentCard.setFullName(agentUser.getFullName());
+        agentCard.setTier(tier);
+        agentCard.setPhoneNumber(agentUser.getPhoneNumber());
+        agentCard.setEmail(agentUser.getEmail());
+        agentCard.setRating(rating);
+        agentCard.setTotalRates(totalRates);
+        return agentCard;
     }
 }

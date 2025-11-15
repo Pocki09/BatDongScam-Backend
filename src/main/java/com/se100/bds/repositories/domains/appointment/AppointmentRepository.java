@@ -25,7 +25,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID>,
     @EntityGraph(attributePaths = {"property", "property.ward", "property.ward.district", "property.ward.district.city", "property.mediaList"})
     List<Appointment> findAllByStatusAndCustomer_Id(Constants.AppointmentStatusEnum status, UUID customerId);
 
-    @EntityGraph(attributePaths = {"property", "property.ward", "property.ward.district", "property.ward.district.city", "property.mediaList", "property.documents", "agent", "agent.user", "property.owner", "property.owner.user"})
+    @EntityGraph(attributePaths = {"property", "property.ward", "property.ward.district", "property.ward.district.city", "property.mediaList", "property.documents", "property.propertyType", "agent", "agent.user", "customer", "customer.user", "property.owner", "property.owner.user"})
     Optional<Appointment> findById(UUID id);
 
     @EntityGraph(attributePaths = {"property", "property.ward", "property.ward.district", "property.ward.district.city", "property.mediaList", "property.propertyType", "agent", "agent.user", "customer", "customer.user", "property.owner", "property.owner.user"})

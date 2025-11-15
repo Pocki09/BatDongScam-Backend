@@ -26,6 +26,10 @@ public class ViewingDetails extends AbstractBaseDataResponse {
     private Constants.AppointmentStatusEnum status; // appointment status
     private String fullAddress;
     private LocalDateTime requestedDate;
+    private LocalDateTime confirmedDate;
+    private Short rating;
+    private String comment;
+    private String customerRequirements;
 
     private String description;
     private Integer rooms;

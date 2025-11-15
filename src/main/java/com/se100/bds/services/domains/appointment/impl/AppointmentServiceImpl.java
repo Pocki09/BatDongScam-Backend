@@ -2,6 +2,7 @@ package com.se100.bds.services.domains.appointment.impl;
 
 import com.se100.bds.dtos.responses.appointment.ViewingCardDto;
 import com.se100.bds.dtos.responses.appointment.ViewingDetails;
+import com.se100.bds.dtos.responses.appointment.ViewingDetailsAdmin;
 import com.se100.bds.dtos.responses.appointment.ViewingListItemDto;
 import com.se100.bds.dtos.responses.user.simple.PropertyOwnerSimpleCard;
 import com.se100.bds.dtos.responses.user.simple.SalesAgentSimpleCard;
@@ -232,5 +233,56 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .collect(Collectors.toList());
 
         return new PageImpl<>(viewingListItems, pageable, finalAppointments.size());
+    }
+
+    @Override
+    public ViewingDetailsAdmin getViewingDetailsAdmin(UUID id) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Appointment not found with id"));
+
+        ViewingDetailsAdmin viewingDetails = appointmentMapper.mapTo(appointment, ViewingDetailsAdmin.class);
+
+        // Build property card
+        ViewingDetailsAdmin.PropertyCard propertyCard = appointmentMapper.buildPropertyCard(appointment);
+        viewingDetails.setPropertyCard(propertyCard);
+
+        // Build customer card with tier
+        String customerTier = rankingService.getCurrentTier(
+                appointment.getCustomer().getId(),
+                Constants.RoleEnum.CUSTOMER
+        );
+        ViewingDetailsAdmin.UserSimpleCard customerCard = appointmentMapper.buildUserSimpleCard(
+                appointment.getCustomer().getUser(),
+                customerTier
+        );
+        viewingDetails.setCustomer(customerCard);
+
+        // Build property owner card with tier
+        String ownerTier = rankingService.getCurrentTier(
+                appointment.getProperty().getOwner().getId(),
+                Constants.RoleEnum.PROPERTY_OWNER
+        );
+        ViewingDetailsAdmin.UserSimpleCard ownerCard = appointmentMapper.buildUserSimpleCard(
+                appointment.getProperty().getOwner().getUser(),
+                ownerTier
+        );
+        viewingDetails.setPropertyOwner(ownerCard);
+
+        // Build sales agent card with tier and rating
+        IndividualSalesAgentPerformanceMonth agentRanking = rankingService.getSaleAgentCurrentMonth(
+                appointment.getAgent().getId()
+        );
+        IndividualSalesAgentPerformanceCareer agentRankingCareer = rankingService.getSaleAgentCareer(
+                appointment.getAgent().getId()
+        );
+        ViewingDetailsAdmin.SalesAgentSimpleCard agentCard = appointmentMapper.buildSalesAgentSimpleCard(
+                appointment.getAgent().getUser(),
+                agentRanking.getPerformanceTier().getValue(),
+                agentRankingCareer.getAvgRating().doubleValue(),
+                agentRankingCareer.getTotalRates()
+        );
+        viewingDetails.setSalesAgent(agentCard);
+
+        return viewingDetails;
     }
 }
