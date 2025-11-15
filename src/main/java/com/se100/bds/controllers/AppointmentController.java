@@ -130,8 +130,8 @@ public class AppointmentController extends AbstractBaseController {
         return responseFactory.successPage(viewingListItems, "Viewing list retrieved successfully");
     }
 
-    @PreAuthorize("hasRole({'ADMIN', 'SALESAGENT'})")
-    @GetMapping("/viewing-details/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SALESAGENT')")
+    @GetMapping("/admin-agent/viewing-details/{id}")
     @Operation(
             summary = "Admin or Agent Get viewing details by appointment ID",
             description = "Get detailed appointment information including property, customer, owner, and agent details",
