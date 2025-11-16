@@ -80,6 +80,15 @@ public class User extends AbstractBaseEntity {
     @Column(name = "back_id_picture_path")
     private String backIdPicturePath;
 
+    @Column(name = "bank_account_number", length = 30)
+    private String bankAccountNumber;
+
+    @Column(name = "bank_account_name", length = 150)
+    private String bankAccountName;
+
+    @Column(name = "bank_bin", length = 20)
+    private String bankBin;
+
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 

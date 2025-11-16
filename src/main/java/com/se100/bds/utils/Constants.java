@@ -20,7 +20,8 @@ public final class Constants {
         SALESAGENT("SALESAGENT"),
         GUEST("GUEST"),
         PROPERTY_OWNER("UNVERIFIED_SEER"),
-        CUSTOMER("CUSTOMER");
+        CUSTOMER("CUSTOMER"),
+        ACCOUNTANT("ACCOUNTANT");
 
         private final String value;
 
@@ -204,7 +205,10 @@ public final class Constants {
     public enum PaymentStatusEnum {
         PENDING("PENDING"),
         SUCCESS("SUCCESS"),
-        FAILED("FAILED");
+        FAILED("FAILED"),
+        SYSTEM_PENDING("SYSTEM_PENDING"),
+        SYSTEM_SUCCESS("SYSTEM_SUCCESS"),
+        SYSTEM_FAILED("SYSTEM_FAILED");
 
         private final String value;
 
