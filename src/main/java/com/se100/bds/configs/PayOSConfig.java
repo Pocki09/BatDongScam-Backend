@@ -22,18 +22,6 @@ public class PayOSConfig {
     @Value("${payos.log-level}")
     private String logLevel;
 
-//    @Value("${payos.payout-client-id}")
-//    private String payoutClientId;
-//
-//    @Value("${payos.payout-api-key}")
-//    private String payoutApiKey;
-//
-//    @Value("${payos.payout-checksum-key}")
-//    private String payoutChecksumKey;
-//
-//    @Value("${payos.payout-log-level}")
-//    private String payoutLogLevel;
-
     @Bean(name = "payOSPaymentClient")
     public PayOS payOSPaymentClient() {
         ClientOptions options = ClientOptions.builder()
@@ -44,17 +32,6 @@ public class PayOSConfig {
                 .build();
         return new PayOS(options);
     }
-
-//    @Bean(name = "payOSPayoutClient")
-//    public PayOS payOSPayoutClient() {
-//        ClientOptions options = ClientOptions.builder()
-//                .clientId(payoutClientId)
-//                .apiKey(payoutApiKey)
-//                .checksumKey(payoutChecksumKey)
-//                .logLevel(parseLogLevel(payoutLogLevel))
-//                .build();
-//        return new PayOS(options);
-//    }
 
     private ClientOptions.LogLevel parseLogLevel(String candidate) {
         if (candidate == null || candidate.isBlank()) {

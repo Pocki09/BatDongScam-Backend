@@ -8,7 +8,6 @@ import com.se100.bds.models.entities.user.User;
 import com.se100.bds.repositories.domains.contract.ContractRepository;
 import com.se100.bds.repositories.domains.contract.PaymentRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
-import com.se100.bds.services.domains.contract.ContractService;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.services.payos.PayOSService;
 import com.se100.bds.utils.Constants.*;
@@ -44,7 +43,7 @@ public class PayOSServiceImpl implements PayOSService {
     private final ContractRepository contractRepository;
     private final PaymentRepository paymentRepository;
     private final PropertyRepository propertyRepository;
-    private final ContractService contractService;
+//    private final ContractService contractService;
     private final UserService userService;
 
     @Value("${payos.return-url}")
@@ -58,14 +57,14 @@ public class PayOSServiceImpl implements PayOSService {
             final ContractRepository contractRepository,
             final PaymentRepository paymentRepository,
             final PropertyRepository propertyRepository,
-            final ContractService contractService,
+//            final ContractService contractService,
             final UserService userService
     ) {
         this.payOS = payOS;
         this.contractRepository = contractRepository;
         this.paymentRepository = paymentRepository;
         this.propertyRepository = propertyRepository;
-        this.contractService = contractService;
+//        this.contractService = contractService;
         this.userService = userService;
     }
 
@@ -686,11 +685,11 @@ public class PayOSServiceImpl implements PayOSService {
             case MONEY_SALE, MONEY_RENTAL -> distributeContractPayment(payment);
             case PENALTY -> {
                 log.info("Penalty payment {} completed; finalizing contract cancellation", payment.getId());
-                contractService.finalizeCancellationAfterPenalty(payment);
+//                contractService.finalizeCancellationAfterPenalty(payment);
             }
             case REFUND -> {
                 log.info("Cancellation refund payment {} completed; finalizing contract settlement", payment.getId());
-                contractService.finalizeCancellationAfterRefundCollection(payment);
+//                contractService.finalizeCancellationAfterRefundCollection(payment);
             }
             case SALARY -> log.info("Salary payment {} registered as SUCCESS", payment.getId());
             default -> log.info("Payment {} completed with type {}", payment.getId(), payment.getPaymentType());
@@ -756,6 +755,5 @@ public class PayOSServiceImpl implements PayOSService {
         log.info("Distributing payment {}. amount={}, commission={}, serviceFee={}, netToOwner={}",
                 payment.getId(), payment.getAmount(), commission, serviceFee, netToOwner);
 
-//        payoutService.payoutToOwner(contract, payment, netToOwner);
     }
 }
