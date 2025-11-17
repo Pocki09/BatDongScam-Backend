@@ -1,6 +1,9 @@
 package com.se100.bds.controllers;
 
 import com.se100.bds.controllers.base.AbstractBaseController;
+import com.se100.bds.dtos.requests.property.CreatePropertyRequest;
+import com.se100.bds.dtos.requests.property.UpdatePropertyRequest;
+import com.se100.bds.dtos.requests.property.UpdatePropertyStatusRequest;
 import com.se100.bds.dtos.requests.property.CreatePropertyTypeRequest;
 import com.se100.bds.dtos.requests.property.UpdatePropertyTypeRequest;
 import com.se100.bds.dtos.responses.SingleResponse;
@@ -8,7 +11,7 @@ import com.se100.bds.dtos.responses.SuccessResponse;
 import com.se100.bds.dtos.responses.error.DetailedErrorResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
 import com.se100.bds.dtos.responses.property.PropertyTypeResponse;
-import com.se100.bds.mappers.PropertyMapper;
+import com.se100.bds.dtos.responses.property.PropertyDetails;
 import com.se100.bds.services.domains.property.PropertyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +29,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -38,8 +42,75 @@ import static com.se100.bds.utils.Constants.SECURITY_SCHEME_NAME;
 @Tag(name = "006. Properties", description = "Property Listing API")
 @Slf4j
 public class PropertyController extends AbstractBaseController {
-    private final PropertyMapper propertyMapper;
     private final PropertyService propertyService;
+
+    @PreAuthorize("hasAnyRole('ADMIN','PROPERTY_OWNER')")
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Create a new property",
+            description = "Create a property listing. Admin requests publish immediately; property owner submissions enter approval workflow.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<SingleResponse<PropertyDetails>> createProperty(
+            @Parameter(description = "Property payload in JSON format", required = true)
+            @Valid @RequestPart("payload") CreatePropertyRequest request,
+            @Parameter(description = "Optional property images")
+            @RequestPart(value = "images", required = false) MultipartFile[] images
+    ) {
+        PropertyDetails propertyDetails = propertyService.createProperty(request, images);
+        return responseFactory.successSingle(propertyDetails, "Property created successfully");
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','PROPERTY_OWNER')")
+    @PutMapping(value = "/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Update an existing property",
+            description = "Update property details. Admin updates keep listings AVAILABLE; owner updates re-enter approval when necessary.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<SingleResponse<PropertyDetails>> updateProperty(
+            @Parameter(description = "Property ID", required = true)
+            @PathVariable UUID propertyId,
+            @Parameter(description = "Updated property payload in JSON format", required = true)
+            @Valid @RequestPart("payload") UpdatePropertyRequest request,
+            @Parameter(description = "Optional new property images")
+            @RequestPart(value = "images", required = false) MultipartFile[] images
+    ) {
+        PropertyDetails propertyDetails = propertyService.updateProperty(propertyId, request, images);
+        return responseFactory.successSingle(propertyDetails, "Property updated successfully");
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','PROPERTY_OWNER')")
+    @PatchMapping("/{propertyId}/status")
+    @Operation(
+            summary = "Update property approval status",
+            description = "Update property status. Admin can manage approval workflow; property owners can toggle availability states they control.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<SingleResponse<PropertyDetails>> updatePropertyStatus(
+            @Parameter(description = "Property ID", required = true)
+            @PathVariable UUID propertyId,
+            @Parameter(description = "Approval status payload", required = true)
+            @Valid @RequestBody UpdatePropertyStatusRequest request
+    ) {
+        PropertyDetails propertyDetails = propertyService.updatePropertyStatus(propertyId, request);
+        return responseFactory.successSingle(propertyDetails, "Property status updated successfully");
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{propertyId}")
+    @Operation(
+            summary = "Soft delete a property",
+            description = "Admin soft deletes a property by marking it as DELETED.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<SingleResponse<Void>> deleteProperty(
+            @Parameter(description = "Property ID", required = true)
+            @PathVariable UUID propertyId
+    ) {
+        propertyService.deleteProperty(propertyId);
+        return responseFactory.successSingle(null, "Property deleted successfully");
+    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{propertyId}/assign-agent/{agentId}")

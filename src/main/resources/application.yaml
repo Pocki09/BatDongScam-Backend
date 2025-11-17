@@ -95,9 +95,7 @@ payos:
   client-id: ${PAYOS_CLIENT_ID}
   api-key: ${PAYOS_API_KEY}
   checksum-key: ${PAYOS_CHECKSUM_KEY}
-  webhook-url: ${PAYOS_WEBHOOK_URL:}
   log-level: ${PAYOS_LOG_LEVEL:NONE}
-  payout-client-id: ${PAYOS_PAYOUT_CLIENT_ID}
-  payout-api-key: ${PAYOS_PAYOUT_API_KEY}
-  payout-checksum-key: ${PAYOS_PAYOUT_CHECKSUM_KEY}
-  payout-log-level: ${PAYOS_PAYOUT_LOG_LEVEL:NONE}
+  webhook-url: ${PAYOS_WEBHOOK_URL}
+  return-url: ${PAYOS_RETURN_URL}
+  cancel-url: ${PAYOS_CANCEL_URL}

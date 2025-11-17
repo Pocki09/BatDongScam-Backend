@@ -21,6 +21,7 @@ public class PropertyDetails extends AbstractBaseDataResponse {
     private SimpleUserResponse owner;
     private SimpleUserResponse assignedAgent;
     private BigDecimal serviceFeeAmount;
+    private BigDecimal serviceFeeCollectedAmount;
     private UUID propertyTypeId;
     private String propertyTypeName;
     private UUID wardId;

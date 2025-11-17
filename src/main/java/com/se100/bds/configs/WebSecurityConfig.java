@@ -44,6 +44,7 @@ public class WebSecurityConfig {
                                 "/api-docs/**",
                                 "/swagger-ui/**",
                                 "/webjars/**",
+                                "/webhooks/**",
                                 "/ws/**",
                                 "/debug/**",
                                 "/bookings/payment/**"

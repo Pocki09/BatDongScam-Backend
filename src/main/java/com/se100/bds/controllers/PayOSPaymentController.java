@@ -14,10 +14,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
@@ -65,9 +65,10 @@ public class PayOSPaymentController extends AbstractBaseController {
         return responseFactory.successSingle(resp, "Created PayOS contract checkout link successfully");
     }
 
-    @PostMapping("/properties/{propertyId}/listing-fee")
+    @PostMapping("/properties/{propertyId}/service-fee")
+    @PreAuthorize("hasAnyRole('PROPERTY_OWNER','ADMIN')")
     @Operation(
-        summary = "Create PayOS checkout link for property listing fee",
+        summary = "Create PayOS checkout link for property service fee",
         responses = {
             @ApiResponse(
                 responseCode = "200",
@@ -95,20 +96,62 @@ public class PayOSPaymentController extends AbstractBaseController {
             )
         }
     )
-    public ResponseEntity<SingleResponse<CreatePaymentLinkResponse>> createPropertyListingFee(
+    public ResponseEntity<SingleResponse<CreatePaymentLinkResponse>> createPropertyServiceFee(
         @PathVariable UUID propertyId,
-        @RequestParam(required = false) BigDecimal amount,
         @RequestParam(required = false) String description,
         @RequestParam(required = false) String returnUrl,
         @RequestParam(required = false) String cancelUrl
     ) {
-        CreatePaymentLinkResponse response = payOSService.createPropertyListingPaymentLink(
+        CreatePaymentLinkResponse response = payOSService.createPropertyServicePaymentLink(
             propertyId,
-            amount,
             description,
             returnUrl,
             cancelUrl
         );
         return responseFactory.successSingle(response, "Created PayOS listing fee checkout link successfully");
+    }
+
+    @PostMapping("/properties")
+    @PreAuthorize("hasAnyRole('PROPERTY_OWNER','ADMIN')")
+    public ResponseEntity<SingleResponse<CreatePaymentLinkResponse>> createPropertyServiceFeeMissingId() {
+        return responseFactory.failedSingle(null, "Property id is required in the URL: POST /api/payments/properties/{propertyId}/service-fee");
+    }
+
+    @PostMapping("/contracts/{contractId}/cancellation-refund")
+    @PreAuthorize("hasAnyRole('PROPERTY_OWNER','ADMIN')")
+    @Operation(
+        summary = "Create PayOS checkout link for contract cancellation refund settlement",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "Checkout link generated",
+                content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = SingleResponse.class)
+                )
+            ),
+            @ApiResponse(
+                responseCode = "400",
+                description = "Bad request",
+                content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class)
+                )
+            ),
+            @ApiResponse(
+                responseCode = "401",
+                description = "Unauthorized",
+                content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = ErrorResponse.class)
+                )
+            )
+        }
+    )
+    public ResponseEntity<SingleResponse<CreatePaymentLinkResponse>> createCancellationRefundSettlement(
+            @PathVariable UUID contractId
+    ) {
+        CreatePaymentLinkResponse response = payOSService.createCancellationRefundCollectionLink(contractId);
+        return responseFactory.successSingle(response, "Created PayOS cancellation refund checkout link successfully");
     }
 }

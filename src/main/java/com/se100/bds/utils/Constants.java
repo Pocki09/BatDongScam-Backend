@@ -2,8 +2,8 @@ package com.se100.bds.utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.stream.Stream;
 
 public final class Constants {
@@ -12,6 +12,8 @@ public final class Constants {
     public static final String TOKEN_HEADER = "Authorization";
 
     public static final String TOKEN_TYPE = "Bearer";
+
+    public static final BigDecimal DEFAULT_PROPERTY_COMMISSION_RATE = new BigDecimal("0.05");
 
     @Getter
     @AllArgsConstructor

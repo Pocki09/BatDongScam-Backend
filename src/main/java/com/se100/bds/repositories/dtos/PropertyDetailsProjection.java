@@ -29,6 +29,7 @@ public record PropertyDetailsProjection(
 
     // Property info
     BigDecimal serviceFeeAmount,
+    BigDecimal serviceFeeCollectedAmount,
     UUID propertyTypeId,
     String propertyTypeName,
     UUID wardId,

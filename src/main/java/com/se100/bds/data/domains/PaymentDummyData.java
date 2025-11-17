@@ -43,6 +43,8 @@ public class PaymentDummyData {
             // Create deposit payment
             Payment deposit = Payment.builder()
                     .contract(contract)
+                    .property(contract.getProperty())
+                    .saleAgent(contract.getAgent())
                     .paymentType(Constants.PaymentTypeEnum.DEPOSIT)
                     .amount(contract.getDepositAmount())
                     .dueDate(contract.getStartDate())
@@ -66,6 +68,8 @@ public class PaymentDummyData {
 
                     Payment installment = Payment.builder()
                             .contract(contract)
+                            .property(contract.getProperty())
+                            .saleAgent(contract.getAgent())
                             .paymentType(Constants.PaymentTypeEnum.MONTHLY)
                             .amount(contract.getRemainingAmount().divide(BigDecimal.valueOf(months), 2, BigDecimal.ROUND_HALF_UP))
                             .dueDate(dueDate)
@@ -83,6 +87,8 @@ public class PaymentDummyData {
                 // Create full payment
                 Payment fullPay = Payment.builder()
                         .contract(contract)
+                        .property(contract.getProperty())
+                        .saleAgent(contract.getAgent())
                         .paymentType(Constants.PaymentTypeEnum.FULL_PAY)
                         .amount(contract.getRemainingAmount())
                         .dueDate(contract.getStartDate().plusDays(30))
