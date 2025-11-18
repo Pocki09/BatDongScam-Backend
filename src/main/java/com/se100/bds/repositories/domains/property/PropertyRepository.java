@@ -137,6 +137,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
             u2.createdAt AS agentCreatedAt,
             u2.updatedAt AS agentUpdatedAt,
             p.serviceFeeAmount AS serviceFeeAmount,
+            p.serviceFeeCollectedAmount AS serviceFeeCollectedAmount,
             pt.id AS propertyTypeId,
             pt.typeName AS propertyTypeName,
             w.id AS wardId,

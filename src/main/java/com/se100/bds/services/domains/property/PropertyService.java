@@ -2,6 +2,9 @@ package com.se100.bds.services.domains.property;
 
 import com.se100.bds.dtos.requests.property.CreatePropertyTypeRequest;
 import com.se100.bds.dtos.requests.property.UpdatePropertyTypeRequest;
+import com.se100.bds.dtos.requests.property.CreatePropertyRequest;
+import com.se100.bds.dtos.requests.property.UpdatePropertyRequest;
+import com.se100.bds.dtos.requests.property.UpdatePropertyStatusRequest;
 import com.se100.bds.dtos.responses.property.PropertyDetails;
 import com.se100.bds.dtos.responses.property.PropertyTypeResponse;
 import com.se100.bds.dtos.responses.property.SimplePropertyCard;
@@ -11,6 +14,7 @@ import com.se100.bds.services.dtos.results.PropertyCard;
 import com.se100.bds.utils.Constants;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -31,6 +35,10 @@ public interface PropertyService {
     Page<PropertyType> getAllTypes(Pageable pageable);
     PropertyDetails getPropertyDetailsById(UUID propertyId);
     List<Property> getAllByUserIdAndStatus(UUID ownerId, UUID customerId, UUID salesAgentId, List<Constants.PropertyStatusEnum> statuses);
+    PropertyDetails createProperty(CreatePropertyRequest request, MultipartFile[] mediaFiles);
+    PropertyDetails updateProperty(UUID propertyId, UpdatePropertyRequest request, MultipartFile[] mediaFiles);
+    PropertyDetails updatePropertyStatus(UUID propertyId, UpdatePropertyStatusRequest request);
+    void deleteProperty(UUID propertyId);
     void assignAgentToProperty(UUID agentId, UUID propertyId);
 
     // PropertyType CRUD operations

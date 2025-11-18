@@ -325,6 +325,7 @@ public class PropertyMapper extends BaseMapper {
                         .updatedAt(projection.agentUpdatedAt())
                         .build() : null)
                 .serviceFeeAmount(projection.serviceFeeAmount())
+                .serviceFeeCollectedAmount(projection.serviceFeeCollectedAmount())
                 .propertyTypeId(projection.propertyTypeId())
                 .propertyTypeName(projection.propertyTypeName())
                 .wardId(projection.wardId())

@@ -42,6 +42,9 @@ spring:
       host: ${MONGODB_HOST}
       port: ${MONGODB_PORT}
       database: ${MONGODB_DB}
+      username: ${MONGODB_USER}
+      password: ${MONGODB_PASSWORD}
+      authentication-database: ${MONGODB_AUTH_DB:admin}
     web:
       pageable:
         default-page-size: ${PAGEABLE_DEFAULT_PAGE_SIZE}
@@ -87,3 +90,12 @@ paypal:
   client-id: ${CLIENT_ID}
   client-secret: ${SECRET_KEY}
   mode: ${PAYPAL_MODE}
+
+payos:
+  client-id: ${PAYOS_CLIENT_ID}
+  api-key: ${PAYOS_API_KEY}
+  checksum-key: ${PAYOS_CHECKSUM_KEY}
+  log-level: ${PAYOS_LOG_LEVEL:NONE}
+  webhook-url: ${PAYOS_WEBHOOK_URL}
+  return-url: ${PAYOS_RETURN_URL}
+  cancel-url: ${PAYOS_CANCEL_URL}
