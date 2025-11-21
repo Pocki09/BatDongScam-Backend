@@ -14,8 +14,11 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.se100.bds.services.domains.ranking.utils.RankingUtil;
 
 @Service
 @Slf4j
@@ -55,11 +58,90 @@ public class PropertyOwnerRankingScheduler {
     }
 
     private void updatePointMonth(IndividualPropertyOwnerContributionMonth individualPropertyOwnerContributionMonth) {
+        // Get previous month data for ExtraPoint
+        LocalDateTime previousMonthTime = RankingUtil.getPreviousMonth(
+                individualPropertyOwnerContributionMonth.getMonth(),
+                individualPropertyOwnerContributionMonth.getYear()
+        );
+        IndividualPropertyOwnerContributionMonth previousMonthData = individualPropertyOwnerContributionMonthRepository.findByOwnerIdAndMonthAndYear(
+                individualPropertyOwnerContributionMonth.getOwnerId(),
+                previousMonthTime.getMonthValue(), previousMonthTime.getYear()
+        );
+        int extraPoint = 0;
+        if (previousMonthData != null) {
+            extraPoint = RankingUtil.getExtraPoint(previousMonthData.getContributionTier().getValue());
+        }
 
+        // Calculate avg_transaction_benchmark and avg_revenue_benchmark
+        List<IndividualPropertyOwnerContributionMonth> allMonthData = individualPropertyOwnerContributionMonthRepository.findAll().stream()
+                .filter(m -> m.getMonth().equals(individualPropertyOwnerContributionMonth.getMonth()) && m.getYear().equals(individualPropertyOwnerContributionMonth.getYear()))
+                .collect(Collectors.toList());
+
+        int totalTransactions = allMonthData.stream()
+                .mapToInt(m -> m.getMonthTotalPropertiesSold() + (m.getMonthTotalForRents() != null ? m.getMonthTotalForRents() : 0))
+                .sum();
+        int totalOwners = allMonthData.size();
+        double avgTransactionBenchmark = totalOwners > 0 ? (double) totalTransactions / totalOwners : 0;
+
+        BigDecimal totalRevenue = allMonthData.stream()
+                .map(IndividualPropertyOwnerContributionMonth::getMonthContributionValue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal avgRevenueBenchmark = totalOwners > 0 ? totalRevenue.divide(BigDecimal.valueOf(totalOwners), 2, BigDecimal.ROUND_HALF_UP) : BigDecimal.ZERO;
+
+        // Calculate scores
+        double propertyUtilizationScore = individualPropertyOwnerContributionMonth.getMonthTotalProperties() > 0 ?
+                ((double) (individualPropertyOwnerContributionMonth.getMonthTotalPropertiesSold() + individualPropertyOwnerContributionMonth.getMonthTotalForRents()) /
+                individualPropertyOwnerContributionMonth.getMonthTotalProperties() * 100) : 0;
+
+        double transactionSuccessScore = avgTransactionBenchmark > 0 ?
+                ((double) (individualPropertyOwnerContributionMonth.getMonthTotalPropertiesSold() + individualPropertyOwnerContributionMonth.getMonthTotalForRents()) /
+                avgTransactionBenchmark * 100) : 0;
+
+        BigDecimal revenueScore = avgRevenueBenchmark.compareTo(BigDecimal.ZERO) > 0 ?
+                individualPropertyOwnerContributionMonth.getMonthContributionValue().divide(avgRevenueBenchmark, 2, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+        revenueScore = revenueScore.min(BigDecimal.valueOf(150));
+
+        // Calculate contribution_point
+        double contributionPointDouble = (0.4 * propertyUtilizationScore) + (0.3 * transactionSuccessScore) + (0.3 * revenueScore.doubleValue()) + extraPoint;
+        int contributionPoint = (int) contributionPointDouble;
+
+        // Set contribution_point and tier
+        individualPropertyOwnerContributionMonth.setContributionPoint(contributionPoint);
+        Constants.ContributionTierEnum newTier = Constants.ContributionTierEnum.get(RankingUtil.getCustomerTier(contributionPoint));
+        individualPropertyOwnerContributionMonth.setContributionTier(newTier);
     }
 
     private void updatePointAll(IndividualPropertyOwnerContributionAll individualPropertyOwnerContributionAll) {
+        int month = LocalDate.now().getMonthValue();
+        int year = LocalDate.now().getYear();
 
+        IndividualPropertyOwnerContributionMonth currentMonthData = individualPropertyOwnerContributionMonthRepository.findByOwnerIdAndMonthAndYear(
+                individualPropertyOwnerContributionAll.getOwnerId(),
+                month, year
+        );
+
+        if (currentMonthData != null) {
+            individualPropertyOwnerContributionAll.setContributionPoint(
+                    individualPropertyOwnerContributionAll.getContributionPoint() +
+                            currentMonthData.getContributionPoint());
+            individualPropertyOwnerContributionAll.setContributionValue(
+                    individualPropertyOwnerContributionAll.getContributionValue().add(
+                            currentMonthData.getMonthContributionValue()
+                    )
+            );
+            individualPropertyOwnerContributionAll.setTotalProperties(
+                    individualPropertyOwnerContributionAll.getTotalProperties() +
+                            currentMonthData.getMonthTotalProperties()
+            );
+            individualPropertyOwnerContributionAll.setTotalPropertiesSold(
+                    individualPropertyOwnerContributionAll.getTotalPropertiesSold() +
+                            currentMonthData.getMonthTotalForSales()
+            );
+            individualPropertyOwnerContributionAll.setTotalPropertiesRented(
+                    individualPropertyOwnerContributionAll.getTotalPropertiesRented() +
+                            currentMonthData.getMonthTotalForRents()
+            );
+        }
     }
 
     private void calculateRankingPosition() {

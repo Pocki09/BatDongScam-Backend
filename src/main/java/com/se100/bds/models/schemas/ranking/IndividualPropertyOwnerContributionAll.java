@@ -2,6 +2,7 @@ package com.se100.bds.models.schemas.ranking;
 
 import com.se100.bds.models.schemas.AbstractBaseMongoSchema;
 import lombok.*;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -16,6 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class IndividualPropertyOwnerContributionAll extends AbstractBaseMongoSchema {
     @Field("owner_id")
+    @Indexed(unique = true)
     private UUID ownerId;
 
     @Field("contribution_point")

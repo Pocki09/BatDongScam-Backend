@@ -409,7 +409,7 @@ public class RankingDummyData {
 
         rankings.sort((a, b) -> b.getLeadScore().compareTo(a.getLeadScore()));
         for (int i = 0; i < rankings.size(); i++) {
-            rankings.get(i).setLeadPosition(String.valueOf(i + 1));
+            rankings.get(i).setLeadPosition(i + 1);
         }
 
         customerPotentialAllRepository.saveAll(rankings);

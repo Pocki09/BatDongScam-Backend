@@ -7,6 +7,7 @@ import com.se100.bds.repositories.domains.mongo.ranking.IndividualCustomerPotent
 import com.se100.bds.repositories.domains.mongo.ranking.IndividualCustomerPotentialMonthRepository;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.utils.Constants;
+import com.se100.bds.services.domains.ranking.utils.RankingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,7 +28,7 @@ public class CustomerRankingScheduler {
     private final UserService userService;
 
     // Run every day at 00:00 AM (midnight)
-    @Scheduled(cron = "0 0 0 * * ?")
+     @Scheduled(cron = "0 0 0 * * ?")
     private void calculateRanking() {
         createIfNotExist();
 
@@ -55,11 +57,94 @@ public class CustomerRankingScheduler {
     }
     
     private void updatePointMonth(IndividualCustomerPotentialMonth individualCustomerPotentialMonth) {
+        // Get previous month data for ExtraPoint
+        LocalDateTime previousMonthTime = RankingUtil.getPreviousMonth(
+                individualCustomerPotentialMonth.getMonth(),
+                individualCustomerPotentialMonth.getYear()
+        );
+        IndividualCustomerPotentialMonth previousMonthData = individualCustomerPotentialMonthRepository.findByCustomerIdAndMonthAndYear(
+                individualCustomerPotentialMonth.getCustomerId(),
+                previousMonthTime.getMonthValue(), previousMonthTime.getYear()
+        );
+        int extraPoint = 0;
+        if (previousMonthData != null) {
+            extraPoint = RankingUtil.getExtraPoint(previousMonthData.getCustomerTier().getValue());
+        }
 
+        // Calculate avg_spending_benchmark
+        List<IndividualCustomerPotentialMonth> allMonthData = individualCustomerPotentialMonthRepository.findAll().stream()
+                .filter(m -> m.getMonth().equals(individualCustomerPotentialMonth.getMonth()) && m.getYear().equals(individualCustomerPotentialMonth.getYear()))
+                .collect(Collectors.toList());
+        BigDecimal totalSpending = allMonthData.stream()
+                .map(IndividualCustomerPotentialMonth::getMonthSpending)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        int totalCustomers = allMonthData.size();
+        BigDecimal avgSpendingBenchmark = totalCustomers > 0 ? totalSpending.divide(BigDecimal.valueOf(totalCustomers), 2, BigDecimal.ROUND_HALF_UP) : BigDecimal.ZERO;
+
+        // Calculate scores
+        int viewingAttendedScore = individualCustomerPotentialMonth.getMonthViewingsRequested() > 0 ?
+                (int) ((double) individualCustomerPotentialMonth.getMonthViewingAttended() / individualCustomerPotentialMonth.getMonthViewingsRequested() * 100) : 0;
+
+        int totalContractsSigned = individualCustomerPotentialMonth.getMonthPurchases() + individualCustomerPotentialMonth.getMonthRentals();
+
+        int conversionScore = individualCustomerPotentialMonth.getMonthViewingAttended() > 0 ?
+                (int) ((double) totalContractsSigned / individualCustomerPotentialMonth.getMonthViewingAttended() * 100) : 0;
+
+        BigDecimal spendingScore = avgSpendingBenchmark.compareTo(BigDecimal.ZERO) > 0 ?
+                individualCustomerPotentialMonth.getMonthSpending().divide(avgSpendingBenchmark, 2, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+        spendingScore = spendingScore.min(BigDecimal.valueOf(150));
+
+        int contractScore = Math.min(totalContractsSigned * 25, 100);
+
+        // Calculate lead_score
+        double leadScoreDouble = (0.2 * viewingAttendedScore) + (0.2 * conversionScore) + (0.4 * spendingScore.doubleValue()) + (0.2 * contractScore) + extraPoint;
+        int leadScore = (int) leadScoreDouble;
+
+        // Set lead_score and tier
+        individualCustomerPotentialMonth.setLeadScore(leadScore);
+        Constants.CustomerTierEnum newTier = Constants.CustomerTierEnum.get(RankingUtil.getCustomerTier(leadScore));
+        individualCustomerPotentialMonth.setCustomerTier(newTier);
     }
-    
-    private void updatePointAll(IndividualCustomerPotentialAll individualCustomerPotentialAll) {
 
+    private void updatePointAll(IndividualCustomerPotentialAll individualCustomerPotentialAll) {
+        int month = LocalDate.now().getMonthValue();
+        int year = LocalDate.now().getYear();
+
+        IndividualCustomerPotentialMonth currentMonthData = individualCustomerPotentialMonthRepository.findByCustomerIdAndMonthAndYear(
+                individualCustomerPotentialAll.getCustomerId(),
+                month, year
+        );
+
+        if (currentMonthData != null) {
+            individualCustomerPotentialAll.setLeadScore(
+                    individualCustomerPotentialAll.getLeadScore() +
+                    currentMonthData.getLeadScore());
+            individualCustomerPotentialAll.setViewingsRequested(
+                    individualCustomerPotentialAll.getViewingsRequested() +
+                    currentMonthData.getMonthViewingsRequested()
+            );
+            individualCustomerPotentialAll.setViewingsAttended(
+                    individualCustomerPotentialAll.getViewingsAttended() +
+                    currentMonthData.getMonthViewingAttended()
+            );
+            individualCustomerPotentialAll.setSpending(
+                    individualCustomerPotentialAll.getSpending().add(
+                            currentMonthData.getMonthSpending()
+                    )
+            );
+            individualCustomerPotentialAll.setTotalPurchases(
+                    individualCustomerPotentialAll.getTotalPurchases() +
+                    currentMonthData.getMonthPurchases()
+            );
+            individualCustomerPotentialAll.setTotalRentals(
+                    individualCustomerPotentialAll.getTotalRentals() +
+                    currentMonthData.getMonthRentals()
+            );
+            individualCustomerPotentialAll.setTotalContractsSigned(
+                    individualCustomerPotentialAll.getTotalContractsSigned() +
+                    currentMonthData.getMonthPurchases() + currentMonthData.getMonthRentals() // assuming contracts signed = purchases + rentals
+            );
+        }
     }
     
     private void calculateRankingPosition() {

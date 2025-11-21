@@ -1,5 +1,6 @@
 package com.se100.bds.services.domains.ranking.utils;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public final class RankingUtil {
@@ -23,5 +24,13 @@ public final class RankingUtil {
             return 5;
         else
             return 0;
+    }
+
+    public static LocalDateTime getPreviousMonth(int month, int year) {
+        if (month == 1) {
+            month = 12;
+            year--;
+        }
+        return LocalDateTime.of(year, month, 1, 0, 0, 0);
     }
 }

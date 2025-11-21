@@ -5,6 +5,7 @@ import com.se100.bds.models.schemas.ranking.IndividualSalesAgentPerformanceCaree
 import com.se100.bds.models.schemas.ranking.IndividualSalesAgentPerformanceMonth;
 import com.se100.bds.repositories.domains.mongo.ranking.IndividualSalesAgentPerformanceCareerRepository;
 import com.se100.bds.repositories.domains.mongo.ranking.IndividualSalesAgentPerformanceMonthRepository;
+import com.se100.bds.services.domains.ranking.utils.RankingUtil;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,11 +57,88 @@ public class SaleAgentRankingScheduler {
     }
 
     private void updatePointMonth(IndividualSalesAgentPerformanceMonth individualSalesAgentPerformanceMonth) {
+        int conversionScore = (individualSalesAgentPerformanceMonth.getMonthContracts() / individualSalesAgentPerformanceMonth.getMonthAppointmentsCompleted()) * 100;
+        int completionScore = (individualSalesAgentPerformanceMonth.getMonthAppointmentsCompleted() / individualSalesAgentPerformanceMonth.getMonthAppointmentsAssigned()) * 100;
+        int satisfactionScore = individualSalesAgentPerformanceMonth.getMonthCustomerSatisfactionAvg().intValue();
 
+        LocalDateTime previousMonthTime = RankingUtil.getPreviousMonth(
+                individualSalesAgentPerformanceMonth.getMonth(),
+                individualSalesAgentPerformanceMonth.getYear()
+        );
+        IndividualSalesAgentPerformanceMonth previousMonthDataRanking = individualSalesAgentPerformanceMonthRepository.findByAgentIdAndMonthAndYear(
+                individualSalesAgentPerformanceMonth.getAgentId(),
+                previousMonthTime.getMonthValue(), previousMonthTime.getYear()
+        );
+        int extraPoint = 0;
+        if (previousMonthDataRanking != null) {
+            extraPoint = RankingUtil.getExtraPoint(previousMonthDataRanking.getPerformanceTier().getValue());
+        }
+
+        int newPerformancePoint = (int) ((
+                0.4 * conversionScore +
+                0.3 * completionScore +
+                0.3 * satisfactionScore
+        ) + extraPoint);
+
+        Constants.PerformanceTierEnum newPerformanceTier = Constants.PerformanceTierEnum.get(
+                RankingUtil.getCustomerTier(newPerformancePoint)
+        );
+
+        individualSalesAgentPerformanceMonth.setPerformancePoint(newPerformancePoint);
+        individualSalesAgentPerformanceMonth.setPerformanceTier(newPerformanceTier);
     }
 
     private void updatePointAll(IndividualSalesAgentPerformanceCareer individualSalesAgentPerformanceCareer) {
+        int month = LocalDate.now().getMonthValue();
+        int year = LocalDate.now().getYear();
 
+        IndividualSalesAgentPerformanceMonth currentMonthData = individualSalesAgentPerformanceMonthRepository.findByAgentIdAndMonthAndYear(
+                individualSalesAgentPerformanceCareer.getAgentId(),
+                month, year
+        );
+
+        if (currentMonthData != null) {
+            individualSalesAgentPerformanceCareer.setPerformancePoint(
+                    individualSalesAgentPerformanceCareer.getPerformancePoint() +
+                    currentMonthData.getPerformancePoint());
+            individualSalesAgentPerformanceCareer.setPropertiesAssigned(
+                    individualSalesAgentPerformanceCareer.getPropertiesAssigned() +
+                    currentMonthData.getMonthPropertiesAssigned()
+            );
+            individualSalesAgentPerformanceCareer.setAppointmentAssigned(
+                    individualSalesAgentPerformanceCareer.getAppointmentAssigned() +
+                    currentMonthData.getMonthAppointmentsAssigned()
+            );
+            individualSalesAgentPerformanceCareer.setAppointmentCompleted(
+                    individualSalesAgentPerformanceCareer.getAppointmentCompleted() +
+                    currentMonthData.getMonthAppointmentsCompleted()
+            );
+            individualSalesAgentPerformanceCareer.setTotalContracts(
+                    individualSalesAgentPerformanceCareer.getTotalContracts() +
+                    currentMonthData.getMonthContracts()
+            );
+            individualSalesAgentPerformanceCareer.setTotalRates(
+                    individualSalesAgentPerformanceCareer.getTotalRates() +
+                    currentMonthData.getMonthRates()
+            );
+
+            // Calculate average rating and customer satisfaction
+            Long monthCount = individualSalesAgentPerformanceMonthRepository.countByAgentId(individualSalesAgentPerformanceCareer.getAgentId());
+
+            if (monthCount > 0) {
+                BigDecimal newAvgRating = (individualSalesAgentPerformanceCareer.getAvgRating()
+                        .multiply(BigDecimal.valueOf(monthCount - 1))
+                        .add(currentMonthData.getAvgRating()))
+                        .divide(BigDecimal.valueOf(monthCount), 2, BigDecimal.ROUND_HALF_UP);
+                individualSalesAgentPerformanceCareer.setAvgRating(newAvgRating);
+
+                BigDecimal newCustomerSatisfactionAvg = (individualSalesAgentPerformanceCareer.getCustomerSatisfactionAvg()
+                        .multiply(BigDecimal.valueOf(monthCount - 1))
+                        .add(currentMonthData.getMonthCustomerSatisfactionAvg()))
+                        .divide(BigDecimal.valueOf(monthCount), 2, BigDecimal.ROUND_HALF_UP);
+                individualSalesAgentPerformanceCareer.setCustomerSatisfactionAvg(newCustomerSatisfactionAvg);
+            }
+        }
     }
 
     private void calculateRankingPosition() {

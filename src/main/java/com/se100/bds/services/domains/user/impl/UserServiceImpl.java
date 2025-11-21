@@ -1076,7 +1076,7 @@ public class UserServiceImpl implements UserService {
                 // leadPosition is String in All schema, need to parse it
                 Integer ranking = null;
                 try {
-                    ranking = Integer.parseInt(customerPotentialAll.getLeadPosition());
+                    ranking = customerPotentialAll.getLeadPosition();
                 } catch (NumberFormatException e) {
                     // If parsing fails, skip ranking filter
                 }
