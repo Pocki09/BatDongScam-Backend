@@ -3,9 +3,12 @@ package com.se100.bds.services.domains.ranking.impl;
 import com.se100.bds.models.schemas.ranking.*;
 import com.se100.bds.repositories.domains.mongo.ranking.*;
 import com.se100.bds.services.domains.ranking.RankingService;
+import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +24,7 @@ public class RankingServiceImpl implements RankingService {
     private final IndividualSalesAgentPerformanceMonthRepository individualSalesAgentPerformanceMonthRepository;
     private final IndividualPropertyOwnerContributionAllRepository individualPropertyOwnerContributionAllRepository;
     private final IndividualPropertyOwnerContributionMonthRepository individualPropertyOwnerContributionMonthRepository;
+    private final UserService userService;
 
     @Override
     public String getTier(UUID userId, Constants.RoleEnum role, int month, int year) {
@@ -67,6 +71,16 @@ public class RankingServiceImpl implements RankingService {
         return individualSalesAgentPerformanceMonthRepository.findByAgentIdAndMonthAndYear(
                 agentId, month, year
         );
+    }
+
+    @Override
+    public IndividualSalesAgentPerformanceMonth getMySaleAgentMonth(int month, int year) {
+        return getSaleAgentMonth(userService.getUserId(), month, year);
+    }
+
+    @Override
+    public Page<IndividualSalesAgentPerformanceMonth> getSaleAgentMonths(Pageable pageable) {
+        return null;
     }
 
     @Override

@@ -3,6 +3,8 @@ package com.se100.bds.models.schemas.ranking;
 import com.se100.bds.models.schemas.AbstractBaseMongoSchema;
 import com.se100.bds.utils.Constants;
 import lombok.*;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -10,6 +12,9 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Document(collection = "individual_sales_agent_performance_month")
+@CompoundIndexes({
+        @CompoundIndex(name = "agent_month_year_idx", def = "{'agent_id': 1, 'month': 1, 'year': 1}", unique = true)
+})
 @Builder
 @Getter
 @Setter

@@ -58,10 +58,8 @@ import org.springframework.validation.FieldError;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -88,7 +86,7 @@ public class UserServiceImpl implements UserService {
             UserMapper userMapper,
             @Lazy PropertyService propertyService,
             @Lazy AppointmentService appointmentService,
-            RankingService rankingService,
+            @Lazy RankingService rankingService,
             CloudinaryService cloudinaryService,
             WardRepository wardRepository
     ) {
@@ -918,7 +916,19 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        return new PageImpl<>(agentListItemList);
+        agentListItemList = agentListItemList.stream()
+                .sorted(Comparator.comparing(
+                        SaleAgentListItem::getPoint,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ))
+                .toList();
+
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), agentListItemList.size());
+        List<SaleAgentListItem> pageContent = agentListItemList.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, agentListItemList.size());
     }
 
     @Override
@@ -1159,7 +1169,16 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        return new PageImpl<>(customerListItemList);
+        customerListItemList = customerListItemList.stream()
+                .sorted(Comparator.comparing(CustomerListItem::getPoint, Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), customerListItemList.size());
+        List<CustomerListItem> pageContent = customerListItemList.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, customerListItemList.size());
     }
 
     @Override
@@ -1361,7 +1380,16 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        return new PageImpl<>(ownerListItemList);
+        // sort asc by point
+        ownerListItemList = ownerListItemList.stream()
+                .sorted(Comparator.comparing(PropertyOwnerListItem::getPoint, Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), ownerListItemList.size());
+        List<PropertyOwnerListItem> pageContent = ownerListItemList.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, ownerListItemList.size());
     }
 
     @Override
@@ -1472,12 +1500,16 @@ public class UserServiceImpl implements UserService {
             freeAgentList.add(freeAgentListItem);
         }
 
-        // Apply pagination
+        // sort asc by point
+        freeAgentList = freeAgentList.stream()
+                .sorted(Comparator.comparing(FreeAgentListItem::getRanking, Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), freeAgentList.size());
-        List<FreeAgentListItem> pagedList = freeAgentList.subList(start, end);
+        List<FreeAgentListItem> pageContent = freeAgentList.subList(start, end);
 
-        return new PageImpl<>(pagedList, pageable, freeAgentList.size());
+        return new PageImpl<>(pageContent, pageable, freeAgentList.size());
     }
 
     @Override
