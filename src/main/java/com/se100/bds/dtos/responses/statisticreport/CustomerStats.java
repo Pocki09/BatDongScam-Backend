@@ -1,5 +1,6 @@
 package com.se100.bds.dtos.responses.statisticreport;
 
+import com.se100.bds.utils.Constants;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,5 +17,5 @@ public class CustomerStats {
     Map<Integer, Integer> totalCustomers;
     Map<Integer, BigDecimal> totalSpending;
     Map<Integer, BigDecimal> avgSpendingPerCustomer;
-    Map<Integer, String> tierDistribution;
+    Map<Constants.CustomerTierEnum, Map<Integer, Double>> tierDistribution;
 }

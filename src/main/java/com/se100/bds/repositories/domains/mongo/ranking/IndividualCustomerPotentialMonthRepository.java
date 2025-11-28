@@ -20,8 +20,7 @@ public interface IndividualCustomerPotentialMonthRepository extends MongoReposit
     IndividualCustomerPotentialMonth findByCustomerIdAndMonthAndYear(UUID customerId, Integer month, Integer year);
 
     /**
-     * Find all customer potential records for a specific month and year
+     * Find all customer potential records by month and year
      */
-    List<IndividualCustomerPotentialMonth> findByMonthAndYear(Integer month, Integer year);
+    List<IndividualCustomerPotentialMonth> findAllByMonthAndYear(Integer month, Integer year);
 }
-

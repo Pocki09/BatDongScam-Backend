@@ -12,6 +12,7 @@ import com.se100.bds.repositories.domains.user.CustomerRepository;
 import com.se100.bds.repositories.domains.user.PropertyOwnerRepository;
 import com.se100.bds.repositories.domains.user.SaleAgentRepository;
 import com.se100.bds.repositories.domains.mongo.ranking.*;
+import com.se100.bds.services.domains.report.scheduler.UserReportScheduler;
 import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -40,6 +42,8 @@ public class RankingDummyData {
     private final IndividualCustomerPotentialMonthRepository customerPotentialMonthRepository;
     private final IndividualCustomerPotentialAllRepository customerPotentialAllRepository;
 
+    private final UserReportScheduler userReportScheduler;
+
     public boolean rankingDataExists() {
         // Check if any ranking data exists
         return ownerContributionMonthRepository.count() > 0
@@ -54,25 +58,40 @@ public class RankingDummyData {
         int currentMonth = LocalDateTime.now().getMonthValue();
         int currentYear = LocalDateTime.now().getYear();
 
-        // Create rankings for the last 6 months
-        for (int i = 0; i < 24; i++) {
-            int month = currentMonth - i;
-            int year = currentYear;
-
-            if (month <= 0) {
-                month += 12;
-                year -= 1;
-            }
-
+        // Create rankings from January 2024 to current month
+        int startYear = 2024;
+        int startMonth = 1;
+        int year = startYear;
+        int month = startMonth;
+        while (year < currentYear || (year == currentYear && month <= currentMonth)) {
             createPropertyOwnerContributionRankings(month, year);
             createSalesAgentPerformanceRankings(month, year);
             createCustomerPotentialRankings(month, year);
+
+            month++;
+            if (month > 12) {
+                month = 1;
+                year++;
+            }
         }
 
         // Create all-time rankings
         createPropertyOwnerContributionAllTimeRankings();
         createSalesAgentPerformanceCareerRankings();
         createCustomerPotentialAllTimeRankings();
+
+        // Initialize data for reports for each month from January 2024 to current month
+        year = startYear;
+        month = startMonth;
+        while (year < currentYear || (year == currentYear && month <= currentMonth)) {
+            userReportScheduler.initData(month, year);
+
+            month++;
+            if (month > 12) {
+                month = 1;
+                year++;
+            }
+        }
 
         log.info("Done creating ranking dummy data");
     }

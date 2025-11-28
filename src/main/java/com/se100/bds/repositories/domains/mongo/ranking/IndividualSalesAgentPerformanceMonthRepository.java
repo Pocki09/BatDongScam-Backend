@@ -25,5 +25,7 @@ public interface IndividualSalesAgentPerformanceMonthRepository extends MongoRep
     List<IndividualSalesAgentPerformanceMonth> findByMonthAndYear(Integer month, Integer year);
 
     Long countByAgentId(UUID agentId);
+
+    List<IndividualSalesAgentPerformanceMonth> findAllByMonthAndYear(Integer month, Integer year);
 }
 

@@ -1,6 +1,8 @@
 package com.se100.bds.data;
 
 import com.se100.bds.data.domains.*;
+import com.se100.bds.services.domains.report.scheduler.UserReportScheduler;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

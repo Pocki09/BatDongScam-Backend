@@ -1,5 +1,6 @@
 package com.se100.bds.dtos.responses.statisticreport;
 
+import com.se100.bds.utils.Constants;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,7 +14,8 @@ import java.util.Map;
 @SuperBuilder
 public class AgentPerformanceStats {
     Map<Integer, Integer> totalAgents;
-    Map<Integer, Double> agentRating;
+    Map<Integer, Integer> totalRates;
+    Map<Integer, Double> avgRating;
     Map<Integer, Double> customerSatisfaction;
-    Map<Integer, String> tierDistribution;
+    Map<Constants.PerformanceTierEnum, Map<Integer, Double>> tierDistribution;
 }

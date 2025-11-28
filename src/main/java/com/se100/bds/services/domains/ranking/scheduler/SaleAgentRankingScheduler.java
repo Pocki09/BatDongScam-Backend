@@ -29,7 +29,7 @@ public class SaleAgentRankingScheduler {
 
     // Run every day at 00:00 AM (midnight)
     @Scheduled(cron = "0 0 0 * * ?")
-    private void calculateRanking() {
+    protected void calculateRanking() {
         createIfNotExist();
 
         calculateRankingMonth();

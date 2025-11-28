@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -41,7 +42,7 @@ public class UserReportScheduler {
 
     // Run at 00:00 AM on the last day of every month
     @Scheduled(cron = "0 0 0 L * ?")
-    private void monthlyGenerator() {
+    protected void monthlyGenerator() {
         int month = LocalDate.now().getMonthValue();
         int year = LocalDate.now().getYear();
 
@@ -50,8 +51,14 @@ public class UserReportScheduler {
         generateCustomerAnalyticsReport(month, year);
     }
 
+    public void initData(int month, int year) {
+        generateAgentPerformanceReport(month, year);
+        generatePropertyOwnerContributionReport(month, year);
+        generateCustomerAnalyticsReport(month, year);
+    }
+
     @Async
-    protected void generateAgentPerformanceReport(int month, int year) {
+    public CompletableFuture<Void> generateAgentPerformanceReport(int month, int year) {
         int newThisMonth = userService.countNewUsersByRoleAndMonthAndYear(Constants.RoleEnum.SALESAGENT, month, year);
         int totalAgents = userService.countNewUsersByRoleAndMonthAndYear(Constants.RoleEnum.SALESAGENT, 0, 0);
 
@@ -108,10 +115,11 @@ public class UserReportScheduler {
         agentPerformanceReportRepository.save(report);
 
         log.info("AgentPerformanceReport created for {}-{}", year, month);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Async
-    protected void generatePropertyOwnerContributionReport(int month, int year) {
+    public CompletableFuture<Void> generatePropertyOwnerContributionReport(int month, int year) {
         int newThisMonth = userService.countNewUsersByRoleAndMonthAndYear(Constants.RoleEnum.PROPERTY_OWNER, month, year);
         int totalOwners = userService.countNewUsersByRoleAndMonthAndYear(Constants.RoleEnum.PROPERTY_OWNER, 0, 0);
 
@@ -152,10 +160,11 @@ public class UserReportScheduler {
         propertyOwnerContributionReportRepository.save(report);
 
         log.info("PropertyOwnerContributionReport created for {}-{}", year, month);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Async
-    protected void generateCustomerAnalyticsReport(int month, int year) {
+    public CompletableFuture<Void> generateCustomerAnalyticsReport(int month, int year) {
         int newThisMonth = userService.countNewUsersByRoleAndMonthAndYear(Constants.RoleEnum.CUSTOMER, month, year);
         int totalCustomers = userService.countNewUsersByRoleAndMonthAndYear(Constants.RoleEnum.CUSTOMER, 0, 0);
 
@@ -225,5 +234,7 @@ public class UserReportScheduler {
         customerAnalyticsReportRepository.save(report);
 
         log.info("CustomerAnalyticsReport created for {}-{}", year, month);
+
+        return CompletableFuture.completedFuture(null);
     }
 }

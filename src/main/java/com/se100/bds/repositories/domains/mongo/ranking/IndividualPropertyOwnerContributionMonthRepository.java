@@ -20,7 +20,7 @@ public interface IndividualPropertyOwnerContributionMonthRepository extends Mong
     IndividualPropertyOwnerContributionMonth findByOwnerIdAndMonthAndYear(UUID ownerId, Integer month, Integer year);
 
     /**
-     * Find all property owner contribution records for a specific month and year
+     * Find all property owner contribution records by month and year
      */
-    List<IndividualPropertyOwnerContributionMonth> findByMonthAndYear(Integer month, Integer year);
+    List<IndividualPropertyOwnerContributionMonth> findAllByMonthAndYear(Integer month, Integer year);
 }

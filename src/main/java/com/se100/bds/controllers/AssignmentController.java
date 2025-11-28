@@ -185,7 +185,7 @@ public class AssignmentController extends AbstractBaseController {
         return responseFactory.successPage(properties, "My assigned properties retrieved successfully");
     }
 
-    @PutMapping("/update-appointment-details/{appointmentId}")
+    @PatchMapping("/update-appointment-details/{appointmentId}")
     @Operation(
             summary = "Agent Update appointment details",
             description = "Update appointment details such as agent notes, viewing outcome, customer interest level, status, and cancellation reason. Only non-null fields will be updated.",
