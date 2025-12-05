@@ -281,6 +281,9 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
     @Query("SELECT COUNT(p) FROM Property p WHERE p.ward.district.city.id = :cityId AND p.status = com.se100.bds.utils.Constants.PropertyStatusEnum.AVAILABLE")
     int countActivePropertiesByCityId(@Param("cityId") UUID cityId);
 
+    @Query("SELECT COUNT(p) FROM Property p WHERE p.propertyType.id = :propertyTypeId")
+    int countByPropertyType_Id(@Param("propertyTypeId") UUID propertyTypeId);
+
     Long countByAssignedAgent_Id(UUID assignedAgentId);
 
     @EntityGraph(attributePaths = {"owner", "owner.user", "assignedAgent", "assignedAgent.user", "mediaList", "ward", "ward.district", "ward.district.city", "propertyType"})

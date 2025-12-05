@@ -99,20 +99,37 @@ public class UserReportScheduler {
         baseReportData.setTitle("Agent Performance Report - " + month + "/" + year);
         baseReportData.setDescription("Monthly sales agent performance analytics");
 
-        // Build and save the report
-        AgentPerformanceReport report = AgentPerformanceReport.builder()
-                .totalAgents(totalAgents)
-                .newThisMonth(newThisMonth)
-                .avgCustomerSatisfaction(avgCustomerSatisfaction)
-                .totalRates(totalRates)
-                .avgRating(avgRating)
-                .build();
+        // Check if report already exists
+        AgentPerformanceReport existingReport = agentPerformanceReportRepository.findByBaseReportData_MonthAndBaseReportData_Year(
+                month, year
+        );
 
-        report.setBaseReportData(baseReportData);
+        AgentPerformanceReport report;
+        if (existingReport != null) {
+            // Update existing report
+            log.info("AgentPerformanceReport for month {} year {} exists. Updating with latest data.", month, year);
+            report = existingReport;
+            report.setTotalAgents(totalAgents);
+            report.setNewThisMonth(newThisMonth);
+            report.setAvgCustomerSatisfaction(avgCustomerSatisfaction);
+            report.setTotalRates(totalRates);
+            report.setAvgRating(avgRating);
+        } else {
+            // Create new report
+            log.info("AgentPerformanceReport for month {} year {} not found. Creating new report.", month, year);
+            report = AgentPerformanceReport.builder()
+                    .totalAgents(totalAgents)
+                    .newThisMonth(newThisMonth)
+                    .avgCustomerSatisfaction(avgCustomerSatisfaction)
+                    .totalRates(totalRates)
+                    .avgRating(avgRating)
+                    .build();
+            report.setBaseReportData(baseReportData);
+        }
 
         agentPerformanceReportRepository.save(report);
 
-        log.info("AgentPerformanceReport created for {}-{}", year, month);
+        log.info("AgentPerformanceReport saved for {}-{}", year, month);
         return CompletableFuture.completedFuture(null);
     }
 
@@ -145,19 +162,35 @@ public class UserReportScheduler {
         baseReportData.setTitle("Property Owner Contribution Report - " + month + "/" + year);
         baseReportData.setDescription("Monthly property owner contribution analytics");
 
-        // Build and save the report
-        PropertyOwnerContributionReport report = PropertyOwnerContributionReport.builder()
-                .totalOwners(totalOwners)
-                .newThisMonth(newThisMonth)
-                .contributionValue(contributionValue)
-                .avgOwnersContributionValue(avgOwnersContributionValue)
-                .build();
+        // Check if report already exists
+        PropertyOwnerContributionReport existingReport = propertyOwnerContributionReportRepository.findByBaseReportData_MonthAndBaseReportData_Year(
+                month, year
+        );
 
-        report.setBaseReportData(baseReportData);
+        PropertyOwnerContributionReport report;
+        if (existingReport != null) {
+            // Update existing report
+            log.info("PropertyOwnerContributionReport for month {} year {} exists. Updating with latest data.", month, year);
+            report = existingReport;
+            report.setTotalOwners(totalOwners);
+            report.setNewThisMonth(newThisMonth);
+            report.setContributionValue(contributionValue);
+            report.setAvgOwnersContributionValue(avgOwnersContributionValue);
+        } else {
+            // Create new report
+            log.info("PropertyOwnerContributionReport for month {} year {} not found. Creating new report.", month, year);
+            report = PropertyOwnerContributionReport.builder()
+                    .totalOwners(totalOwners)
+                    .newThisMonth(newThisMonth)
+                    .contributionValue(contributionValue)
+                    .avgOwnersContributionValue(avgOwnersContributionValue)
+                    .build();
+            report.setBaseReportData(baseReportData);
+        }
 
         propertyOwnerContributionReportRepository.save(report);
 
-        log.info("PropertyOwnerContributionReport created for {}-{}", year, month);
+        log.info("PropertyOwnerContributionReport saved for {}-{}", year, month);
         return CompletableFuture.completedFuture(null);
     }
 
@@ -216,22 +249,41 @@ public class UserReportScheduler {
         baseReportData.setTitle("Customer Analytics Report - " + month + "/" + year);
         baseReportData.setDescription("Monthly customer behavior and satisfaction analytics");
 
-        // Build and save the report
-        CustomerAnalyticsReport report = CustomerAnalyticsReport.builder()
-                .totalCustomers(totalCustomers)
-                .newCustomerAcquiredCurrentMonth(newThisMonth)
-                .avgCustomerTransactionValue(avgCustomerTransactionValue)
-                .highValueCustomerCount(highValueCustomerCount)
-                .customerSatisfactionScore(customerSatisfactionScore)
-                .totalRates(totalRates)
-                .avgRating(avgRating)
-                .build();
+        // Check if report already exists
+        CustomerAnalyticsReport existingReport = customerAnalyticsReportRepository.findByBaseReportData_MonthAndBaseReportData_Year(
+                month, year
+        );
 
-        report.setBaseReportData(baseReportData);
+        CustomerAnalyticsReport report;
+        if (existingReport != null) {
+            // Update existing report
+            log.info("CustomerAnalyticsReport for month {} year {} exists. Updating with latest data.", month, year);
+            report = existingReport;
+            report.setTotalCustomers(totalCustomers);
+            report.setNewCustomerAcquiredCurrentMonth(newThisMonth);
+            report.setAvgCustomerTransactionValue(avgCustomerTransactionValue);
+            report.setHighValueCustomerCount(highValueCustomerCount);
+            report.setCustomerSatisfactionScore(customerSatisfactionScore);
+            report.setTotalRates(totalRates);
+            report.setAvgRating(avgRating);
+        } else {
+            // Create new report
+            log.info("CustomerAnalyticsReport for month {} year {} not found. Creating new report.", month, year);
+            report = CustomerAnalyticsReport.builder()
+                    .totalCustomers(totalCustomers)
+                    .newCustomerAcquiredCurrentMonth(newThisMonth)
+                    .avgCustomerTransactionValue(avgCustomerTransactionValue)
+                    .highValueCustomerCount(highValueCustomerCount)
+                    .customerSatisfactionScore(customerSatisfactionScore)
+                    .totalRates(totalRates)
+                    .avgRating(avgRating)
+                    .build();
+            report.setBaseReportData(baseReportData);
+        }
 
         customerAnalyticsReportRepository.save(report);
 
-        log.info("CustomerAnalyticsReport created for {}-{}", year, month);
+        log.info("CustomerAnalyticsReport saved for {}-{}", year, month);
 
         return CompletableFuture.completedFuture(null);
     }

@@ -73,43 +73,60 @@ public class FinancialReportScheduler {
         List<UUID> wardIds = locationService.getAllWardIds();
         List<UUID> districtIds = locationService.getAllDistrictIds();
 
-        FinancialReport previousMonth;
-        if (month - 1 == 0) {
-            previousMonth = financialReportRepository.findByBaseReportData_MonthAndBaseReportData_Year(
-                    12, year - 1
-            );
+        // Check if report for this month already exists
+        FinancialReport existingReport = financialReportRepository.findByBaseReportData_MonthAndBaseReportData_Year(
+                month, year
+        );
+
+        FinancialReport currentMonth;
+
+        if (existingReport != null) {
+            // Report exists - UPDATE with latest data
+            log.info("FinancialReport for month {} year {} exists. Recalculating with latest data.", month, year);
+            currentMonth = existingReport;
         } else {
-            previousMonth = financialReportRepository.findByBaseReportData_MonthAndBaseReportData_Year(
-                    month - 1, year
-            );
+            // Report doesn't exist - CREATE from previous month
+            log.info("FinancialReport for month {} year {} not found. Creating new report.", month, year);
+
+            FinancialReport previousMonth;
+            if (month - 1 == 0) {
+                previousMonth = financialReportRepository.findByBaseReportData_MonthAndBaseReportData_Year(
+                        12, year - 1
+                );
+            } else {
+                previousMonth = financialReportRepository.findByBaseReportData_MonthAndBaseReportData_Year(
+                        month - 1, year
+                );
+            }
+
+            if (previousMonth != null) {
+                currentMonth = simpleMapper.mapTo(previousMonth, FinancialReport.class);
+                currentMonth.setId(null);
+            } else {
+                BaseReportData baseReportData = new BaseReportData();
+                baseReportData.setMonth(month);
+                baseReportData.setYear(year);
+                baseReportData.setReportType(Constants.ReportTypeEnum.FINANCIAL);
+                baseReportData.setTitle("Financial Report");
+
+                currentMonth = new FinancialReport();
+                currentMonth.setBaseReportData(baseReportData);
+                currentMonth.setTotalRevenue(BigDecimal.ZERO);
+                currentMonth.setContractCount(0);
+                currentMonth.setTax(BigDecimal.ZERO);
+                currentMonth.setTotalSalary(BigDecimal.ZERO);
+                currentMonth.setNetProfit(BigDecimal.ZERO);
+                currentMonth.setTotalRates(0);
+                currentMonth.setAvgRating(BigDecimal.ZERO);
+                currentMonth.setRevenueCities(new ArrayList<>());
+                currentMonth.setRevenueDistricts(new ArrayList<>());
+                currentMonth.setRevenueWards(new ArrayList<>());
+                currentMonth.setRevenuePropertyTypes(new ArrayList<>());
+                currentMonth.setSaleAgentsSalaryMonth(new ArrayList<>());
+                currentMonth.setSaleAgentsSalaryCareer(new ArrayList<>());
+            }
         }
 
-        FinancialReport currentMonth = new FinancialReport();
-        if (previousMonth != null)
-            currentMonth = simpleMapper.mapTo(previousMonth, FinancialReport.class);
-        else {
-            BaseReportData baseReportData = new BaseReportData();
-            baseReportData.setMonth(month);
-            baseReportData.setYear(year);
-            baseReportData.setReportType(Constants.ReportTypeEnum.FINANCIAL);
-            baseReportData.setTitle("Financial Report");
-
-            currentMonth.setBaseReportData(baseReportData);
-            currentMonth.setTotalRevenue(BigDecimal.ZERO);
-            currentMonth.setContractCount(0);
-            currentMonth.setTax(BigDecimal.ZERO);
-            currentMonth.setTotalSalary(BigDecimal.ZERO);
-            currentMonth.setNetProfit(BigDecimal.ZERO);
-            currentMonth.setTotalRates(0);
-            currentMonth.setAvgRating(BigDecimal.ZERO);
-            currentMonth.setRevenueCities(new ArrayList<>());
-            currentMonth.setRevenueDistricts(new ArrayList<>());
-            currentMonth.setRevenueWards(new ArrayList<>());
-            currentMonth.setRevenuePropertyTypes(new ArrayList<>());
-            currentMonth.setSaleAgentsSalaryMonth(new ArrayList<>());
-            currentMonth.setSaleAgentsSalaryCareer(new ArrayList<>());
-        }
-        currentMonth.setId(null);
         currentMonth.setSaleAgentsSalaryMonth(new ArrayList<>());
         currentMonth.getBaseReportData().setDescription(String.format("Financial Report for Bat dong scam in %d, %d", month, year));
         currentMonth.getBaseReportData().setMonth(month);

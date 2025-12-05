@@ -8,5 +8,7 @@ import java.util.List;
 
 @Repository
 public interface PropertyOwnerContributionReportRepository extends MongoRepository<PropertyOwnerContributionReport, String> {
+    PropertyOwnerContributionReport findByBaseReportData_MonthAndBaseReportData_Year(Integer baseReportDataMonth, Integer baseReportDataYear);
+
     List<PropertyOwnerContributionReport> findAllByBaseReportData_Year(Integer baseReportDataYear);
 }

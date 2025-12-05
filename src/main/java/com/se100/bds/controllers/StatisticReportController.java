@@ -2,10 +2,13 @@ package com.se100.bds.controllers;
 
 import com.se100.bds.controllers.base.AbstractBaseController;
 import com.se100.bds.dtos.responses.SingleResponse;
+import com.se100.bds.dtos.responses.admindashboard.*;
 import com.se100.bds.dtos.responses.statisticreport.AgentPerformanceStats;
 import com.se100.bds.dtos.responses.statisticreport.CustomerStats;
 import com.se100.bds.dtos.responses.statisticreport.FinancialStats;
 import com.se100.bds.dtos.responses.statisticreport.PropertyOwnerStats;
+import com.se100.bds.dtos.responses.statisticreport.PropertyStats;
+import com.se100.bds.dtos.responses.statisticreport.ViolationReportStats;
 import com.se100.bds.services.domains.report.ReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -87,5 +90,121 @@ public class StatisticReportController extends AbstractBaseController {
             @PathVariable int year) {
         FinancialStats stats = reportService.getFinancialStats(year);
         return responseFactory.successSingle(stats, "Financial stats retrieved successfully");
+    }
+
+    @GetMapping("/property/{year}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get property stats for a year", security = @SecurityRequirement(name = SECURITY_SCHEME_NAME))
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved property stats"),
+        @ApiResponse(responseCode = "404", description = "Year not found")
+    })
+    public ResponseEntity<SingleResponse<PropertyStats>> getPropertyStats(
+            @Parameter(description = "Year for the stats", required = true)
+            @PathVariable int year) {
+        PropertyStats stats = reportService.getPropertyStats(year);
+        return responseFactory.successSingle(stats, "Property stats retrieved successfully");
+    }
+
+    @GetMapping("/violation/{year}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get violation stats for a year", security = @SecurityRequirement(name = SECURITY_SCHEME_NAME))
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved violation stats"),
+        @ApiResponse(responseCode = "404", description = "Year not found")
+    })
+    public ResponseEntity<SingleResponse<ViolationReportStats>> getViolationStats(
+            @Parameter(description = "Year for the stats", required = true)
+            @PathVariable int year) {
+        ViolationReportStats stats = reportService.getViolationStats(year);
+        return responseFactory.successSingle(stats, "Violation stats retrieved successfully");
+    }
+
+    // ===== ADMIN DASHBOARD ENDPOINTS =====
+
+    @GetMapping("/admin-dashboard/top-stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get dashboard top stats - Admin Dashboard", security = @SecurityRequirement(name = SECURITY_SCHEME_NAME))
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved top stats"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<SingleResponse<DashboardTopStats>> getDashboardTopStats() {
+        DashboardTopStats stats = reportService.getDashboardTopStats();
+        return responseFactory.successSingle(stats, "Dashboard top stats retrieved successfully");
+    }
+
+    @GetMapping("/admin-dashboard/revenue-contracts/{year}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get dashboard revenue and contracts - Admin Dashboard", security = @SecurityRequirement(name = SECURITY_SCHEME_NAME))
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved revenue and contracts"),
+        @ApiResponse(responseCode = "404", description = "Year not found")
+    })
+    public ResponseEntity<SingleResponse<DashboardRevenueAndContracts>> getDashboardRevenueAndContracts(
+            @Parameter(description = "Year for the stats", required = true)
+            @PathVariable int year) {
+        DashboardRevenueAndContracts stats = reportService.getDashboardRevenueAndContracts(year);
+        return responseFactory.successSingle(stats, "Dashboard revenue and contracts retrieved successfully");
+    }
+
+    @GetMapping("/admin-dashboard/total-properties/{year}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get dashboard total properties - Admin Dashboard", security = @SecurityRequirement(name = SECURITY_SCHEME_NAME))
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved total properties"),
+        @ApiResponse(responseCode = "404", description = "Year not found")
+    })
+    public ResponseEntity<SingleResponse<DashboardTotalProperties>> getDashboardTotalProperties(
+            @Parameter(description = "Year for the stats", required = true)
+            @PathVariable int year) {
+        DashboardTotalProperties stats = reportService.getDashboardTotalProperties(year);
+        return responseFactory.successSingle(stats, "Dashboard total properties retrieved successfully");
+    }
+
+    @GetMapping("/admin-dashboard/property-distribution/{year}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get dashboard property distribution - Admin Dashboard", security = @SecurityRequirement(name = SECURITY_SCHEME_NAME))
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved property distribution"),
+        @ApiResponse(responseCode = "404", description = "Year not found")
+    })
+    public ResponseEntity<SingleResponse<DashboardPropertyDistribution>> getDashboardPropertyDistribution(
+            @Parameter(description = "Year for the stats", required = true)
+            @PathVariable int year) {
+        DashboardPropertyDistribution stats = reportService.getDashboardPropertyDistribution(year);
+        return responseFactory.successSingle(stats, "Dashboard property distribution retrieved successfully");
+    }
+
+    @GetMapping("/admin-dashboard/agent-ranking/{month}/{year}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get dashboard agent ranking (top 5) - Admin Dashboard", security = @SecurityRequirement(name = SECURITY_SCHEME_NAME))
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved agent ranking"),
+        @ApiResponse(responseCode = "404", description = "Month/Year not found")
+    })
+    public ResponseEntity<SingleResponse<DashboardAgentRanking>> getDashboardAgentRanking(
+            @Parameter(description = "Month for the ranking", required = true)
+            @PathVariable int month,
+            @Parameter(description = "Year for the ranking", required = true)
+            @PathVariable int year) {
+        DashboardAgentRanking ranking = reportService.getDashboardAgentRanking(month, year);
+        return responseFactory.successSingle(ranking, "Dashboard agent ranking retrieved successfully");
+    }
+
+    @GetMapping("/admin-dashboard/customer-ranking/{month}/{year}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get dashboard customer ranking (top 5) - Admin Dashboard", security = @SecurityRequirement(name = SECURITY_SCHEME_NAME))
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved customer ranking"),
+        @ApiResponse(responseCode = "404", description = "Month/Year not found")
+    })
+    public ResponseEntity<SingleResponse<DashboardCustomerRanking>> getDashboardCustomerRanking(
+            @Parameter(description = "Month for the ranking", required = true)
+            @PathVariable int month,
+            @Parameter(description = "Year for the ranking", required = true)
+            @PathVariable int year) {
+        DashboardCustomerRanking ranking = reportService.getDashboardCustomerRanking(month, year);
+        return responseFactory.successSingle(ranking, "Dashboard customer ranking retrieved successfully");
     }
 }

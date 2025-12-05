@@ -8,5 +8,7 @@ import java.util.List;
 
 @Repository
 public interface CustomerAnalyticsReportRepository extends MongoRepository<CustomerAnalyticsReport, String> {
+    CustomerAnalyticsReport findByBaseReportData_MonthAndBaseReportData_Year(Integer baseReportDataMonth, Integer baseReportDataYear);
+
     List<CustomerAnalyticsReport> findAllByBaseReportData_Year(Integer baseReportDataYear);
 }

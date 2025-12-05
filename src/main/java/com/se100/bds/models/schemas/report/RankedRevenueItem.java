@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RankedRevenueItem {
+public class RankedRevenueItem { // THIS IS THE FUCKING LAST TIME I VIBE CODE
     private UUID id;
     private BigDecimal revenue;
 }

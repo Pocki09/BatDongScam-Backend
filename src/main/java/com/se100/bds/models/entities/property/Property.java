@@ -43,7 +43,7 @@ public class Property extends AbstractBaseEntity {
     private BigDecimal serviceFeeAmount;
 
     @Column(name = "service_fee_collected_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal serviceFeeCollectedAmount = BigDecimal.ZERO;
+    private BigDecimal serviceFeeCollectedAmount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "property_type_id", nullable = false)

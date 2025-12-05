@@ -59,4 +59,6 @@ public interface PropertyService {
     List<UUID> getAllAvailablePropertyTypeIds();
 
     String getPropertyTypeName(UUID propertyTypeId);
+
+    int countPropertiesByPropertyTypeId(UUID propertyTypeId);
 }

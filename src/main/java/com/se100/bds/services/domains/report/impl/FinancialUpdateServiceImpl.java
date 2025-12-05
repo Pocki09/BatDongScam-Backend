@@ -2,7 +2,6 @@ package com.se100.bds.services.domains.report.impl;
 
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.schemas.report.FinancialReport;
-import com.se100.bds.models.schemas.report.RankedItem;
 import com.se100.bds.models.schemas.report.RankedRevenueItem;
 import com.se100.bds.repositories.domains.mongo.report.FinancialReportRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;

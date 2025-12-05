@@ -1,7 +1,6 @@
 package com.se100.bds.services.domains.search.impl;
 
 import com.se100.bds.models.schemas.report.PropertyStatisticsReport;
-import com.se100.bds.models.schemas.report.RankedItem;
 import com.se100.bds.models.schemas.search.SearchLog;
 import com.se100.bds.repositories.domains.mongo.report.PropertyStatisticsReportRepository;
 import com.se100.bds.repositories.domains.mongo.search.SearchLogRepository;
@@ -58,22 +57,17 @@ public class SearchServiceImpl implements SearchService {
 
             PropertyStatisticsReport report = reportOpt.get();
 
-            List<RankedItem> rankedList = getRankedListByType(report, searchType, userId == null);
+            Map<UUID, Integer> rankedMap = getRankedListByType(report, searchType);
 
-            if (rankedList == null || rankedList.isEmpty()) {
+            if (rankedMap == null || rankedMap.isEmpty()) {
                 return List.of();
             }
 
-            // Apply offset and limit for pagination
-            int fromIndex = Math.min(offset, rankedList.size());
-            int toIndex = Math.min(offset + limit, rankedList.size());
-
-            if (fromIndex >= rankedList.size()) {
-                return List.of();
-            }
-
-            return rankedList.subList(fromIndex, toIndex).stream()
-                    .map(RankedItem::getId)
+            return rankedMap.entrySet().stream()
+                    .sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed())
+                    .skip(offset)
+                    .limit(limit)
+                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
 
         } catch (Exception e) {
@@ -95,15 +89,16 @@ public class SearchServiceImpl implements SearchService {
             }
 
             PropertyStatisticsReport report = reportOpt.get();
-            List<RankedItem> searchedProperties = report.getSearchedPropertiesMonth();
+            Map<UUID, Integer> searchedProperties = report.getSearchedProperties();
 
             if (searchedProperties == null || searchedProperties.isEmpty()) {
                 return List.of();
             }
 
-            return searchedProperties.stream()
+            return searchedProperties.entrySet().stream()
+                    .sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed())
                     .limit(limit)
-                    .map(RankedItem::getId)
+                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
 
         } catch (Exception e) {
@@ -114,21 +109,19 @@ public class SearchServiceImpl implements SearchService {
     }
 
     /**
-     * Lấy List dữ liệu search đã được sắp xếp sẵn tương ứng với SearchTypeEnum
+     * Lấy Map dữ liệu search tương ứng với SearchTypeEnum
      * @param report PropertyStatisticsReport
      * @param searchType Loại search (CITY, DISTRICT, WARD, PROPERTY, PROPERTY_TYPE)
-     * @param useMonthData true = dùng dữ liệu tháng hiện tại, false = dùng dữ liệu tích lũy
-     * @return List<RankedItem> đã được sort theo count giảm dần
+     * @return Map<UUID, Integer> với key là id, value là count
      */
-    private List<RankedItem> getRankedListByType(PropertyStatisticsReport report,
-                                                  Constants.SearchTypeEnum searchType,
-                                                  boolean useMonthData) {
+    private Map<UUID, Integer> getRankedListByType(PropertyStatisticsReport report,
+                                                  Constants.SearchTypeEnum searchType) {
         return switch (searchType) {
-            case CITY -> useMonthData ? report.getSearchedCitiesMonth() : report.getSearchedCities();
-            case DISTRICT -> useMonthData ? report.getSearchedDistrictsMonth() : report.getSearchedDistricts();
-            case WARD -> useMonthData ? report.getSearchedWardsMonth() : report.getSearchedWards();
-            case PROPERTY -> useMonthData ? report.getSearchedPropertiesMonth() : report.getSearchedProperties();
-            case PROPERTY_TYPE -> useMonthData ? report.getSearchedPropertyTypesMonth() : report.getSearchedPropertyTypes();
+            case CITY -> report.getSearchedCities();
+            case DISTRICT -> report.getSearchedDistricts();
+            case WARD -> report.getSearchedWards();
+            case PROPERTY -> report.getSearchedProperties();
+            case PROPERTY_TYPE -> report.getSearchedPropertyTypes();
         };
     }
 }

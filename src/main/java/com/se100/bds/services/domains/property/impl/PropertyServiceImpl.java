@@ -671,6 +671,11 @@ public class PropertyServiceImpl implements PropertyService {
         return propertyTypeRepository.getPropertyTypeNameById(propertyTypeId);
     }
 
+    @Override
+    public int countPropertiesByPropertyTypeId(UUID propertyTypeId) {
+        return propertyRepository.countByPropertyType_Id(propertyTypeId);
+    }
+
     private boolean hasPriceChanged(BigDecimal currentPrice, BigDecimal newPrice) {
         return bigDecimalChanged(currentPrice, newPrice);
     }

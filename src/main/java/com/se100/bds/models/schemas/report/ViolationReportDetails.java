@@ -4,7 +4,7 @@ import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.util.List;
+import java.util.Map;
 
 @Document(collection = "violation_report_details")
 @Builder
@@ -16,9 +16,6 @@ public class ViolationReportDetails extends AbstractBaseMongoReport {
     @Field("total_violation_reports")
     private Integer totalViolationReports;
 
-    @Field("total_violation_reports_current_month")
-    private Integer totalViolationReportsCurrentMonth;
-
     @Field("avg_resolution_time_hours")
     private Integer avgResolutionTimeHours;
 
@@ -29,5 +26,5 @@ public class ViolationReportDetails extends AbstractBaseMongoReport {
     private Integer propertiesRemoved;
 
     @Field("violation_type_counts")
-    private List<RankedItem> violationTypeCounts;
+    private Map<String, Integer> violationTypeCounts;
 }

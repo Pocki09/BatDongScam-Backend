@@ -414,6 +414,7 @@ public final class Constants {
     @Getter
     @AllArgsConstructor
     public enum ViolationStatusEnum {
+        PENDING("PENDING"),
         REPORTED("REPORTED"),
         UNDER_REVIEW("UNDER_REVIEW"),
         RESOLVED("RESOLVED"),

@@ -8,6 +8,8 @@ import java.util.List;
 
 @Repository
 public interface AgentPerformanceReportRepository extends MongoRepository<AgentPerformanceReport, String> {
+    AgentPerformanceReport findByBaseReportData_MonthAndBaseReportData_Year(Integer baseReportDataMonth, Integer baseReportDataYear);
+
     List<AgentPerformanceReport> findAllByBaseReportData_Year(Integer baseReportDataYear);
 }
 

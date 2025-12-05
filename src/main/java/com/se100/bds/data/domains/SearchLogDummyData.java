@@ -9,7 +9,6 @@ import com.se100.bds.models.entities.user.User;
 import com.se100.bds.models.schemas.customer.CustomerFavoriteProperty;
 import com.se100.bds.models.schemas.report.BaseReportData;
 import com.se100.bds.models.schemas.report.PropertyStatisticsReport;
-import com.se100.bds.models.schemas.report.RankedItem;
 import com.se100.bds.models.schemas.search.SearchLog;
 import com.se100.bds.repositories.domains.location.CityRepository;
 import com.se100.bds.repositories.domains.location.DistrictRepository;
@@ -21,7 +20,6 @@ import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.repositories.domains.property.PropertyTypeRepository;
 import com.se100.bds.repositories.domains.user.UserRepository;
 import com.se100.bds.utils.Constants;
-import com.se100.bds.utils.ReportHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -52,7 +50,7 @@ public class SearchLogDummyData {
 
     @Transactional(readOnly = true)
     public void createDummy() {
-        log.info("Creating 100k search logs per month from January 2024 to October 2025...");
+        log.info("Creating 100k search logs per month from January 2024 to November 2025...");
 
         // Fetch all necessary data
         List<UUID> userIds = userRepository.findAll().stream().map(User::getId).toList();
@@ -96,9 +94,9 @@ public class SearchLogDummyData {
                 userIds.size(), cityIds.size(), districtDataList.size(), wardDataList.size(),
                 propertyDataList.size(), propertyTypeIds.size());
 
-        // Generate data for each month from January 2024 to October 2025
+        // Generate data for each month from January 2024 to November 2025
         YearMonth startMonth = YearMonth.of(2024, 1);
-        YearMonth endMonth = YearMonth.of(2025, 10);
+        YearMonth endMonth = YearMonth.of(2025, 12);
         YearMonth currentMonth = startMonth;
 
         while (!currentMonth.isAfter(endMonth)) {
@@ -354,24 +352,17 @@ public class SearchLogDummyData {
         // Build and save the report
         PropertyStatisticsReport report = PropertyStatisticsReport.builder()
             .totalActiveProperties(totalActiveProperties)
-            .totalSoldPropertiesCurrentMonth(totalSoldPropertiesCurrentMonth)
-            .totalSoldPropertiesCurrentDay(totalSoldPropertiesCurrentDay)
-            .totalRentedPropertiesCurrentMonth(totalRentedPropertiesCurrentMonth)
-            .totalRentedPropertiesCurrentDay(totalRentedPropertiesCurrentDay)
-            .searchedCitiesMonth(convertToSortedRankedList(searchedCitiesMonth))
-            .searchedCities(convertToSortedRankedList(searchedCities))
-            .favoriteCities(convertToSortedRankedList(favoriteCities))
-            .searchedDistrictsMonth(convertToSortedRankedList(searchedDistrictsMonth))
-            .searchedDistricts(convertToSortedRankedList(searchedDistricts))
-            .favoriteDistricts(convertToSortedRankedList(favoriteDistricts))
-            .searchedWardsMonth(convertToSortedRankedList(searchedWardsMonth))
-            .searchedWards(convertToSortedRankedList(searchedWards))
-            .favoriteWards(convertToSortedRankedList(favoriteWards))
-            .searchedPropertyTypesMonth(convertToSortedRankedList(searchedPropertyTypesMonth))
-            .searchedPropertyTypes(convertToSortedRankedList(searchedPropertyTypes))
-            .favoritePropertyTypes(convertToSortedRankedList(favoritePropertyTypes))
-            .searchedPropertiesMonth(convertToSortedRankedList(searchedPropertiesMonth))
-            .searchedProperties(convertToSortedRankedList(searchedProperties))
+            .totalSoldProperties(totalSoldPropertiesCurrentDay)
+            .totalRentedProperties(totalRentedPropertiesCurrentDay)
+            .searchedCities(searchedCities)
+            .favoriteCities(favoriteCities)
+            .searchedDistricts(searchedDistricts)
+            .favoriteDistricts(favoriteDistricts)
+            .searchedWards(searchedWards)
+            .favoriteWards(favoriteWards)
+            .searchedPropertyTypes(searchedPropertyTypes)
+            .favoritePropertyTypes(favoritePropertyTypes)
+            .searchedProperties(searchedProperties)
             .build();
 
         report.setBaseReportData(baseReportData);
@@ -381,15 +372,6 @@ public class SearchLogDummyData {
         propertyStatisticsReportRepository.save(report);
 
         log.info("PropertyStatisticsReport created for {}-{}", year, month);
-    }
-
-    /**
-     * Convert Map<UUID, Integer> to List<RankedItem> sorted by count DESC
-     * This pre-sorts data so queries can use O(k) subList() instead of O(n log n) sorting
-     */
-    private List<RankedItem> convertToSortedRankedList(Map<UUID, Integer> countMap) {
-        // Sử dụng helper utility để tái sử dụng logic
-        return ReportHelper.convertToSortedRankedList(countMap);
     }
 
     private <T> Map<UUID, Integer> countByField(List<SearchLog> logs, java.util.function.Function<SearchLog, UUID> fieldExtractor) {
@@ -471,16 +453,6 @@ public class SearchLogDummyData {
         }
 
         return typeCount;
-    }
-
-    public boolean any() {
-        return searchLogRepository.count() > 0;
-    }
-
-    public void clear() {
-        searchLogRepository.deleteAll();
-        propertyStatisticsReportRepository.deleteAll();
-        log.info("Cleared all search logs and property statistics reports");
     }
 
     // Helper classes to avoid lazy loading issues
