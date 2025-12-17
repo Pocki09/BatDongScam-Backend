@@ -39,7 +39,12 @@ spring:
     password: ${POSTGRESQL_PASSWORD}
   data:
     mongodb:
-      uri: mongodb://${MONGODB_HOST}:${MONGODB_PORT}/${MONGODB_DB}
+      authentication-database: ${MONGODB_AUTH_DB}
+      host: ${MONGODB_HOST}
+      database: ${MONGODB_DB}
+      port: ${MONGODB_PORT}
+      username: ${MONGODB_USER}
+      password: ${MONGODB_PASSWORD}
     web:
       pageable:
         default-page-size: ${PAGEABLE_DEFAULT_PAGE_SIZE}
@@ -55,6 +60,12 @@ spring:
   jackson:
     mapper:
       accept-case-insensitive-enums: true
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE}
+
 
 springdoc:
   api-docs:
