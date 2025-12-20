@@ -1,4 +1,4 @@
-package com.se100.bds.services.payos.impl;
+package com.se100.bds.services.payment.impl;
 
 import com.se100.bds.dtos.requests.payos.CreateContractPaymentRequest;
 import com.se100.bds.models.entities.contract.Contract;
@@ -11,7 +11,7 @@ import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.services.domains.ranking.RankingService;
 import com.se100.bds.services.domains.report.FinancialUpdateService;
 import com.se100.bds.services.domains.user.UserService;
-import com.se100.bds.services.payos.PayOSService;
+import com.se100.bds.services.payment.PaymentService;
 import com.se100.bds.utils.Constants;
 import com.se100.bds.utils.Constants.*;
 import lombok.extern.slf4j.Slf4j;
@@ -20,14 +20,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.payos.PayOS;
-import vn.payos.exception.PayOSException;
-import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
-import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
-import vn.payos.model.v2.paymentRequests.PaymentLink;
-import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
-import vn.payos.model.v2.paymentRequests.PaymentLinkStatus;
-import vn.payos.model.webhooks.WebhookData;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -38,7 +30,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-public class PayOSServiceImpl implements PayOSService {
+public class PaymentServiceImpl implements PaymentService {
 
     private static final String PAYOS_CHECKOUT_BASE_URL = "https://pay.payos.vn/web/";
     private static final String PAYOS_PAYMENT_METHOD = "PAYOS";
@@ -46,7 +38,6 @@ public class PayOSServiceImpl implements PayOSService {
     private static final String OWNER_PAYOUT_METHOD = "OWNER_PAYOUT";
     private static final String CUSTOMER_PAYOUT_METHOD = "CUSTOMER_PAYOUT";
 
-    private final PayOS payOS;
     private final ContractRepository contractRepository;
     private final PaymentRepository paymentRepository;
     private final PropertyRepository propertyRepository;
@@ -61,7 +52,7 @@ public class PayOSServiceImpl implements PayOSService {
     @Value("${payos.cancel-url}")
     private String defaultCancelUrl;
 
-    public PayOSServiceImpl(
+    public PaymentServiceImpl(
             @Qualifier("payOSPaymentClient") final PayOS payOS,
             final ContractRepository contractRepository,
             final PaymentRepository paymentRepository,

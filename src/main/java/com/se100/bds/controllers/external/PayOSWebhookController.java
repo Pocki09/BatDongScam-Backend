@@ -4,7 +4,7 @@ package com.se100.bds.controllers.external;
 import com.se100.bds.controllers.base.AbstractBaseController;
 import com.se100.bds.dtos.responses.SingleResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
-import com.se100.bds.services.payos.PayOSService;
+import com.se100.bds.services.payment.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class PayOSWebhookController extends AbstractBaseController {
 
-	private final PayOSService payOSService;
+	private final PaymentService paymentService;
 
     @PostMapping
     @Operation(
@@ -51,7 +51,7 @@ public class PayOSWebhookController extends AbstractBaseController {
 	    }
     )
     public ResponseEntity<SingleResponse<Void>> handle(@RequestBody String rawBody) {
-		payOSService.handlePaymentWebhook(rawBody);
+		paymentService.handlePaymentWebhook(rawBody);
 		return responseFactory.successSingle(null, "Webhook handled successfully");
 	}
 }

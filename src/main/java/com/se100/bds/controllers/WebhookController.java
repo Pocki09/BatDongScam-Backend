@@ -4,7 +4,7 @@ import com.se100.bds.controllers.base.AbstractBaseController;
 import com.se100.bds.dtos.requests.payos.CreateContractPaymentRequest;
 import com.se100.bds.dtos.responses.SingleResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
-import com.se100.bds.services.payos.PayOSService;
+import com.se100.bds.services.payment.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,13 +23,13 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/payos")
-@Tag(name = "40. Payments", description = "Payment APIs via PayOS")
-public class PayOSPaymentController extends AbstractBaseController {
-    private final PayOSService payOSService;
+@Tag(name = "40. Webhooks", description = "Webhook to receive from payment APIs")
+public class WebhookController extends AbstractBaseController {
+    private final PaymentService paymentService;
 
     @PostMapping("/contracts/{contractId}/checkout")
     @Operation(
-        summary = "Create PayOS checkout link for a contract payment",
+        summary = "Create checkout link for a contract payment",
         responses = {
             @ApiResponse(
                 responseCode = "200",
@@ -61,7 +61,7 @@ public class PayOSPaymentController extends AbstractBaseController {
             @PathVariable UUID contractId,
             @Valid @RequestBody CreateContractPaymentRequest body
     ) {
-        CreatePaymentLinkResponse resp = payOSService.createContractPaymentLink(contractId, body);
+        CreatePaymentLinkResponse resp = paymentService.createContractPaymentLink(contractId, body);
         return responseFactory.successSingle(resp, "Created PayOS contract checkout link successfully");
     }
 
@@ -102,7 +102,7 @@ public class PayOSPaymentController extends AbstractBaseController {
         @RequestParam(required = false) String returnUrl,
         @RequestParam(required = false) String cancelUrl
     ) {
-        CreatePaymentLinkResponse response = payOSService.createPropertyServicePaymentLink(
+        CreatePaymentLinkResponse response = paymentService.createPropertyServicePaymentLink(
             propertyId,
             description,
             returnUrl,
@@ -151,7 +151,7 @@ public class PayOSPaymentController extends AbstractBaseController {
     public ResponseEntity<SingleResponse<CreatePaymentLinkResponse>> createCancellationRefundSettlement(
             @PathVariable UUID contractId
     ) {
-        CreatePaymentLinkResponse response = payOSService.createCancellationRefundCollectionLink(contractId);
+        CreatePaymentLinkResponse response = paymentService.createCancellationRefundCollectionLink(contractId);
         return responseFactory.successSingle(response, "Created PayOS cancellation refund checkout link successfully");
     }
 }
