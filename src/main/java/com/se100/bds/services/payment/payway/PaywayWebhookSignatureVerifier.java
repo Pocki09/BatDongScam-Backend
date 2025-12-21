@@ -6,10 +6,15 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Verifies Payway webhook signature.
- *
+ * <p>
  * Contract:
- * - Signature is hex(HMAC_SHA256(verifyKey, rawRequestBodyBytes))
- * - No timestamp / nonce
+ * <ul>
+ *     <li>HMAC-SHA256 with verifyKey as key</li>
+ *     <li>Hex-encoded lowercase output</li>
+ *     <li>Input is raw request body bytes</li>
+ *     <li>No timestamp / nonce</li>
+ * </ul>
+ * <p>
  */
 public final class PaywayWebhookSignatureVerifier {
 
