@@ -25,7 +25,14 @@ public class PayoutSessionResponse {
     /** created | paid | failed */
     private String status;
 
-    private String destination;
+    @Schema(name = "account_number")
+    private String accountNumber;
+
+    @Schema(name = "account_holder_name")
+    private String accountHolderName;
+
+    @Schema(name = "swift_code")
+    private String swiftCode;
 
     private String description;
 
@@ -40,4 +47,3 @@ public class PayoutSessionResponse {
     @Schema(name = "updated_at")
     private OffsetDateTime updatedAt;
 }
-

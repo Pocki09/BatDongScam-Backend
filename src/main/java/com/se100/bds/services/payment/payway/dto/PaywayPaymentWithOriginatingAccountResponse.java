@@ -13,7 +13,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaywayPayoutResponse {
+public class PaywayPaymentWithOriginatingAccountResponse {
 
     private String id;
 
@@ -21,24 +21,26 @@ public class PaywayPayoutResponse {
 
     private String currency;
 
-    /** created | paid | failed */
     private String status;
 
-    @JsonProperty("account_number")
-    private String accountNumber;
+    @JsonProperty("originating_account_id")
+    private String originatingAccountId;
 
-    @JsonProperty("account_holder_name")
-    private String accountHolderName;
-
-    @JsonProperty("swift_code")
-    private String swiftCode;
+    @JsonProperty("originating_account")
+    private PaywayAccountRef originatingAccount;
 
     private String description;
 
     private Map<String, Object> metadata;
 
+    @JsonProperty("return_url")
+    private String returnUrl;
+
     @JsonProperty("webhook_url")
     private String webhookUrl;
+
+    @JsonProperty("checkout_url")
+    private String checkoutUrl;
 
     @JsonProperty("created_at")
     private OffsetDateTime createdAt;

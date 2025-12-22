@@ -21,8 +21,14 @@ public class CreatePayoutSessionRequest {
     @Schema(description = "Currency code", example = "USD", requiredMode = Schema.RequiredMode.REQUIRED)
     private String currency;
 
-    @Schema(description = "Mock destination identifier")
-    private String destination;
+    @Schema(description = "Destination bank account number", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String accountNumber;
+
+    @Schema(description = "Destination account holder name", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String accountHolderName;
+
+    @Schema(description = "Destination SWIFT code", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String swiftCode;
 
     @Schema(description = "Description")
     private String description;

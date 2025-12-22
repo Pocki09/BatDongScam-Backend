@@ -9,10 +9,13 @@ import com.se100.bds.services.payment.dto.PayoutSessionResponse;
 import com.se100.bds.services.payment.payway.dto.PaywayCreatePaymentRequest;
 import com.se100.bds.services.payment.payway.dto.PaywayCreatePayoutRequest;
 import com.se100.bds.services.payment.payway.dto.PaywayPaymentResponse;
+import com.se100.bds.services.payment.payway.dto.PaywayPaymentWithOriginatingAccountResponse;
 import com.se100.bds.services.payment.payway.dto.PaywayPayoutResponse;
+import com.se100.bds.services.payment.payway.exceptions.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
@@ -32,9 +36,6 @@ public class PaywayService implements PaymentGatewayService {
     @Value("${payway.api-key}")
     private String apiKey;
 
-    @Value("${payway.verify-key}")
-    private String verifyKey;
-
     @Value("${payway.webhook-base-url}")
     private String webhookBaseUrl;
 
@@ -42,6 +43,45 @@ public class PaywayService implements PaymentGatewayService {
     private String returnUrl;
 
     private volatile RestClient restClient;
+
+    private static String safeReadBody(org.springframework.http.client.ClientHttpResponse response) {
+        try {
+            return new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static String summarizePaywayError(int status, String body) {
+        String trimmed = body == null ? "" : body.trim();
+        if (trimmed.isEmpty()) return "Payway returned HTTP " + status;
+        // Keep it short-ish so it doesn't spam logs, but still useful.
+        if (trimmed.length() > 500) trimmed = trimmed.substring(0, 500) + "...";
+        return "Payway returned HTTP " + status + ": " + trimmed;
+    }
+
+    private static void throwPayway(org.springframework.http.HttpStatusCode status, String body) {
+        int code = status.value();
+        String message = summarizePaywayError(code, body);
+
+        if (code == 400) {
+            throw new PaywayBadRequestException(message, body);
+        }
+        if (code == 401 || code == 403) {
+            throw new PaywayUnauthorizedException(code, message, body);
+        }
+        if (code == 404) {
+            throw new PaywayNotFoundException(message, body);
+        }
+        if (code == 422) {
+            throw new PaywayUnprocessableEntityException(message, body);
+        }
+        if (code >= 500) {
+            throw new PaywayServerException(code, message, body);
+        }
+
+        throw new PaywayApiException(code, message, body);
+    }
 
     private RestClient client() {
         // Lazy-init so we don't need extra @Configuration right now.
@@ -56,6 +96,10 @@ public class PaywayService implements PaymentGatewayService {
                 .baseUrl(serviceUrl)
                 .requestFactory(new JdkClientHttpRequestFactory(httpClient))
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> {
+                    String body = safeReadBody(response);
+                    throwPayway(response.getStatusCode(), body);
+                })
                 .build();
 
         restClient = created;
@@ -119,13 +163,14 @@ public class PaywayService implements PaymentGatewayService {
             throw new IllegalArgumentException("paymentId is required");
         }
 
-        PaywayPaymentResponse paywayResp = client()
+        // New Payway contract returns PaymentWithOriginatingAccount.
+        PaywayPaymentWithOriginatingAccountResponse paywayResp = client()
                 .get()
                 .uri("/api/payments/{id}", paymentId)
                 .accept(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .retrieve()
-                .body(PaywayPaymentResponse.class);
+                .body(PaywayPaymentWithOriginatingAccountResponse.class);
 
         if (paywayResp == null) {
             throw new IllegalStateException("Payway returned empty response");
@@ -153,7 +198,9 @@ public class PaywayService implements PaymentGatewayService {
         PaywayCreatePayoutRequest paywayRequest = PaywayCreatePayoutRequest.builder()
                 .amount(request.getAmount())
                 .currency(request.getCurrency())
-                .destination(request.getDestination())
+                .accountNumber(request.getAccountNumber())
+                .accountHolderName(request.getAccountHolderName())
+                .swiftCode(request.getSwiftCode())
                 .description(request.getDescription())
                 .metadata(request.getMetadata())
                 .webhookUrl(request.getWebhookUrl())
@@ -219,13 +266,31 @@ public class PaywayService implements PaymentGatewayService {
                 .build();
     }
 
+    private static CreatePaymentSessionResponse mapPayment(PaywayPaymentWithOriginatingAccountResponse paywayResp) {
+        return CreatePaymentSessionResponse.builder()
+                .id(paywayResp.getId())
+                .amount(paywayResp.getAmount())
+                .currency(paywayResp.getCurrency())
+                .status(paywayResp.getStatus())
+                .description(paywayResp.getDescription())
+                .metadata(paywayResp.getMetadata())
+                .returnUrl(paywayResp.getReturnUrl())
+                .webhookUrl(paywayResp.getWebhookUrl())
+                .checkoutUrl(paywayResp.getCheckoutUrl())
+                .createdAt(paywayResp.getCreatedAt())
+                .updatedAt(paywayResp.getUpdatedAt())
+                .build();
+    }
+
     private static CreatePayoutSessionResponse mapPayoutCreate(PaywayPayoutResponse paywayResp) {
         return CreatePayoutSessionResponse.builder()
                 .id(paywayResp.getId())
                 .amount(paywayResp.getAmount())
                 .currency(paywayResp.getCurrency())
                 .status(paywayResp.getStatus())
-                .destination(paywayResp.getDestination())
+                .accountNumber(paywayResp.getAccountNumber())
+                .accountHolderName(paywayResp.getAccountHolderName())
+                .swiftCode(paywayResp.getSwiftCode())
                 .description(paywayResp.getDescription())
                 .metadata(paywayResp.getMetadata())
                 .webhookUrl(paywayResp.getWebhookUrl())
@@ -240,7 +305,9 @@ public class PaywayService implements PaymentGatewayService {
                 .amount(paywayResp.getAmount())
                 .currency(paywayResp.getCurrency())
                 .status(paywayResp.getStatus())
-                .destination(paywayResp.getDestination())
+                .accountNumber(paywayResp.getAccountNumber())
+                .accountHolderName(paywayResp.getAccountHolderName())
+                .swiftCode(paywayResp.getSwiftCode())
                 .description(paywayResp.getDescription())
                 .metadata(paywayResp.getMetadata())
                 .webhookUrl(paywayResp.getWebhookUrl())
@@ -255,9 +322,5 @@ public class PaywayService implements PaymentGatewayService {
             return baseUrl.substring(0, baseUrl.length() - 1);
         }
         return baseUrl;
-    }
-
-    public String getVerifyKey() {
-        return verifyKey;
     }
 }

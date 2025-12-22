@@ -6,31 +6,28 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Map;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaywayCreatePayoutRequest {
+public class PaywayAccountRef {
 
-    private Integer amount;
+    private String id;
 
-    private String currency;
+    private String role;
 
-    @JsonProperty("account_number")
-    private String accountNumber;
+    @JsonProperty("display_name")
+    private String displayName;
 
     @JsonProperty("account_holder_name")
     private String accountHolderName;
 
+    @JsonProperty("account_number")
+    private String accountNumber;
+
     @JsonProperty("swift_code")
     private String swiftCode;
 
-    private String description;
-
-    private Map<String, Object> metadata;
-
-    @JsonProperty("webhook_url")
-    private String webhookUrl;
+    private String currency;
 }
+
