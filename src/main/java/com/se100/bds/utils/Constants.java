@@ -20,10 +20,8 @@ public final class Constants {
     public enum RoleEnum {
         ADMIN("ADMIN"),
         SALESAGENT("SALESAGENT"),
-        GUEST("GUEST"),
-        PROPERTY_OWNER("UNVERIFIED_SEER"),
-        CUSTOMER("CUSTOMER"),
-        ACCOUNTANT("ACCOUNTANT");
+        PROPERTY_OWNER("PROPERTY_OWNER"),
+        CUSTOMER("CUSTOMER");
 
         private final String value;
 
@@ -129,8 +127,7 @@ public final class Constants {
     @AllArgsConstructor
     public enum ContractTypeEnum {
         PURCHASE("PURCHASE"),
-        RENTAL("RENTAL"),
-        INVESTMENT("INVESTMENT");
+        RENTAL("RENTAL");
 
         private final String value;
 
@@ -318,8 +315,7 @@ public final class Constants {
     @AllArgsConstructor
     public enum TransactionTypeEnum {
         SALE("SALE"),
-        RENTAL("RENTAL"),
-        INVESTMENT("INVESTMENT");
+        RENTAL("RENTAL");
 
         private final String value;
 

@@ -80,9 +80,8 @@ public class ContractServiceImpl implements ContractService {
         BigDecimal finalPaymentAmount = remainingAmount;
         if (request.getInstallmentAmount() != null && request.getInstallmentAmount() > 0) {
             // For mortgages, final payment is the last installment
-            BigDecimal installmentPayment = remainingAmount.divide(
+            finalPaymentAmount = remainingAmount.divide(
                     BigDecimal.valueOf(request.getInstallmentAmount()), 2, RoundingMode.HALF_UP);
-            finalPaymentAmount = installmentPayment;
         }
 
         Contract contract = Contract.builder()
@@ -392,7 +391,6 @@ public class ContractServiceImpl implements ContractService {
         String prefix = switch (type) {
             case PURCHASE -> "PUR";
             case RENTAL -> "RNT";
-            case INVESTMENT -> "INV";
         };
         
         String timestamp = String.valueOf(System.currentTimeMillis()).substring(5);
@@ -516,6 +514,7 @@ public class ContractServiceImpl implements ContractService {
         return builder.build();
     }
 
+    // TODO: split to mapper class later
     private ContractDetailResponse mapToDetailResponse(Contract contract) {
         ContractDetailResponse.ContractDetailResponseBuilder builder = ContractDetailResponse.builder()
                 .id(contract.getId())

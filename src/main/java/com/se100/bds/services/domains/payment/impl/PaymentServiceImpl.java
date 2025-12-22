@@ -1,5 +1,6 @@
 package com.se100.bds.services.domains.payment.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.se100.bds.dtos.requests.payment.CreateBonusPaymentRequest;
 import com.se100.bds.dtos.requests.payment.CreateSalaryPaymentRequest;
 import com.se100.bds.dtos.requests.payment.UpdatePaymentStatusRequest;
@@ -13,8 +14,9 @@ import com.se100.bds.models.entities.user.SaleAgent;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.repositories.domains.contract.PaymentRepository;
 import com.se100.bds.repositories.domains.user.SaleAgentRepository;
+import com.se100.bds.services.payment.payway.PaywayWebhookHandler;
+import com.se100.bds.services.payment.payway.dto.PaywayWebhookEvent;
 import com.se100.bds.services.domains.payment.PaymentService;
-import com.se100.bds.utils.Constants;
 import com.se100.bds.utils.Constants.PaymentStatusEnum;
 import com.se100.bds.utils.Constants.PaymentTypeEnum;
 import jakarta.persistence.criteria.Predicate;
@@ -41,13 +43,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final SaleAgentRepository saleAgentRepository;
+    private final PaywayWebhookHandler paywayWebhookHandler;
+    private final ObjectMapper objectMapper;
 
     private static final String COMPANY_NAME = "Company";
     private static final String COMPANY_ROLE = "COMPANY";
     private static final String PAYOS_METHOD = "PAYOS";
     private static final String OWNER_PAYOUT_METHOD = "OWNER_PAYOUT";
     private static final String COMPANY_PAYOUT_METHOD = "COMPANY_PAYOUT";
-    private static final String CUSTOMER_PAYOUT_METHOD = "CUSTOMER_PAYOUT";
 
     private static final EnumSet<PaymentTypeEnum> CUSTOMER_TO_COMPANY_TYPES = EnumSet.of(
             PaymentTypeEnum.DEPOSIT,
@@ -67,7 +70,7 @@ public class PaymentServiceImpl implements PaymentService {
             if (!combined.isEmpty()) {
                 return combined;
             }
-            return role != null ? role : null;
+            return role;
         }
     }
 
@@ -182,6 +185,28 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("Created bonus payment {} for agent {}", saved.getId(), request.getAgentId());
 
         return mapToDetailResponse(saved);
+    }
+
+    @Override
+    public void handlePaywayWebhook(String rawBody) {
+        // Route by event.type, since Payway sends multiple event shapes.
+        try {
+            PaywayWebhookEvent<?> envelope = objectMapper.readValue(
+                    rawBody,
+                    objectMapper.getTypeFactory().constructType(PaywayWebhookEvent.class)
+            );
+
+            String type = envelope != null ? envelope.getType() : null;
+            if (type != null && type.startsWith("payout.")) {
+                paywayWebhookHandler.handlePayoutEvent(rawBody);
+                return;
+            }
+        } catch (Exception e) {
+            // Best-effort: if we can't parse the envelope, fall back to payment handler.
+            log.warn("Payway webhook: unable to parse envelope, falling back to payment handler", e);
+        }
+
+        paywayWebhookHandler.handlePaymentEvent(rawBody);
     }
 
     private Specification<Payment> buildPaymentSpecification(

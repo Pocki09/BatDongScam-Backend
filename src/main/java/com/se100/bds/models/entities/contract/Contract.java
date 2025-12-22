@@ -73,6 +73,9 @@ public class Contract extends AbstractBaseEntity {
     @Column(name = "total_contract_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalContractAmount;
 
+    @Column(name = "commission_amount", nullable = false, precision = 15, scale = 2)
+    private BigDecimal commissionAmount;
+
     @Column(name = "deposit_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal depositAmount;
 

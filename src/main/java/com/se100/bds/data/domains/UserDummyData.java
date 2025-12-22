@@ -48,18 +48,6 @@ public class UserDummyData {
         List<Ward> wards = wardRepository.findAll();
         Random random = new Random();
 
-        // Create 1 Guest
-        User guest = createUser(
-                "guest@example.com",
-                "0901234567",
-                "Guest",
-                "User",
-                wards.isEmpty() ? null : wards.get(random.nextInt(wards.size())),
-                Constants.RoleEnum.GUEST
-        );
-        allUsers.add(guest);
-        log.info("Created Guest user: {}", guest.getEmail());
-
         // Create 1 Admin
         User admin = createUser(
                 "admin@example.com",
@@ -71,18 +59,6 @@ public class UserDummyData {
         );
         allUsers.add(admin);
         log.info("Created Admin user: {}", admin.getEmail());
-
-        // Create 1 Accountant
-        User accountant = createUser(
-                "accountant@example.com",
-                "0901234566",
-                "Accountant",
-                "User",
-                wards.isEmpty() ? null : wards.get(random.nextInt(wards.size())),
-                Constants.RoleEnum.ACCOUNTANT
-        );
-        allUsers.add(accountant);
-        log.info("Created Accountant user: {}", accountant.getEmail());
 
         // Create 10 Sale Agents
         for (int i = 1; i <= 10; i++) {

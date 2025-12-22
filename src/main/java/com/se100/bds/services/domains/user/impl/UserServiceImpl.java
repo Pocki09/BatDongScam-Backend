@@ -199,13 +199,9 @@ public class UserServiceImpl implements UserService {
                 List<Property> properties = propertyService.getAllByUserIdAndStatus(null, user.getId(), null, null);
                 int bought = 0;
                 int rent = 0;
-                int invest = 0;
                 int total = properties.size();
 
                 for (Property property : properties) {
-                   if (property.getTransactionType() == Constants.TransactionTypeEnum.INVESTMENT) {
-                       invest++;
-                   }
                    if (property.getTransactionType() == Constants.TransactionTypeEnum.SALE) {
                        bought++;
                    }
@@ -219,7 +215,6 @@ public class UserServiceImpl implements UserService {
                                 .totalListings(total)
                                 .totalBought(bought)
                                 .totalRented(rent)
-                                .totalInvested(invest)
                                 .build()
                 );
 
@@ -243,7 +238,6 @@ public class UserServiceImpl implements UserService {
             case PROPERTY_OWNER -> {
                 List<Property> properties = propertyService.getAllByUserIdAndStatus(user.getId(), null, null, null);
                 int totalSolds = 0;
-                int totalProjects = 0;
                 int totalRentals = 0;
 
                 for (Property property : properties) {
@@ -251,9 +245,6 @@ public class UserServiceImpl implements UserService {
 
                     if (transactionType == Constants.TransactionTypeEnum.SALE) {
                         totalSolds++;
-                    }
-                    else if (transactionType == Constants.TransactionTypeEnum.INVESTMENT) {
-                        totalProjects++;
                     }
                     else if (transactionType == Constants.TransactionTypeEnum.RENTAL) {
                         totalRentals++;
@@ -264,7 +255,6 @@ public class UserServiceImpl implements UserService {
                         PropertyOwnerPropertyProfileResponse.builder()
                                 .totalListings(properties.size())
                                 .totalSolds(totalSolds)
-                                .totalProjects(totalProjects)
                                 .totalRentals(totalRentals)
                                 .build()
                 );
@@ -526,7 +516,6 @@ public class UserServiceImpl implements UserService {
                 List<Property> properties = propertyService.getAllByUserIdAndStatus(null, id, null, null);
 
                 int totalSolds = 0;
-                int totalProjects = 0;
                 int totalRentals = 0;
 
                 for (Property property : properties) {
@@ -536,14 +525,11 @@ public class UserServiceImpl implements UserService {
                     else  if (property.getTransactionType() == Constants.TransactionTypeEnum.RENTAL) {
                         totalRentals++;
                     }
-                    else
-                        totalProjects++;
                 }
 
                 customerPropertyProfileResponse.setTotalListings(properties.size());
                 customerPropertyProfileResponse.setTotalBought(totalSolds);
                 customerPropertyProfileResponse.setTotalRented(totalRentals);
-                customerPropertyProfileResponse.setTotalInvested(totalProjects);
 
                 UserProfileResponse<CustomerPropertyProfileResponse> customerProfileResponse =
                         (UserProfileResponse<CustomerPropertyProfileResponse>) userProfileResponse;
@@ -564,7 +550,6 @@ public class UserServiceImpl implements UserService {
                                 List.of(Constants.PropertyStatusEnum.AVAILABLE, Constants.PropertyStatusEnum.SOLD, Constants.PropertyStatusEnum.RENTED));
 
                 int totalSolds = 0;
-                int totalProjects = 0;
                 int totalRentals = 0;
 
                 for (Property property : properties) {
@@ -576,11 +561,6 @@ public class UserServiceImpl implements UserService {
                             && (status == Constants.PropertyStatusEnum.SOLD || status == Constants.PropertyStatusEnum.AVAILABLE)) {
                         totalSolds++;
                     }
-                    // Count INVESTMENT transactions (Projects) that are AVAILABLE
-                    else if (transactionType == Constants.TransactionTypeEnum.INVESTMENT
-                            && status == Constants.PropertyStatusEnum.AVAILABLE) {
-                        totalProjects++;
-                    }
                     // Count RENTAL transactions that are RENTED or AVAILABLE
                     else if (transactionType == Constants.TransactionTypeEnum.RENTAL
                             && (status == Constants.PropertyStatusEnum.RENTED || status == Constants.PropertyStatusEnum.AVAILABLE)) {
@@ -590,7 +570,6 @@ public class UserServiceImpl implements UserService {
 
                 ownerPropertyProfileResponse.setTotalListings(properties.size());
                 ownerPropertyProfileResponse.setTotalSolds(totalSolds);
-                ownerPropertyProfileResponse.setTotalProjects(totalProjects);
                 ownerPropertyProfileResponse.setTotalRentals(totalRentals);
 
                 UserProfileResponse<PropertyOwnerPropertyProfileResponse> ownerProfileResponse =
@@ -944,7 +923,6 @@ public class UserServiceImpl implements UserService {
             Integer minContracts, Integer maxContracts,
             Integer minPropertiesBought, Integer maxPropertiesBought,
             Integer minPropertiesRented, Integer maxPropertiesRented,
-            Integer minPropertiesInvested, Integer maxPropertiesInvested,
             Integer minRanking, Integer maxRanking,
             LocalDateTime joinedDateFrom, LocalDateTime joinedDateTo,
             List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds
@@ -1045,15 +1023,6 @@ public class UserServiceImpl implements UserService {
                     continue;
                 }
 
-                // Month data doesn't have invested properties, skip that filter for month view
-                int totalProperties = purchases + rentals;
-                if (minPropertiesInvested != null && totalProperties < minPropertiesInvested) {
-                    continue;
-                }
-                if (maxPropertiesInvested != null && totalProperties > maxPropertiesInvested) {
-                    continue;
-                }
-
                 customerListItemList.add(
                         CustomerListItem.builder()
                                 .id(customerUser.getId())
@@ -1140,14 +1109,6 @@ public class UserServiceImpl implements UserService {
                     continue;
                 }
 
-                int totalProperties = purchases + rentals;
-                if (minPropertiesInvested != null && totalProperties < minPropertiesInvested) {
-                    continue;
-                }
-                if (maxPropertiesInvested != null && totalProperties > maxPropertiesInvested) {
-                    continue;
-                }
-
                 customerListItemList.add(
                         CustomerListItem.builder()
                                 .id(customerUser.getId())
@@ -1192,7 +1153,6 @@ public class UserServiceImpl implements UserService {
             Integer minProperties, Integer maxProperties,
             Integer minPropertiesForSale, Integer maxPropertiesForSale,
             Integer minPropertiesForRents, Integer maxPropertiesForRents,
-            Integer minProjects, Integer maxProjects,
             Integer minRanking, Integer maxRanking,
             LocalDateTime joinedDateFrom, LocalDateTime joinedDateTo,
             List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds) {
@@ -1277,17 +1237,6 @@ public class UserServiceImpl implements UserService {
                     continue;
                 }
 
-                // Calculate projects as properties sold + rented (assuming these are investment properties)
-                Integer propertiesSold = ownerContributionMonth.getMonthTotalPropertiesSold();
-                Integer propertiesRented = ownerContributionMonth.getMonthTotalPropertiesRented();
-                int projects = propertiesSold + propertiesRented;
-                if (minProjects != null && projects < minProjects) {
-                    continue;
-                }
-                if (maxProjects != null && projects > maxProjects) {
-                    continue;
-                }
-
                 ownerListItemList.add(
                         PropertyOwnerListItem.builder()
                                 .id(ownerUser.getId())
@@ -1349,14 +1298,6 @@ public class UserServiceImpl implements UserService {
                     continue;
                 }
                 if (maxPropertiesForRents != null && propertiesRented > maxPropertiesForRents) {
-                    continue;
-                }
-
-                int projects = propertiesSold + propertiesRented;
-                if (minProjects != null && projects < minProjects) {
-                    continue;
-                }
-                if (maxProjects != null && projects > maxProjects) {
                     continue;
                 }
 

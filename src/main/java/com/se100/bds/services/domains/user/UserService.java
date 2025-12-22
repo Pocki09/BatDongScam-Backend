@@ -94,7 +94,6 @@ public interface UserService {
             Integer minContracts, Integer maxContracts,
             Integer minPropertiesBought, Integer maxPropertiesBought,
             Integer minPropertiesRented, Integer maxPropertiesRented,
-            Integer minPropertiesInvested, Integer maxPropertiesInvested,
             Integer minRanking, Integer maxRanking,
             LocalDateTime joinedDateFrom, LocalDateTime joinedDateTo,
             List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds
@@ -107,7 +106,6 @@ public interface UserService {
             Integer minProperties, Integer maxProperties,
             Integer minPropertiesForSale, Integer maxPropertiesForSale,
             Integer minPropertiesForRents, Integer maxPropertiesForRents,
-            Integer minProjects, Integer maxProjects,
             Integer minRanking, Integer maxRanking,
             LocalDateTime joinedDateFrom, LocalDateTime joinedDateTo,
             List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds

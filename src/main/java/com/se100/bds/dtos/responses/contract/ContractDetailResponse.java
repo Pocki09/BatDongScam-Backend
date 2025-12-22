@@ -25,7 +25,7 @@ public class ContractDetailResponse {
     @Schema(description = "Contract number")
     private String contractNumber;
 
-    @Schema(description = "Contract type: PURCHASE, RENTAL, INVESTMENT")
+    @Schema(description = "Contract type: PURCHASE, RENTAL")
     private String contractType;
 
     @Schema(description = "Contract status: DRAFT, PENDING_SIGNING, ACTIVE, COMPLETED, CANCELLED")

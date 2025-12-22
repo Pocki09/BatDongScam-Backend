@@ -53,4 +53,10 @@ public interface PaymentService {
      * Create bonus payment for sales agent
      */
     PaymentDetailResponse createBonusPayment(CreateBonusPaymentRequest request);
+
+    /**
+     * Process a Payway webhook event (raw request body JSON string).
+     * Signature verification is handled at the controller layer.
+     */
+    void handlePaywayWebhook(String rawBody);
 }

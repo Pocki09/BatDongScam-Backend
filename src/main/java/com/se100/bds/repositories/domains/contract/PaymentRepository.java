@@ -13,11 +13,10 @@ import java.util.UUID;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, UUID>, JpaSpecificationExecutor<Payment> {
-	Optional<Payment> findByPayosOrderCode(Long payosOrderCode);
+	Optional<Payment> findByPaywayPaymentId(String paywayPaymentId);
 	List<Payment> findAllByContract_IdAndStatus(UUID contractId, PaymentStatusEnum status);
 	Optional<Payment> findFirstByContract_IdAndPaymentTypeAndStatus(UUID contractId, PaymentTypeEnum paymentType, PaymentStatusEnum status);
 	Optional<Payment> findFirstByContract_IdAndPaymentTypeOrderByCreatedAtDesc(UUID contractId, PaymentTypeEnum paymentType);
 	Optional<Payment> findFirstByProperty_IdAndPaymentTypeOrderByCreatedAtDesc(UUID propertyId, PaymentTypeEnum paymentType);
 	Optional<Payment> findFirstByContract_IdAndPaymentTypeAndPaymentMethodOrderByCreatedAtDesc(UUID contractId, PaymentTypeEnum paymentType, String paymentMethod);
 }
-

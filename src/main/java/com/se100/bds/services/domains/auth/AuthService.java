@@ -1,7 +1,6 @@
 package com.se100.bds.services.domains.auth;
 
 import com.se100.bds.dtos.responses.auth.TokenResponse;
-import com.se100.bds.models.entities.user.User;
 
 import java.util.UUID;
 
@@ -9,10 +8,6 @@ public interface AuthService {
     TokenResponse login(String email, String password, Boolean rememberMe);
 
     TokenResponse refreshFromBearerString(String bearer);
-
-    void logout(User user, String bearer);
-
-    void logout(User user);
 
     TokenResponse refresh(String refreshToken);
 

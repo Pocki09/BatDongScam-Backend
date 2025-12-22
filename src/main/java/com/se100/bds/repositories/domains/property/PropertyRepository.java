@@ -2,6 +2,7 @@ package com.se100.bds.repositories.domains.property;
 
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.user.PropertyOwner;
+import com.se100.bds.repositories.dtos.DocumentProjection;
 import com.se100.bds.repositories.dtos.MediaProjection;
 import com.se100.bds.repositories.dtos.PropertyCardProtection;
 import com.se100.bds.repositories.dtos.PropertyDetailsProjection;
@@ -215,7 +216,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
         WHERE d.property.id = :propertyId
         ORDER BY d.createdAt ASC
     """)
-    List<com.se100.bds.repositories.dtos.DocumentProjection> findDocumentsByPropertyId(@Param("propertyId") UUID propertyId);
+    List<DocumentProjection> findDocumentsByPropertyId(@Param("propertyId") UUID propertyId);
 
     List<Property> findAllByOwner(PropertyOwner owner);
 

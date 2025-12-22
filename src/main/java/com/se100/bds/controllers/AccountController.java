@@ -443,8 +443,6 @@ public class AccountController extends AbstractBaseController {
             @RequestParam(required = false) Integer maxPropertiesBought,
             @RequestParam(required = false) Integer minPropertiesRented,
             @RequestParam(required = false) Integer maxPropertiesRented,
-            @RequestParam(required = false) Integer minPropertiesInvested,
-            @RequestParam(required = false) Integer maxPropertiesInvested,
             @RequestParam(required = false) Integer minRanking,
             @RequestParam(required = false) Integer maxRanking,
             @RequestParam(required = false) LocalDateTime joinedDateFrom,
@@ -467,7 +465,6 @@ public class AccountController extends AbstractBaseController {
                 minContracts, maxContracts,
                 minPropertiesBought, maxPropertiesBought,
                 minPropertiesRented, maxPropertiesRented,
-                minPropertiesInvested, maxPropertiesInvested,
                 minRanking, maxRanking,
                 joinedDateFrom, joinedDateTo,
                 filteredCityIds, filteredDistrictIds, filteredWardIds
@@ -516,8 +513,6 @@ public class AccountController extends AbstractBaseController {
             @RequestParam(required = false) Integer maxPropertiesForSale,
             @RequestParam(required = false) Integer minPropertiesForRents,
             @RequestParam(required = false) Integer maxPropertiesForRents,
-            @RequestParam(required = false) Integer minProjects,
-            @RequestParam(required = false) Integer maxProjects,
             @RequestParam(required = false) Integer minRanking,
             @RequestParam(required = false) Integer maxRanking,
             @RequestParam(required = false) LocalDateTime joinedDateFrom,
@@ -538,7 +533,6 @@ public class AccountController extends AbstractBaseController {
                 minProperties, maxProperties,
                 minPropertiesForSale, maxPropertiesForSale,
                 minPropertiesForRents, maxPropertiesForRents,
-                minProjects, maxProjects,
                 minRanking, maxRanking,
                 joinedDateFrom, joinedDateTo,
                 filteredCityIds, filteredDistrictIds, filteredWardIds

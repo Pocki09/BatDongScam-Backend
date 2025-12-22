@@ -13,5 +13,4 @@ public class CustomerPropertyProfileResponse {
     private Integer totalListings;
     private Integer totalBought;
     private Integer totalRented;
-    private Integer totalInvested;
 }

@@ -13,5 +13,4 @@ public class PropertyOwnerPropertyProfileResponse {
     private Integer totalListings;
     private Integer totalSolds;
     private Integer totalRentals;
-    private Integer totalProjects;
 }

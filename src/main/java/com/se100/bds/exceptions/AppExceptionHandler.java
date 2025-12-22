@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -97,8 +98,9 @@ public class AppExceptionHandler {
         return build(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
-    @ExceptionHandler(NotFoundException.class)
-    public final ResponseEntity<ErrorResponse> handleDomainNotFound(final NotFoundException e) {
+    // https://github.com/spring-projects/spring-boot/issues/38733
+    @ExceptionHandler({NotFoundException.class, NoResourceFoundException.class})
+    public final ResponseEntity<ErrorResponse> handleDomainNotFound(final Exception e) {
         log.error(e.toString(), e.getMessage());
         return build(HttpStatus.NOT_FOUND, e.getMessage());
     }
@@ -140,7 +142,7 @@ public class AppExceptionHandler {
     @ExceptionHandler(Exception.class)
     public final ResponseEntity<ErrorResponse> handleAllExceptions(final Exception e) {
         log.error("Exception: {}", ExceptionUtils.getStackTrace(e));
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Server cooked!!!");
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Server cooked! Exception: " + e.getMessage());
     }
 
     /**

@@ -84,29 +84,6 @@ public class AuthServiceImpl implements AuthService {
         return refresh(jwtTokenProvider.extractJwtFromBearerString(bearer));
     }
 
-    /**
-     * Logout - Stateless JWT doesn't require token deletion.
-     * Token will expire naturally or client should discard it.
-     *
-     * @param user   User
-     * @param bearer String
-     */
-    @Override
-    @Transactional
-    public void logout(User user, final String bearer) {
-        log.info("Logout request for user: {}", user.getId());
-        // In stateless JWT, logout is handled client-side by discarding the token
-        // The token will expire naturally based on its expiration time
-        // If you need immediate invalidation, consider implementing a token blacklist
-    }
-
-    @Override
-    @Transactional
-    public void logout(User user) {
-        log.info("Logout request for user: {}", user.getId());
-        // In stateless JWT, logout is handled client-side by discarding the token
-    }
-
     @Override
     @Transactional
     public TokenResponse refresh(final String refreshToken) {

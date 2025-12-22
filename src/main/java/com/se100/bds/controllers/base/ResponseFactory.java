@@ -54,7 +54,7 @@ public class ResponseFactory {
             T data,
             String message
     ) {
-        return ResponseEntity.ok(
+        return ResponseEntity.badRequest().body(
                 createSingleResponse(HttpStatus.BAD_REQUEST, message, data)
         );
     }
