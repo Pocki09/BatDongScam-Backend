@@ -88,6 +88,12 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
+    public Property findPropertyById(UUID propertyId) {
+        return propertyRepository.findById(propertyId)
+                .orElseThrow(() -> new EntityNotFoundException("Property not found with id: " + propertyId));
+    }
+
+    @Override
     public Page<PropertyCard> getAllCardsWithFilters(List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds,
                                                      List<UUID> propertyTypeIds, UUID ownerId, String ownerName,
                                                      List<Constants.ContributionTierEnum> ownerTier,

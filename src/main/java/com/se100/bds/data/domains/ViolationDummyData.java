@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -36,10 +35,37 @@ public class ViolationDummyData {
     private final ViolationReportScheduler violationReportScheduler;
     private final Random random = new Random();
 
+    /**
+     * Check if violation data already exists
+     */
+    public boolean any() {
+        try {
+            return violationRepository.count() > 0;
+        } catch (Exception e) {
+            log.warn("Could not check violation data existence (table might not exist yet): {}", e.getMessage());
+            return false;
+        }
+    }
+
     public void createDummy() {
-        createDummyViolations();
-        createDummyViolationReportDetails();
-        initViolationReportData();
+        try {
+            // Check if violation reports already exist
+            long existingCount = violationRepository.count();
+            if (existingCount > 0) {
+                log.info("Violation reports already exist ({}), skipping creation", existingCount);
+                return;
+            }
+
+            log.info("Creating violation dummy data...");
+            createDummyViolations();
+            createDummyViolationReportDetails();
+            initViolationReportData();
+            log.info("Violation dummy data created successfully");
+
+        } catch (Exception e) {
+            log.error("Failed to create violation dummy data. This might be due to schema not being created yet.", e);
+            log.warn("You may need to restart the application after schema is fully created.");
+        }
     }
 
     private void initViolationReportData() {
@@ -109,14 +135,14 @@ public class ViolationDummyData {
                 reportedEntity = reportedUser;
             }
 
-            // Random reporter (can be null for anonymous reports)
-            User reporter = random.nextBoolean() ? users.get(random.nextInt(users.size())) : null;
+            // Every violation must have a reporter (no anonymous reports)
+            User reporter = users.get(random.nextInt(users.size()));
 
             Constants.ViolationTypeEnum violationType = violationTypes[random.nextInt(violationTypes.length)];
             Constants.ViolationStatusEnum status = statuses[random.nextInt(statuses.length)];
 
             ViolationReport violation = ViolationReport.builder()
-                    .user(reporter)
+                    .reporterUser(reporter)
                     .relatedEntityType(reportedType)
                     .relatedEntityId(reportedType == Constants.ViolationReportedTypeEnum.PROPERTY
                             ? ((Property) reportedEntity).getId()
@@ -126,10 +152,12 @@ public class ViolationDummyData {
                     .status(status)
                     .resolutionNotes(status == Constants.ViolationStatusEnum.RESOLVED ? generateResolutionNotes() : null)
                     .resolvedAt(status == Constants.ViolationStatusEnum.RESOLVED ? LocalDateTime.now().minusDays(random.nextInt(30)) : null)
+                    .penaltyApplied(status == Constants.ViolationStatusEnum.RESOLVED && random.nextBoolean()
+                            ? Constants.PenaltyAppliedEnum.values()[random.nextInt(Constants.PenaltyAppliedEnum.values().length)]
+                            : null)
                     .mediaList(new ArrayList<>())
                     .build();
 
-            // Add evidence media to violation report (1-5 images/videos)
             int mediaCount = 1 + random.nextInt(5); // 1-5 media files
             for (int j = 0; j < mediaCount; j++) {
                 Media media = createViolationEvidenceMedia(violation, j);
@@ -146,26 +174,19 @@ public class ViolationDummyData {
     private String generateViolationDescription(Constants.ViolationTypeEnum violationType, Constants.ViolationReportedTypeEnum reportedType) {
         String entityType = reportedType == Constants.ViolationReportedTypeEnum.PROPERTY ? "property" : "user";
 
-        switch (violationType) {
-            case FRAUDULENT_LISTING:
-                return "This " + entityType + " contains false information and misleading claims.";
-            case MISREPRESENTATION_OF_PROPERTY:
-                return "Property details do not match the actual condition or specifications.";
-            case SPAM_OR_DUPLICATE_LISTING:
-                return "Multiple identical listings posted for the same property.";
-            case INAPPROPRIATE_CONTENT:
-                return "This " + entityType + " contains inappropriate images or offensive language.";
-            case NON_COMPLIANCE_WITH_TERMS:
-                return "User violated platform terms and conditions.";
-            case FAILURE_TO_DISCLOSE_INFORMATION:
-                return "Critical information was not disclosed properly.";
-            case HARASSMENT:
-                return "User engaged in harassment or abusive behavior towards other users.";
-            case SCAM_ATTEMPT:
-                return "Suspected scam or fraudulent activity detected.";
-            default:
-                return "Violation of platform policies.";
-        }
+        return switch (violationType) {
+            case FRAUDULENT_LISTING -> "This " + entityType + " contains false information and misleading claims.";
+            case MISREPRESENTATION_OF_PROPERTY ->
+                    "Property details do not match the actual condition or specifications.";
+            case SPAM_OR_DUPLICATE_LISTING -> "Multiple identical listings posted for the same property.";
+            case INAPPROPRIATE_CONTENT ->
+                    "This " + entityType + " contains inappropriate images or offensive language.";
+            case NON_COMPLIANCE_WITH_TERMS -> "User violated platform terms and conditions.";
+            case FAILURE_TO_DISCLOSE_INFORMATION -> "Critical information was not disclosed properly.";
+            case HARASSMENT -> "User engaged in harassment or abusive behavior towards other users.";
+            case SCAM_ATTEMPT -> "Suspected scam or fraudulent activity detected.";
+            default -> "Violation of platform policies.";
+        };
     }
 
     private String generateResolutionNotes() {
@@ -180,23 +201,23 @@ public class ViolationDummyData {
     }
 
     private Media createViolationEvidenceMedia(ViolationReport violation, int index) {
-        // 70% images, 30% videos for evidence
-        Constants.MediaTypeEnum mediaType = random.nextDouble() < 0.7
+        // 80% images, 20% documents for evidence
+        Constants.MediaTypeEnum mediaType = random.nextDouble() < 0.8
                 ? Constants.MediaTypeEnum.IMAGE
-                : Constants.MediaTypeEnum.VIDEO;
+                : Constants.MediaTypeEnum.DOCUMENT;
 
         String fileName;
         String filePath;
         String mimeType;
 
         if (mediaType == Constants.MediaTypeEnum.IMAGE) {
-            fileName = "violation_evidence_" + violation.getId() + "_" + (index + 1) + ".jpg";
-            filePath = "https://res.cloudinary.com/bds-platform/image/upload/violations/" + violation.getId() + "/" + fileName;
+            fileName = "violation_evidence_" + (index + 1) + ".jpg";
+            filePath = "https://res.cloudinary.com/bds-platform/image/upload/violations/evidence_" + (index + 1) + ".jpg";
             mimeType = "image/jpeg";
         } else {
-            fileName = "violation_evidence_" + violation.getId() + "_" + (index + 1) + ".mp4";
-            filePath = "https://res.cloudinary.com/bds-platform/video/upload/violations/" + violation.getId() + "/" + fileName;
-            mimeType = "video/mp4";
+            fileName = "violation_document_" + (index + 1) + ".pdf";
+            filePath = "https://res.cloudinary.com/bds-platform/raw/upload/violations/document_" + (index + 1) + ".pdf";
+            mimeType = "application/pdf";
         }
 
         return Media.builder()
@@ -205,7 +226,6 @@ public class ViolationDummyData {
                 .fileName(fileName)
                 .filePath(filePath)
                 .mimeType(mimeType)
-                .documentType(null) // Not a document, it's evidence (image/video)
                 .build();
     }
 

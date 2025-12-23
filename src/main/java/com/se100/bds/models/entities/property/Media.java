@@ -24,7 +24,7 @@ public class Media extends AbstractBaseEntity {
     private Property property;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "report_id", nullable = true)
+    @JoinColumn(name = "violation_id", nullable = true)
     @JsonIgnore
     private ViolationReport violationReport;
 

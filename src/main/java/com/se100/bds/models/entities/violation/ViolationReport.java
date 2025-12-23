@@ -25,26 +25,26 @@ import java.util.UUID;
 })
 public class ViolationReport extends AbstractBaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "reporter_user", nullable = false)
+    private User reporterUser;
 
     @Column(name = "related_entity_type", nullable = false)
-    @Enumerated(EnumType.STRING)
     private Constants.ViolationReportedTypeEnum relatedEntityType;
 
     @Column(name = "related_entity_id", nullable = false)
     private UUID relatedEntityId;
 
     @Column(name = "violation_type", nullable = false)
-    @Enumerated(EnumType.STRING)
     private Constants.ViolationTypeEnum violationType;
 
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "status")
-    @Enumerated(EnumType.STRING)
     private Constants.ViolationStatusEnum status;
+
+    @Column(name = "penalty_applied")
+    private Constants.PenaltyAppliedEnum penaltyApplied;
 
     @Column(name = "resolution_notes", columnDefinition = "TEXT")
     private String resolutionNotes;

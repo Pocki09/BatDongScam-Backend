@@ -95,11 +95,11 @@ public class DummyData implements CommandLineRunner {
         // 14. Create violation reports
         violationDummyData.createDummy();
 
-        // 15. Create search logs (100k logs with proper hierarchical relationships)
-        searchLogDummyData.createDummy();
-
         // 16. Create ranking data (monthly and all-time rankings for owners, agents, customers)
         rankingDummyData.createDummy();
+
+        // 15. Create search logs (100k logs with proper hierarchical relationships)
+        searchLogDummyData.createDummy();
 
         log.info("Done initializing dummy data");
     }

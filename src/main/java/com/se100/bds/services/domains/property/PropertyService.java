@@ -23,6 +23,9 @@ import java.util.UUID;
 
 public interface PropertyService {
     Page<Property> getAll(Pageable pageable);
+
+    Property findPropertyById(UUID propertyId);
+
     Page<PropertyCard> getAllCardsWithFilters(List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds,
                                               List<UUID> propertyTypeIds, UUID ownerId, String ownerName,
                                               List<Constants.ContributionTierEnum> ownerTier,

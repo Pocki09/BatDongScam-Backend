@@ -22,12 +22,14 @@ import com.se100.bds.repositories.domains.user.UserRepository;
 import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -50,9 +52,9 @@ public class SearchLogDummyData {
 
     @Transactional(readOnly = true)
     public void createDummy() {
-        log.info("Creating 100k search logs per month from January 2024 to November 2025...");
+        log.info("Creating search logs per month from January 2024 to December 2025 (async processing)...");
 
-        // Fetch all necessary data
+        // Fetch all necessary data ONCE
         List<UUID> userIds = userRepository.findAll().stream().map(User::getId).toList();
         List<UUID> cityIds = cityRepository.findAll().stream().map(City::getId).toList();
 
@@ -94,18 +96,55 @@ public class SearchLogDummyData {
                 userIds.size(), cityIds.size(), districtDataList.size(), wardDataList.size(),
                 propertyDataList.size(), propertyTypeIds.size());
 
-        // Generate data for each month from January 2024 to November 2025
+        // Generate data for each month from January 2024 to December 2025
         YearMonth startMonth = YearMonth.of(2024, 1);
         YearMonth endMonth = YearMonth.of(2025, 12);
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         YearMonth currentMonth = startMonth;
 
         while (!currentMonth.isAfter(endMonth)) {
-            log.info("Processing month: {}-{}", currentMonth.getYear(), currentMonth.getMonthValue());
+            final YearMonth month = currentMonth;
+            final LocalDateTime monthStart = month.atDay(1).atStartOfDay();
+            final LocalDateTime monthEnd = month.atEndOfMonth().atTime(23, 59, 59);
 
-            LocalDateTime monthStart = currentMonth.atDay(1).atStartOfDay();
-            LocalDateTime monthEnd = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+            // Process each month asynchronously
+            CompletableFuture<Void> future = processMonthAsync(
+                month.getYear(), month.getMonthValue(),
+                monthStart, monthEnd,
+                userIds, cityIds, districtDataList, wardDataList,
+                propertyDataList, propertyTypeIds,
+                districtToCityMap, wardToDistrictMap
+            );
 
-            // Generate 100k search logs for this month
+            futures.add(future);
+            currentMonth = currentMonth.plusMonths(1);
+        }
+
+        // Wait for all months to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        log.info("Successfully created search logs and reports for all months");
+    }
+
+    @Async
+    public CompletableFuture<Void> processMonthAsync(
+            int year, int month,
+            LocalDateTime monthStart,
+            LocalDateTime monthEnd,
+            List<UUID> userIds,
+            List<UUID> cityIds,
+            List<LocationData> districtDataList,
+            List<LocationData> wardDataList,
+            List<PropertyData> propertyDataList,
+            List<UUID> propertyTypeIds,
+            Map<UUID, UUID> districtToCityMap,
+            Map<UUID, UUID> wardToDistrictMap
+    ) {
+        try {
+            log.info("Processing month: {}-{} [Thread: {}]", year, month, Thread.currentThread().getName());
+
+            // Generate search logs for this month
             generateSearchLogsForMonth(
                 monthStart, monthEnd,
                 userIds, cityIds, districtDataList, wardDataList,
@@ -115,17 +154,17 @@ public class SearchLogDummyData {
 
             // Generate PropertyStatisticsReport for this month
             generatePropertyStatisticsReport(
-                currentMonth.getYear(), currentMonth.getMonthValue(),
+                year, month,
                 monthStart, monthEnd,
                 cityIds, districtDataList, wardDataList, propertyTypeIds
             );
 
-            log.info("Completed month: {}-{}", currentMonth.getYear(), currentMonth.getMonthValue());
-
-            currentMonth = currentMonth.plusMonths(1);
+            log.info("Completed month: {}-{}", year, month);
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            log.error("Error processing month {}-{}: {}", year, month, e.getMessage(), e);
+            return CompletableFuture.failedFuture(e);
         }
-
-        log.info("Successfully created search logs and reports for all months");
     }
 
     private void generateSearchLogsForMonth(
@@ -140,16 +179,15 @@ public class SearchLogDummyData {
             Map<UUID, UUID> districtToCityMap,
             Map<UUID, UUID> wardToDistrictMap
     ) {
-        // for production
-//        int totalLogs = 100000;
-//        int batchSize = 5000;
-
         int totalLogs = 1000;
         int batchSize = 500;
         int batches = totalLogs / batchSize;
 
+        // Process batches in parallel
+        List<List<SearchLog>> allBatches = new ArrayList<>();
+
         for (int batch = 0; batch < batches; batch++) {
-            List<SearchLog> searchLogs = new ArrayList<>();
+            List<SearchLog> searchLogs = new ArrayList<>(batchSize);
 
             for (int i = 0; i < batchSize; i++) {
                 SearchLog searchLog = generateSearchLog(
@@ -161,8 +199,11 @@ public class SearchLogDummyData {
                 searchLogs.add(searchLog);
             }
 
-            searchLogRepository.saveAll(searchLogs);
+            allBatches.add(searchLogs);
         }
+
+        // Save all batches (MongoDB can handle bulk inserts efficiently)
+        allBatches.parallelStream().forEach(searchLogRepository::saveAll);
     }
 
     private SearchLog generateSearchLog(

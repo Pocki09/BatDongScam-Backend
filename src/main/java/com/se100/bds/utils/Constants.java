@@ -366,6 +366,7 @@ public final class Constants {
         }
     }
 
+    ///  VIOLATION REPORT
     @Getter
     @AllArgsConstructor
     public enum ViolationReportedTypeEnum {
@@ -427,6 +428,45 @@ public final class Constants {
 
     @Getter
     @AllArgsConstructor
+    public enum PenaltyAppliedEnum {
+        WARNING("WARNING"),
+        REMOVED_POST("REMOVED_POST"),
+        SUSPENDED_ACCOUNT("SUSPENDED_ACCOUNT");
+
+        private final String value;
+
+        public static PenaltyAppliedEnum get(final String name) {
+            return Stream.of(PenaltyAppliedEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid violation status name: %s", name)));
+        }
+    }
+
+    ///
+
+    @Getter
+    @AllArgsConstructor
+    public enum ReportTypeEnum { // Statistic report, not violation report
+        FINANCIAL("FINANCIAL"),
+        AGENT_PERFORMANCE("AGENT_PERFORMANCE"),
+        PROPERTY_STATISTICS("PROPERTY_STATISTICS"),
+        PROPERTY_OWNER_CONTRIBUTION("PROPERTY_OWNER_CONTRIBUTION"),
+        CUSTOMER_ANALYTICS("CUSTOMER_ANALYTICS"),
+        VIOLATION("VIOLATION");
+
+        private final String value;
+
+        public static ReportTypeEnum get(final String name) {
+            return Stream.of(ReportTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid report type name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
     public enum PropertyStatusEnum {
         PENDING("PENDING"),
         REJECTED("REJECTED"),
@@ -445,26 +485,6 @@ public final class Constants {
                     .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid property status name: %s", name)));
-        }
-    }
-
-    @Getter
-    @AllArgsConstructor
-    public enum ReportTypeEnum {
-        FINANCIAL("FINANCIAL"),
-        AGENT_PERFORMANCE("AGENT_PERFORMANCE"),
-        PROPERTY_STATISTICS("PROPERTY_STATISTICS"),
-        PROPERTY_OWNER_CONTRIBUTION("PROPERTY_OWNER_CONTRIBUTION"),
-        CUSTOMER_ANALYTICS("CUSTOMER_ANALYTICS"),
-        VIOLATION("VIOLATION");
-
-        private final String value;
-
-        public static ReportTypeEnum get(final String name) {
-            return Stream.of(ReportTypeEnum.values())
-                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid report type name: %s", name)));
         }
     }
 
