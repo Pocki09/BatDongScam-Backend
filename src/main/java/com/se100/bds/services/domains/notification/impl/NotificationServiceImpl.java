@@ -1,18 +1,28 @@
 package com.se100.bds.services.domains.notification.impl;
 
-import com.se100.bds.models.entities.appointment.Appointment;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.se100.bds.dtos.responses.notification.NotificationDetails;
+import com.se100.bds.dtos.responses.notification.NotificationItem;
+import com.se100.bds.mappers.NotificationMapper;
 import com.se100.bds.models.entities.notification.Notification;
-import com.se100.bds.models.entities.property.Media;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.repositories.domains.notification.NotificationRepository;
 import com.se100.bds.services.domains.notification.NotificationService;
+import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.utils.Constants;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -20,141 +30,106 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
-    private static final String DEFAULT_NOTIFICATION_IMAGE = "https://static.batdongsam.com/notifications/default.png";
-
     private final NotificationRepository notificationRepository;
+    private final FirebaseMessaging firebaseMessaging;
+    private final UserService userService;
+    private final NotificationMapper notificationMapper;
 
-    @Override
     @Async
-    public void notifyAppointmentBooked(Appointment appointment) {
-        if (appointment == null) {
-            return;
-        }
-
-        String propertyTitle = extractPropertyTitle(appointment);
-        String message = String.format("Your viewing for %s is pending confirmation.", propertyTitle);
-        sendNotification(appointment.getCustomer() != null ? appointment.getCustomer().getUser() : null,
-                "Viewing booked",
-                message,
-                appointment);
-
-        if (appointment.getAgent() != null && appointment.getAgent().getUser() != null) {
-            String agentMessage = String.format("New viewing assigned for %s on %s.",
-                    propertyTitle,
-                    appointment.getRequestedDate());
-            sendNotification(appointment.getAgent().getUser(),
-                    "New viewing assignment",
-                    agentMessage,
-                    appointment);
-        }
-    }
-
     @Override
-    @Async
-    public void notifyAppointmentAssigned(Appointment appointment) {
-        if (appointment == null || appointment.getAgent() == null || appointment.getAgent().getUser() == null) {
-            return;
-        }
-
-        String propertyTitle = extractPropertyTitle(appointment);
-        String title = "Viewing confirmed";
-        String message = String.format("Agent %s is now handling your viewing for %s.",
-                appointment.getAgent().getUser().getFullName(),
-                propertyTitle);
-        sendNotification(appointment.getCustomer() != null ? appointment.getCustomer().getUser() : null,
-                title,
-                message,
-                appointment);
-
-        String agentTitle = "You have been assigned";
-        String agentMessage = String.format("You are assigned to the viewing for %s on %s.",
-                propertyTitle,
-                appointment.getRequestedDate());
-        sendNotification(appointment.getAgent().getUser(), agentTitle, agentMessage, appointment);
-    }
-
-    @Override
-    @Async
-    public void notifyAppointmentCancelled(Appointment appointment, String reason) {
-        if (appointment == null) {
-            return;
-        }
-
-        String propertyTitle = extractPropertyTitle(appointment);
-        String cancellationMessage = String.format("Viewing for %s was cancelled. %s",
-                propertyTitle,
-                reason != null ? reason : "");
-
-        sendNotification(appointment.getCustomer() != null ? appointment.getCustomer().getUser() : null,
-                "Viewing cancelled",
-                cancellationMessage,
-                appointment);
-
-        if (appointment.getAgent() != null && appointment.getAgent().getUser() != null) {
-            String agentMessage = String.format("Viewing for %s has been cancelled.", propertyTitle);
-            sendNotification(appointment.getAgent().getUser(),
-                    "Assigned viewing cancelled",
-                    agentMessage,
-                    appointment);
-        }
-    }
-
-    @Override
-    @Async
-    public void notifyAppointmentCompleted(Appointment appointment) {
-        if (appointment == null || appointment.getCustomer() == null) {
-            return;
-        }
-
-        String propertyTitle = extractPropertyTitle(appointment);
-        String message = String.format("Thanks for attending the viewing for %s. Please consider leaving feedback.", propertyTitle);
-        sendNotification(appointment.getCustomer().getUser(),
-                "Viewing completed",
-                message,
-                appointment);
-    }
-
-    private void sendNotification(User recipient, String title, String message, Appointment appointment) {
+    public void createNotification(
+            User recipient,
+            Constants.NotificationTypeEnum type,
+            String title,
+            String message,
+            Constants.RelatedEntityTypeEnum relatedEntityType,
+            String relatedEntityId,
+            String imgUrl
+    ) {
         if (recipient == null) {
             return;
         }
 
         Notification notification = Notification.builder()
                 .recipient(recipient)
-                .type(Constants.NotificationTypeEnum.APPOINTMENT_REMINDER)
+                .type(type)
                 .title(title)
                 .message(message)
-                .relatedEntityType(Constants.RelatedEntityTypeEnum.APPOINTMENT)
-                .relatedEntityId(resolveRelatedEntityId(appointment))
+                .relatedEntityType(relatedEntityType)
+                .relatedEntityId(relatedEntityId)
                 .deliveryStatus(Constants.NotificationStatusEnum.PENDING)
                 .isRead(Boolean.FALSE)
-                .imgUrl(resolveImage(appointment))
+                .imgUrl(imgUrl)
                 .build();
+
+        try {
+            log.info("Send web push notification for recipient {}", recipient);
+            sendPushNotification(recipient.getFcmToken(), title, message, imgUrl);
+        } catch (Exception e) {
+            log.error("Error sending web push notification for recipient {}", recipient, e);
+            notification.setDeliveryStatus(Constants.NotificationStatusEnum.FAILED);
+        }
 
         notificationRepository.save(notification);
         log.debug("Created appointment notification '{}' for recipient {}", title, recipient.getId());
     }
 
-    private String resolveRelatedEntityId(Appointment appointment) {
-        return appointment != null && appointment.getId() != null
-                ? appointment.getId().toString()
-                : null;
+    @Override
+    public Page<NotificationItem> getMyNotifications(Pageable pageable) {
+        User currentUser = userService.getUser();
+        if (currentUser == null) {
+            throw new EntityNotFoundException("Current user not found");
+        }
+
+        Page<Notification> notifications = notificationRepository.findByRecipientOrderByCreatedAtDesc(currentUser, pageable);
+        return notificationMapper.mapToPage(notifications, NotificationItem.class);
     }
 
-    private String resolveImage(Appointment appointment) {
-        if (appointment != null && appointment.getProperty() != null) {
-            List<Media> mediaList = appointment.getProperty().getMediaList();
-            if (mediaList != null && !mediaList.isEmpty() && mediaList.get(0).getFilePath() != null) {
-                return mediaList.get(0).getFilePath();
-            }
+    @Override
+    public NotificationDetails getNotificationDetailsById(UUID notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found with id: " + notificationId));
+
+        User currentUser = userService.getUser();
+        if (currentUser != null && !notification.getRecipient().getId().equals(currentUser.getId())) {
+            throw new EntityNotFoundException("Notification not found with id: " + notificationId);
         }
-        return DEFAULT_NOTIFICATION_IMAGE;
+
+        notification.setIsRead(Boolean.TRUE);
+        notification.setReadAt(LocalDateTime.now());
+
+        return notificationMapper.toNotificationDetails(notification);
     }
 
-    private String extractPropertyTitle(Appointment appointment) {
-        if (appointment != null && appointment.getProperty() != null && appointment.getProperty().getTitle() != null) {
-            return appointment.getProperty().getTitle();
+    private void sendPushNotification(String fcmToken, String title, String body, String imageUrl) {
+        try {
+            com.google.firebase.messaging.Notification firebaseNotification = com.google.firebase.messaging.Notification
+                    .builder()
+                    .setTitle(title)
+                    .setBody(body)
+                    .build();
+
+            // Add data payload for handling when app is in background
+            Map<String, String> data = new HashMap<>();
+            data.put("click_action", "OPEN_ACTIVITY");
+            data.put("title", title);
+            data.put("body", body);
+            data.put("image", imageUrl);
+
+            Message pushNotification = Message.builder()
+                    .setToken(fcmToken)
+                    .setNotification(firebaseNotification)
+                    .putAllData(data)
+                    .build();
+
+            String response = firebaseMessaging.send(pushNotification);
+            log.info("Successfully sent notification to: {}", fcmToken);
+            log.debug("FCM Response: {}", response);
+        } catch (FirebaseMessagingException e) {
+            log.error("Failed to send notification to token: {}", fcmToken);
+            log.error("Error code: {}, message: {}", e.getErrorCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error sending notification: {}", e.getMessage(), e);
         }
-        return "property";
     }
 }

@@ -146,7 +146,34 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Track customer action for ranking
         rankingService.customerAction(customer.getId(), Constants.CustomerActionEnum.VIEWING_REQUESTED, null);
 
-        notificationService.notifyAppointmentBooked(saved);
+        // Send notifications
+        String propertyTitle = property.getTitle();
+        String customerName = customer.getUser().getFirstName() + " " + customer.getUser().getLastName();
+        String imgUrl = property.getMediaList().isEmpty() ? null : property.getMediaList().get(0).getFilePath();
+
+        // Notify property owner
+        notificationService.createNotification(
+            property.getOwner().getUser(),
+            Constants.NotificationTypeEnum.APPOINTMENT_BOOKED,
+            "New Viewing Appointment",
+            String.format("Customer %s has booked a viewing for your property: %s", customerName, propertyTitle),
+            Constants.RelatedEntityTypeEnum.APPOINTMENT,
+            saved.getId().toString(),
+            imgUrl
+        );
+
+        // Notify assigned agent if exists
+        if (assignedAgent != null) {
+            notificationService.createNotification(
+                assignedAgent.getUser(),
+                Constants.NotificationTypeEnum.APPOINTMENT_BOOKED,
+                "New Viewing Assignment",
+                String.format("You have been assigned to a viewing appointment for property: %s", propertyTitle),
+                Constants.RelatedEntityTypeEnum.APPOINTMENT,
+                saved.getId().toString(),
+                imgUrl
+            );
+        }
 
         String confirmationMessage = assignedAgent != null
             ? "Appointment created and assigned to agent " + assignedAgent.getUser().getFirstName() + " " + assignedAgent.getUser().getLastName()
@@ -203,7 +230,46 @@ public class AppointmentServiceImpl implements AppointmentService {
             rankingService.customerAction(appointment.getCustomer().getId(), Constants.CustomerActionEnum.VIEWING_CANCELLED, null);
         }
 
-        notificationService.notifyAppointmentCancelled(appointment, reason);
+        // Send cancellation notifications
+        String propertyTitle = appointment.getProperty().getTitle();
+        String reasonText = reason != null ? " Reason: " + reason : "";
+        String imgUrl = appointment.getProperty().getMediaList().isEmpty() ? null :
+                        appointment.getProperty().getMediaList().get(0).getFilePath();
+
+        // Notify customer
+        notificationService.createNotification(
+            appointment.getCustomer().getUser(),
+            Constants.NotificationTypeEnum.APPOINTMENT_CANCELLED,
+            "Appointment Cancelled",
+            String.format("Your viewing appointment for %s has been cancelled.%s", propertyTitle, reasonText),
+            Constants.RelatedEntityTypeEnum.APPOINTMENT,
+            appointment.getId().toString(),
+            imgUrl
+        );
+
+        // Notify property owner
+        notificationService.createNotification(
+            appointment.getProperty().getOwner().getUser(),
+            Constants.NotificationTypeEnum.APPOINTMENT_CANCELLED,
+            "Appointment Cancelled",
+            String.format("The viewing appointment for your property %s has been cancelled.%s", propertyTitle, reasonText),
+            Constants.RelatedEntityTypeEnum.APPOINTMENT,
+            appointment.getId().toString(),
+            imgUrl
+        );
+
+        // Notify agent if assigned
+        if (appointment.getAgent() != null) {
+            notificationService.createNotification(
+                appointment.getAgent().getUser(),
+                Constants.NotificationTypeEnum.APPOINTMENT_CANCELLED,
+                "Appointment Cancelled",
+                String.format("The viewing appointment for property %s has been cancelled.%s", propertyTitle, reasonText),
+                Constants.RelatedEntityTypeEnum.APPOINTMENT,
+                appointment.getId().toString(),
+                imgUrl
+            );
+        }
 
         return true;
     }
@@ -249,7 +315,45 @@ public class AppointmentServiceImpl implements AppointmentService {
             rankingService.customerAction(appointment.getCustomer().getId(), Constants.CustomerActionEnum.VIEWING_ATTENDED, null);
         }
 
-        notificationService.notifyAppointmentCompleted(appointment);
+        // Send completion notifications
+        String propertyTitle = appointment.getProperty().getTitle();
+        String imgUrl = appointment.getProperty().getMediaList().isEmpty() ? null :
+                        appointment.getProperty().getMediaList().get(0).getFilePath();
+
+        // Notify customer
+        notificationService.createNotification(
+            appointment.getCustomer().getUser(),
+            Constants.NotificationTypeEnum.APPOINTMENT_COMPLETED,
+            "Appointment Completed",
+            String.format("Your viewing appointment for %s has been completed. Please rate your experience!", propertyTitle),
+            Constants.RelatedEntityTypeEnum.APPOINTMENT,
+            appointment.getId().toString(),
+            imgUrl
+        );
+
+        // Notify property owner
+        notificationService.createNotification(
+            appointment.getProperty().getOwner().getUser(),
+            Constants.NotificationTypeEnum.APPOINTMENT_COMPLETED,
+            "Appointment Completed",
+            String.format("The viewing appointment for your property %s has been completed.", propertyTitle),
+            Constants.RelatedEntityTypeEnum.APPOINTMENT,
+            appointment.getId().toString(),
+            imgUrl
+        );
+
+        // Notify agent if assigned
+        if (appointment.getAgent() != null) {
+            notificationService.createNotification(
+                appointment.getAgent().getUser(),
+                Constants.NotificationTypeEnum.APPOINTMENT_COMPLETED,
+                "Appointment Completed",
+                String.format("The viewing appointment for property %s has been completed.", propertyTitle),
+                Constants.RelatedEntityTypeEnum.APPOINTMENT,
+                appointment.getId().toString(),
+                imgUrl
+            );
+        }
 
         return true;
     }
@@ -633,7 +737,35 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointmentRepository.save(appointment);
         log.info("Assigned agent {} to appointment: {}", agentId, appointmentId);
 
-        notificationService.notifyAppointmentAssigned(appointment);
+        // Send assignment notifications
+        String propertyTitle = appointment.getProperty().getTitle();
+        String customerName = appointment.getCustomer().getUser().getFirstName() + " " +
+                              appointment.getCustomer().getUser().getLastName();
+        String imgUrl = appointment.getProperty().getMediaList().isEmpty() ? null :
+                        appointment.getProperty().getMediaList().get(0).getFilePath();
+
+        // Notify agent
+        notificationService.createNotification(
+            agentUser,
+            Constants.NotificationTypeEnum.APPOINTMENT_ASSIGNED,
+            "New Viewing Assignment",
+            String.format("You have been assigned to a viewing appointment with %s for property: %s", customerName, propertyTitle),
+            Constants.RelatedEntityTypeEnum.APPOINTMENT,
+            appointment.getId().toString(),
+            imgUrl
+        );
+
+        // Notify customer
+        String agentName = agentUser.getFirstName() + " " + agentUser.getLastName();
+        notificationService.createNotification(
+            appointment.getCustomer().getUser(),
+            Constants.NotificationTypeEnum.APPOINTMENT_ASSIGNED,
+            "Agent Assigned to Your Appointment",
+            String.format("Agent %s has been assigned to your viewing appointment for: %s", agentName, propertyTitle),
+            Constants.RelatedEntityTypeEnum.APPOINTMENT,
+            appointment.getId().toString(),
+            imgUrl
+        );
 
         // Track appointment assignment action for agent ranking
         rankingService.agentAction(agentId, Constants.AgentActionEnum.APPOINTMENT_ASSIGNED, null);
@@ -687,7 +819,46 @@ public class AppointmentServiceImpl implements AppointmentService {
                 if (appointment.getCustomer() != null) {
                     rankingService.customerAction(appointment.getCustomer().getId(), Constants.CustomerActionEnum.VIEWING_ATTENDED, null);
                 }
-                notificationService.notifyAppointmentCompleted(appointment);
+
+                // Send completion notifications
+                String propertyTitle = appointment.getProperty().getTitle();
+                String imgUrl = appointment.getProperty().getMediaList().isEmpty() ? null :
+                                appointment.getProperty().getMediaList().get(0).getFilePath();
+
+                // Notify customer
+                notificationService.createNotification(
+                    appointment.getCustomer().getUser(),
+                    Constants.NotificationTypeEnum.APPOINTMENT_COMPLETED,
+                    "Appointment Completed",
+                    String.format("Your viewing appointment for %s has been completed. Please rate your experience!", propertyTitle),
+                    Constants.RelatedEntityTypeEnum.APPOINTMENT,
+                    appointment.getId().toString(),
+                    imgUrl
+                );
+
+                // Notify property owner
+                notificationService.createNotification(
+                    appointment.getProperty().getOwner().getUser(),
+                    Constants.NotificationTypeEnum.APPOINTMENT_COMPLETED,
+                    "Appointment Completed",
+                    String.format("The viewing appointment for your property %s has been completed.", propertyTitle),
+                    Constants.RelatedEntityTypeEnum.APPOINTMENT,
+                    appointment.getId().toString(),
+                    imgUrl
+                );
+
+                // Notify agent if assigned
+                if (appointment.getAgent() != null) {
+                    notificationService.createNotification(
+                        appointment.getAgent().getUser(),
+                        Constants.NotificationTypeEnum.APPOINTMENT_COMPLETED,
+                        "Appointment Completed",
+                        String.format("The viewing appointment for property %s has been completed.", propertyTitle),
+                        Constants.RelatedEntityTypeEnum.APPOINTMENT,
+                        appointment.getId().toString(),
+                        imgUrl
+                    );
+                }
             }
 
             // If status is CANCELLED, update cancelled fields
@@ -704,7 +875,46 @@ public class AppointmentServiceImpl implements AppointmentService {
                     appointment.setCancelledReason(cancelledReason);
                 }
 
-                notificationService.notifyAppointmentCancelled(appointment, cancelledReason);
+                // Send cancellation notifications
+                String propertyTitle = appointment.getProperty().getTitle();
+                String reasonText = cancelledReason != null ? " Reason: " + cancelledReason : "";
+                String imgUrl = appointment.getProperty().getMediaList().isEmpty() ? null :
+                                appointment.getProperty().getMediaList().get(0).getFilePath();
+
+                // Notify customer
+                notificationService.createNotification(
+                    appointment.getCustomer().getUser(),
+                    Constants.NotificationTypeEnum.APPOINTMENT_CANCELLED,
+                    "Appointment Cancelled",
+                    String.format("Your viewing appointment for %s has been cancelled.%s", propertyTitle, reasonText),
+                    Constants.RelatedEntityTypeEnum.APPOINTMENT,
+                    appointment.getId().toString(),
+                    imgUrl
+                );
+
+                // Notify property owner
+                notificationService.createNotification(
+                    appointment.getProperty().getOwner().getUser(),
+                    Constants.NotificationTypeEnum.APPOINTMENT_CANCELLED,
+                    "Appointment Cancelled",
+                    String.format("The viewing appointment for your property %s has been cancelled.%s", propertyTitle, reasonText),
+                    Constants.RelatedEntityTypeEnum.APPOINTMENT,
+                    appointment.getId().toString(),
+                    imgUrl
+                );
+
+                // Notify agent if assigned
+                if (appointment.getAgent() != null) {
+                    notificationService.createNotification(
+                        appointment.getAgent().getUser(),
+                        Constants.NotificationTypeEnum.APPOINTMENT_CANCELLED,
+                        "Appointment Cancelled",
+                        String.format("The viewing appointment for property %s has been cancelled.%s", propertyTitle, reasonText),
+                        Constants.RelatedEntityTypeEnum.APPOINTMENT,
+                        appointment.getId().toString(),
+                        imgUrl
+                    );
+                }
             }
         } else if (cancelledReason != null) {
             // Update cancelled reason even if status is not provided (in case it's already cancelled)

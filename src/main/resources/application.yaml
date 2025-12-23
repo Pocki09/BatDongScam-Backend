@@ -103,3 +103,10 @@ payway:
   verify-key: ${PAYWAY_CHECKSUM_KEY}
   webhook-base-url: ${PAYWAY_WEBHOOK_BASE_URL}
   return-url: ${PAYWAY_RETURN_URL}
+
+
+firebase:
+  app: ${FIREBASE_APP_NAME}
+  credentials:
+    file: ${FIREBASE_CREDENTIALS_FILE}
+  project-id: ${FIREBASE_PROJECT_ID}

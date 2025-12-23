@@ -37,3 +37,6 @@ build/
 
 ### Copilot instruction ###
 .github/
+
+### firebase ###
+src/main/resources/batdongscam-firebase-adminsdk-fbsvc-35bc7fa2ae.json
