@@ -5,6 +5,7 @@ import com.se100.bds.services.domains.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -34,6 +35,7 @@ public class CustomAuthenticationManager implements AuthenticationManager {
             boolean matches = passwordEncoder.matches(authentication.getCredentials().toString(), user.getPassword());
             if (!matches) {
                 log.error("AuthenticationCredentialsNotFoundException occurred for {}", authentication.getName());
+                throw new BadCredentialsException("Invalid credentials");
             }
         }
         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getRole().getValue()));
