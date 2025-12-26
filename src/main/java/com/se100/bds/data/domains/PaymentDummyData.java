@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -49,7 +50,7 @@ public class PaymentDummyData {
                     .paymentType(Constants.PaymentTypeEnum.DEPOSIT)
                     .amount(contract.getDepositAmount())
                     .dueDate(contract.getStartDate())
-                    .paidDate(contract.getStartDate())
+                    .paidTime(contract.getStartDate().atTime(13, 20))
                     .installmentNumber(null)
                     .paymentMethod("Bank Transfer")
                     .transactionReference(String.format("TXN%012d", random.nextInt(999999999)))
@@ -65,7 +66,7 @@ public class PaymentDummyData {
                 int months = contract.getInstallmentAmount();
                 for (int i = 0; i < months; i++) {
                     LocalDate dueDate = contract.getStartDate().plusMonths(i);
-                    LocalDate paidDate = random.nextBoolean() ? dueDate.plusDays(random.nextInt(5)) : null;
+                    LocalDateTime paidTime = random.nextBoolean() ? dueDate.plusDays(random.nextInt(5)).atTime(13, 20) : null;
 
                     Payment installment = Payment.builder()
                             .contract(contract)
@@ -74,11 +75,11 @@ public class PaymentDummyData {
                             .paymentType(Constants.PaymentTypeEnum.MONTHLY)
                             .amount(contract.getRemainingAmount().divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP))
                             .dueDate(dueDate)
-                            .paidDate(paidDate)
+                            .paidTime(paidTime)
                             .installmentNumber(i + 1)
-                            .paymentMethod(paidDate != null ? "Bank Transfer" : null)
-                            .transactionReference(paidDate != null ? String.format("TXN%012d", random.nextInt(999999999)) : null)
-                            .status(paidDate != null ? Constants.PaymentStatusEnum.SUCCESS : Constants.PaymentStatusEnum.PENDING)
+                            .paymentMethod(paidTime != null ? "PayOS Transfer" : null)
+                            .transactionReference(paidTime != null ? String.format("TXN%012d", random.nextInt(999999999)) : null)
+                            .status(paidTime != null ? Constants.PaymentStatusEnum.SUCCESS : Constants.PaymentStatusEnum.PENDING)
                             .penaltyAmount(BigDecimal.ZERO)
                             .notes(String.format("Monthly payment %d/%d", i + 1, months))
                             .build();
@@ -93,7 +94,7 @@ public class PaymentDummyData {
                         .paymentType(Constants.PaymentTypeEnum.FULL_PAY)
                         .amount(contract.getRemainingAmount())
                         .dueDate(contract.getStartDate().plusDays(30))
-                        .paidDate(random.nextBoolean() ? contract.getStartDate().plusDays(30) : null)
+                        .paidTime(random.nextBoolean() ? contract.getStartDate().plusDays(30).atTime(13, 20) : null)
                         .installmentNumber(null)
                         .paymentMethod("Bank Transfer")
                         .transactionReference(String.format("TXN%012d", random.nextInt(999999999)))

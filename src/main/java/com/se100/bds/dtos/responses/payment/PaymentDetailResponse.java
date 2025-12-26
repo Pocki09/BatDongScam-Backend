@@ -18,14 +18,13 @@ public class PaymentDetailResponse {
     private UUID id;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
-    // Payment info
+
     private String paymentType;
     private String status;
     private BigDecimal amount;
     private BigDecimal penaltyAmount;
     private LocalDate dueDate;
-    private LocalDate paidDate;
+    private LocalDateTime paidTime;
     private Integer installmentNumber;
     private String paymentMethod;
     private String transactionReference;

@@ -2,13 +2,14 @@ package com.se100.bds.models.entities.contract;
 
 import com.se100.bds.models.entities.AbstractBaseEntity;
 import com.se100.bds.models.entities.property.Property;
-import com.se100.bds.models.entities.user.SaleAgent;
+import com.se100.bds.models.entities.user.User;
 import com.se100.bds.utils.Constants;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payments")
@@ -43,8 +44,8 @@ public class Payment extends AbstractBaseEntity {
     @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
 
-    @Column(name = "paid_date")
-    private LocalDate paidDate;
+    @Column(name = "paid_time")
+    private LocalDateTime paidTime;
 
     @Column(name = "installment_number")
     private Integer installmentNumber;

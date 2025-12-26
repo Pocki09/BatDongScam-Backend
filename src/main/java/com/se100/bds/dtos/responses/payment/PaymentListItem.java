@@ -22,7 +22,7 @@ public class PaymentListItem {
     private String status;
     private BigDecimal amount;
     private LocalDate dueDate;
-    private LocalDate paidDate;
+    private LocalDateTime paidTime;
     
     // Derived payer info (customer paying for contract, owner paying service fee)
     private UUID payerId;

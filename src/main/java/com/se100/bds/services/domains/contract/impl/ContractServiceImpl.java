@@ -603,7 +603,7 @@ public class ContractServiceImpl implements ContractService {
                             .status(p.getStatus() != null ? p.getStatus().name() : null)
                             .amount(p.getAmount())
                             .dueDate(p.getDueDate())
-                            .paidDate(p.getPaidDate())
+                            .paidTime(p.getPaidTime())
                             .installmentNumber(p.getInstallmentNumber())
                             .build())
                     .collect(Collectors.toList());

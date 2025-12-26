@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+import java.time.LocalDateTime;
 import java.util.*;
 
 
@@ -128,8 +128,8 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Set paid date if marking as success
         if (request.getStatus() == PaymentStatusEnum.SUCCESS || request.getStatus() == PaymentStatusEnum.SYSTEM_SUCCESS) {
-            if (payment.getPaidDate() == null) {
-                payment.setPaidDate(LocalDate.now());
+            if (payment.getPaidTime() == null) {
+                payment.setPaidTime(LocalDateTime.now());
             }
         }
 
@@ -237,29 +237,20 @@ public class PaymentServiceImpl implements PaymentService {
                 .status(payment.getStatus() != null ? payment.getStatus().name() : null)
                 .amount(payment.getAmount())
                 .dueDate(payment.getDueDate())
-                .paidDate(payment.getPaidDate());
-
-        // Contract context
-        Contract contract = payment.getContract();
-        if (contract != null) {
-            builder.contractId(contract.getId())
-                   .contractNumber(contract.getContractNumber());
-        }
-
-        // Property context
-        Property property = payment.getProperty();
-        if (property == null && contract != null) {
-            property = contract.getProperty();
-        }
-        if (property != null) {
-            builder.propertyId(property.getId())
-                   .propertyTitle(property.getTitle());
-        }
+                .paidTime(payment.getPaidTime());
 
         return builder.build();
     }
 
+    // TODO: reuse mapping logic with PaymentMapper
     private PaymentDetailResponse mapToDetailResponse(Payment payment) {
+        var payerResponse = PaymentDetailResponse.PaymentPayerResponse.builder()
+                .id(payment.getPayer() != null ? payment.getPayer().getId() : null)
+                .name(payment.getPayer() != null ? payment.getPayer().getFullName() : null)
+                .email(payment.getPayer() != null ? payment.getPayer().getEmail() : null)
+                .phoneNumber(payment.getPayer() != null ? payment.getPayer().getPhoneNumber() : null)
+                .build();
+
         PaymentDetailResponse.PaymentDetailResponseBuilder builder = PaymentDetailResponse.builder()
                 .id(payment.getId())
                 .createdAt(payment.getCreatedAt())
@@ -269,59 +260,11 @@ public class PaymentServiceImpl implements PaymentService {
                 .amount(payment.getAmount())
                 .penaltyAmount(payment.getPenaltyAmount())
                 .dueDate(payment.getDueDate())
-                .paidDate(payment.getPaidDate())
+                .paidTime(payment.getPaidTime())
                 .installmentNumber(payment.getInstallmentNumber())
                 .paymentMethod(payment.getPaymentMethod())
                 .transactionReference(payment.getTransactionReference())
                 .notes(payment.getNotes());
-
-        // Calculate overdue days
-        if (payment.getDueDate() != null && payment.getPaidDate() == null 
-                && payment.getStatus() != PaymentStatusEnum.SUCCESS 
-                && payment.getStatus() != PaymentStatusEnum.SYSTEM_SUCCESS) {
-            long overdue = ChronoUnit.DAYS.between(payment.getDueDate(), LocalDate.now());
-            if (overdue > 0) {
-                builder.overdueDays(overdue);
-                builder.penaltyApplied(payment.getPenaltyAmount() != null && payment.getPenaltyAmount().signum() > 0);
-            } else {
-                builder.overdueDays(0L);
-                builder.penaltyApplied(false);
-            }
-        } else {
-            builder.overdueDays(0L);
-            builder.penaltyApplied(payment.getPenaltyAmount() != null && payment.getPenaltyAmount().signum() > 0);
-        }
-
-        // Contract context
-        Contract contract = payment.getContract();
-        if (contract != null) {
-            builder.contractId(contract.getId())
-                   .contractNumber(contract.getContractNumber())
-                   .contractType(contract.getContractType() != null ? contract.getContractType().name() : null)
-                   .contractStatus(contract.getStatus() != null ? contract.getStatus().name() : null);
-        }
-
-        // Property context
-        Property property = payment.getProperty();
-        if (property == null && contract != null) {
-            property = contract.getProperty();
-        }
-        if (property != null) {
-            builder.propertyId(property.getId())
-                   .propertyTitle(property.getTitle())
-                   .propertyAddress(property.getFullAddress());
-        }
-
-        // Agent context (salary/bonus)
-        SaleAgent agent = payment.getSaleAgent();
-        if (agent != null) {
-            builder.agentId(agent.getId())
-                   .agentEmployeeCode(agent.getEmployeeCode());
-            if (agent.getUser() != null) {
-                builder.agentFirstName(agent.getUser().getFirstName())
-                       .agentLastName(agent.getUser().getLastName());
-            }
-        }
 
         return builder.build();
     }
