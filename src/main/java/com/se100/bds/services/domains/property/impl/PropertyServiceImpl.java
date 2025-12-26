@@ -25,6 +25,7 @@ import com.se100.bds.repositories.dtos.DocumentProjection;
 import com.se100.bds.repositories.dtos.MediaProjection;
 import com.se100.bds.repositories.dtos.PropertyCardProtection;
 import com.se100.bds.repositories.dtos.PropertyDetailsProjection;
+import com.se100.bds.services.domains.notification.NotificationService;
 import com.se100.bds.services.domains.payment.PaymentService;
 import com.se100.bds.services.domains.property.PropertyService;
 import com.se100.bds.services.domains.ranking.RankingService;
@@ -36,7 +37,6 @@ import com.se100.bds.utils.Constants;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -71,6 +71,7 @@ public class PropertyServiceImpl implements PropertyService {
     private static final EnumSet<Constants.PropertyStatusEnum> OWNER_STATUS_UPDATABLE = EnumSet.of(
             Constants.PropertyStatusEnum.RENTED,
             Constants.PropertyStatusEnum.SOLD,
+            Constants.PropertyStatusEnum.AVAILABLE,
             Constants.PropertyStatusEnum.UNAVAILABLE
     );
 
@@ -84,6 +85,7 @@ public class PropertyServiceImpl implements PropertyService {
     private final RankingService rankingService;
     private final CloudinaryService cloudinaryService;
     private final PaymentService paymentService;
+    private final NotificationService notificationService;
 
     @Override
     public Page<Property> getAll(Pageable pageable) {
@@ -314,33 +316,17 @@ public class PropertyServiceImpl implements PropertyService {
         BigDecimal commissionRate = Constants.DEFAULT_PROPERTY_COMMISSION_RATE;
         BigDecimal serviceFeeAmount = computeServiceFee(request.getPriceAmount(), commissionRate);
 
-        Property property = Property.builder()
-            .owner(owner)
-            .propertyType(propertyType)
-            .ward(ward)
-            .title(request.getTitle())
-            .description(request.getDescription())
-            .transactionType(request.getTransactionType())
-            .fullAddress(request.getFullAddress())
-            .area(request.getArea())
-            .rooms(request.getRooms())
-            .bathrooms(request.getBathrooms())
-            .floors(request.getFloors())
-            .bedrooms(request.getBedrooms())
-            .houseOrientation(request.getHouseOrientation())
-            .balconyOrientation(request.getBalconyOrientation())
-            .yearBuilt(request.getYearBuilt())
-            .priceAmount(request.getPriceAmount())
-            .pricePerSquareMeter(resolvePricePerSquareMeter(null, request.getPriceAmount(), request.getArea()))
-            .commissionRate(commissionRate)
-            .serviceFeeAmount(serviceFeeAmount)
-            .serviceFeeCollectedAmount(isAdmin ? serviceFeeAmount : BigDecimal.ZERO)
-            .amenities(request.getAmenities())
-            .status(isAdmin ? Constants.PropertyStatusEnum.AVAILABLE : Constants.PropertyStatusEnum.PENDING)
-            .viewCount(0)
-            .approvedAt(isAdmin ? LocalDateTime.now() : null)
-            .assignedAgent(null)
-            .build();
+        var property = new Property();
+
+        applyPropertyChanges(property, request, owner, propertyType, ward, commissionRate, serviceFeeAmount);
+        // if admin, mark service fee as collected and set status to AVAILABLE
+        if (isAdmin) {
+            property.setStatus(Constants.PropertyStatusEnum.AVAILABLE);
+            property.setServiceFeeCollectedAmount(serviceFeeAmount);
+            property.setApprovedAt(LocalDateTime.now());
+        } else {
+            property.setStatus(Constants.PropertyStatusEnum.PENDING);
+        }
 
         ensureMediaCollection(property);
         Property persisted = propertyRepository.save(property);
@@ -428,29 +414,33 @@ public class PropertyServiceImpl implements PropertyService {
         Constants.PropertyStatusEnum targetStatus = request.getStatus();
 
         if (isAdmin) {
-
+            return handleAdminUpdateStatus(property, targetStatus);
         }
 
         if (isOwner && property.getOwner().getId().equals(currentUser.getId())) {
-            if (!OWNER_STATUS_UPDATABLE.contains(targetStatus)) {
-                throw new IllegalArgumentException("Property owners can only set status to RENTED, SOLD, or UNAVAILABLE");
-            }
-
-            property.setStatus(targetStatus);
-            Property saved = propertyRepository.save(property);
-            log.info("Owner {} updated property {} status to {}", currentUser.getId(), saved.getId(), targetStatus);
-
-            // Track property status change action for ranking
-            if (targetStatus == Constants.PropertyStatusEnum.SOLD) {
-                rankingService.propertyOwnerAction(property.getOwner().getId(), Constants.PropertyOwnerActionEnum.PROPERTY_SOLD, null);
-            } else if (targetStatus == Constants.PropertyStatusEnum.RENTED) {
-                rankingService.propertyOwnerAction(property.getOwner().getId(), Constants.PropertyOwnerActionEnum.PROPERTY_RENTED, null);
-            }
-
-            return propertyMapper.mapTo(saved, PropertyDetails.class);
+            return handleOwnerUpdateStatus(targetStatus, property, currentUser);
         }
 
         throw new AccessDeniedException("You do not have permission to modify this property");
+    }
+
+    private PropertyDetails handleOwnerUpdateStatus(Constants.PropertyStatusEnum targetStatus, Property property, User currentUser) {
+        if (!OWNER_STATUS_UPDATABLE.contains(targetStatus)) {
+            throw new IllegalArgumentException("Property owners can only set status to RENTED, SOLD, AVAILABLE or UNAVAILABLE");
+        }
+
+        property.setStatus(targetStatus);
+        Property saved = propertyRepository.save(property);
+        log.info("Owner {} updated property {} status to {}", currentUser.getId(), saved.getId(), targetStatus);
+
+        // Track property status change action for ranking
+        if (targetStatus == Constants.PropertyStatusEnum.SOLD) {
+            rankingService.propertyOwnerAction(property.getOwner().getId(), Constants.PropertyOwnerActionEnum.PROPERTY_SOLD, null);
+        } else if (targetStatus == Constants.PropertyStatusEnum.RENTED) {
+            rankingService.propertyOwnerAction(property.getOwner().getId(), Constants.PropertyOwnerActionEnum.PROPERTY_RENTED, null);
+        }
+
+        return propertyMapper.mapTo(saved, PropertyDetails.class);
     }
 
     PropertyDetails handleAdminUpdateStatus(Property property, Constants.PropertyStatusEnum targetStatus) {
@@ -467,10 +457,30 @@ public class PropertyServiceImpl implements PropertyService {
                 property.setApprovedAt(LocalDateTime.now());
                 if (hasOutstandingServiceFee(property))
                     paymentService.createServiceFeePayment(property);
+                // notify owner about approval
+                notificationService.createNotification(
+                        property.getOwner().getUser(),
+                        Constants.NotificationTypeEnum.PROPERTY_APPROVAL,
+                        "Property Approved",
+                        "Your property \"" + property.getTitle() + "\" has been approved and is now listed.",
+                        Constants.RelatedEntityTypeEnum.PROPERTY,
+                        property.getId().toString(),
+                        null
+                );
             }
             case PENDING, REJECTED -> {
                 property.setApprovedAt(null);
                 property.setAssignedAgent(null);
+                // notify owner about rejection
+                notificationService.createNotification(
+                        property.getOwner().getUser(),
+                        Constants.NotificationTypeEnum.PROPERTY_REJECTION,
+                        "Property Rejected",
+                        "Your property \"" + property.getTitle() + "\" has been rejected, please review.",
+                        Constants.RelatedEntityTypeEnum.PROPERTY,
+                        property.getId().toString(),
+                        null
+                );
             }
             case AVAILABLE -> {
                 if (property.getApprovedAt() == null) {
@@ -485,7 +495,6 @@ public class PropertyServiceImpl implements PropertyService {
         log.info("Admin updated property {} status to {}", saved.getId(), targetStatus);
         return propertyMapper.mapTo(saved, PropertyDetails.class);
     }
-
 
     @Override
     @Transactional
@@ -698,20 +707,6 @@ public class PropertyServiceImpl implements PropertyService {
         return propertyRepository.countByPropertyType_Id(propertyTypeId);
     }
 
-    private boolean isPriceIncreased(@NotNull BigDecimal currentPrice, @NotNull BigDecimal newPrice) {
-        return newPrice.compareTo(currentPrice) > 0;
-    }
-
-    private boolean bigDecimalChanged(BigDecimal current, BigDecimal incoming) {
-        if (current == null && incoming == null) {
-            return false;
-        }
-        if (current == null || incoming == null) {
-            return true;
-        }
-        return current.compareTo(incoming) != 0;
-    }
-
     private void synchronizeServiceFeeCollection(Property property) {
         BigDecimal serviceFeeAmount = property.getServiceFeeAmount();
         BigDecimal collected = property.getServiceFeeCollectedAmount();
@@ -749,6 +744,8 @@ public class PropertyServiceImpl implements PropertyService {
                                       Ward ward,
                                       BigDecimal commissionRate,
                                       BigDecimal serviceFeeAmount) {
+        var pricePerSquareMeter = request.getPriceAmount().divide(request.getArea(), 2, RoundingMode.HALF_UP);
+
         property.setOwner(owner);
         property.setPropertyType(propertyType);
         property.setWard(ward);
@@ -765,38 +762,11 @@ public class PropertyServiceImpl implements PropertyService {
         property.setBalconyOrientation(request.getBalconyOrientation());
         property.setYearBuilt(request.getYearBuilt());
         property.setPriceAmount(request.getPriceAmount());
-        property.setPricePerSquareMeter(resolvePricePerSquareMeter(null, request.getPriceAmount(), request.getArea()));
+        property.setPricePerSquareMeter(pricePerSquareMeter);
         property.setCommissionRate(commissionRate);
         property.setServiceFeeAmount(serviceFeeAmount);
         synchronizeServiceFeeCollection(property);
         property.setAmenities(request.getAmenities());
-    }
-
-    private void reconcileStatusAfterOwnerUpdate(Property property, boolean priceChanged, boolean priceIncreased) {
-        property.setStatus(Constants.PropertyStatusEnum.PENDING);
-
-        if (!priceChanged) {
-            return;
-        }
-
-        if (priceIncreased) {
-            if (hasOutstandingServiceFee(property)) {
-                // create payment requiring the outstanding amount
-            } else {
-                Constants.PropertyStatusEnum currentStatus = property.getStatus();
-                if (currentStatus == Constants.PropertyStatusEnum.AVAILABLE
-                        || currentStatus == Constants.PropertyStatusEnum.APPROVED) {
-                    property.setStatus(Constants.PropertyStatusEnum.APPROVED);
-                }
-            }
-            return;
-        }
-
-        if (!hasOutstandingServiceFee(property)
-                && property.getStatus() == Constants.PropertyStatusEnum.APPROVED) {
-            property.setStatus(Constants.PropertyStatusEnum.AVAILABLE);
-        }
-        property.setStatus(Constants.PropertyStatusEnum.PENDING);
     }
 
     private BigDecimal computeServiceFee(BigDecimal priceAmount, BigDecimal commissionRate) {
@@ -855,16 +825,6 @@ public class PropertyServiceImpl implements PropertyService {
         if (property.getMediaList() == null) {
             property.setMediaList(new ArrayList<>());
         }
-    }
-
-    private BigDecimal resolvePricePerSquareMeter(BigDecimal providedValue, BigDecimal priceAmount, BigDecimal area) {
-        if (providedValue != null && providedValue.compareTo(BigDecimal.ZERO) >= 0) {
-            return providedValue;
-        }
-        if (priceAmount != null && area != null && area.compareTo(BigDecimal.ZERO) > 0) {
-            return priceAmount.divide(area, 2, RoundingMode.HALF_UP);
-        }
-        return null;
     }
 
     private String buildMediaFolderPath(UUID propertyId) {
