@@ -14,7 +14,7 @@ public interface ReportService {
     FinancialStats getFinancialStats(int year);
     PropertyStats getPropertyStats(int year);
     ViolationReportStats getViolationStats(int year);
-    List<AgentSalaryItem> getFinancialReport(int month, int year);
+    List<AgentSalaryItem> getSalaryByMonthYear(int month, int year);
 
     /// ADMIN DASHBOARD
     DashboardTopStats getDashboardTopStats();

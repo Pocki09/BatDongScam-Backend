@@ -584,7 +584,7 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AgentSalaryItem> getFinancialReport(int month, int year) {
+    public List<AgentSalaryItem> getSalaryByMonthYear(int month, int year) {
         FinancialReport financialReport = financialReportRepository.getFinancialReportByBaseReportData_MonthAndBaseReportData_Year(month, year);
         if (financialReport == null) {
             return List.of();
