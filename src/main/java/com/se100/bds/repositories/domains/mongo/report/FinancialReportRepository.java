@@ -11,5 +11,7 @@ public interface FinancialReportRepository extends MongoRepository<FinancialRepo
     FinancialReport findByBaseReportData_MonthAndBaseReportData_Year(Integer baseReportDataMonth, Integer baseReportDataYear);
 
     List<FinancialReport> findAllByBaseReportData_Year(Integer baseReportDataYear);
+
+    FinancialReport getFinancialReportByBaseReportData_MonthAndBaseReportData_Year(Integer baseReportDataMonth, Integer baseReportDataYear);
 }
 

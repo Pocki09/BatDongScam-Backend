@@ -23,6 +23,7 @@ import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -579,6 +580,16 @@ public class ReportServiceImpl implements ReportService {
         violationStats.setViolationTrends(violationTrends);
 
         return violationStats;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AgentSalaryItem> getFinancialReport(int month, int year) {
+        FinancialReport financialReport = financialReportRepository.getFinancialReportByBaseReportData_MonthAndBaseReportData_Year(month, year);
+        if (financialReport == null) {
+            return List.of();
+        }
+        return financialReport.getSaleAgentsSalaryMonth();
     }
 
 
