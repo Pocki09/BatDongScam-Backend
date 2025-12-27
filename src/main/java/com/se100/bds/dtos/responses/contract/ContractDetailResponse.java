@@ -186,7 +186,7 @@ public class ContractDetailResponse {
         private String status;
         private BigDecimal amount;
         private LocalDate dueDate;
-        private LocalDate paidDate;
+        private LocalDateTime paidTime;
         private Integer installmentNumber;
     }
 }

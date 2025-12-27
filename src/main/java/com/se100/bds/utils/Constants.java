@@ -248,6 +248,8 @@ public final class Constants {
         CONTRACT_UPDATE("CONTRACT_UPDATE"),
         PAYMENT_DUE("PAYMENT_DUE"),
         VIOLATION_WARNING("VIOLATION_WARNING"),
+        PROPERTY_APPROVAL("PROPERTY_APPROVAL"),
+        PROPERTY_REJECTION("PROPERTY_REJECTION"),
         SYSTEM_ALERT("SYSTEM_ALERT");
 
         private final String value;

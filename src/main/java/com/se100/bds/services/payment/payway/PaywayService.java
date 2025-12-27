@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
+import java.math.BigDecimal;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 
@@ -108,11 +109,16 @@ public class PaywayService implements PaymentGatewayService {
     }
 
     @Override
+    public CreatePaymentSessionResponse createPaymentSession(CreatePaymentSessionRequest request) {
+        return createPaymentSession(request, null);
+    }
+
+    @Override
     public CreatePaymentSessionResponse createPaymentSession(CreatePaymentSessionRequest request, String idempotencyKey) {
         if (request == null) {
             throw new IllegalArgumentException("request is required");
         }
-        if (request.getAmount() == null || request.getAmount() < 0) {
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("amount must be >= 0");
         }
         if (!StringUtils.hasText(request.getCurrency())) {
@@ -185,7 +191,7 @@ public class PaywayService implements PaymentGatewayService {
         if (request == null) {
             throw new IllegalArgumentException("request is required");
         }
-        if (request.getAmount() == null || request.getAmount() < 0) {
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("amount must be >= 0");
         }
         if (!StringUtils.hasText(request.getCurrency())) {

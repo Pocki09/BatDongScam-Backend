@@ -1,11 +1,13 @@
 package com.se100.bds.services.payment.payway.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 @Data
@@ -14,7 +16,8 @@ import java.util.Map;
 @AllArgsConstructor
 public class PaywayCreatePayoutRequest {
 
-    private Integer amount;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private BigDecimal amount;
 
     private String currency;
 

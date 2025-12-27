@@ -8,6 +8,7 @@ import com.se100.bds.services.payment.dto.PayoutSessionResponse;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.Map;
 
 //! Note: This is a temporary smoke test for local development only.
@@ -23,7 +24,7 @@ class PaywayServiceTest {
         // We just inject @Value fields directly so application.yaml placeholders / .env aren't needed.
         setField(service, "serviceUrl", System.getProperty("payway.service-url", "http://localhost:3000"));
         setField(service, "apiKey", System.getProperty("payway.api-key", "my-client-id"));
-        setField(service, "webhookBaseUrl", System.getProperty("payway.webhook-base-url", "http://example.com/payway/webhook"));
+        setField(service, "webhookBaseUrl", System.getProperty("payway.webhook-base-url", "http://localhost:8081/webhooks"));
         setField(service, "returnUrl", System.getProperty("payway.return-url", "http://localhost:5000"));
 
         return service;
@@ -47,7 +48,7 @@ class PaywayServiceTest {
             String idempotencyKey = "test-idempotency-payment-001";
 
             CreatePaymentSessionRequest req = CreatePaymentSessionRequest.builder()
-                    .amount(1999)
+                    .amount(new BigDecimal(1999))
                     .currency("USD")
                     .description("Payway smoke test")
                     .metadata(Map.of("source", "PaywayServiceTest"))
@@ -75,7 +76,7 @@ class PaywayServiceTest {
             String idempotencyKey = "test-idempotency-payout-001";
 
             CreatePayoutSessionRequest req = CreatePayoutSessionRequest.builder()
-                    .amount(1234)
+                    .amount(new BigDecimal(1234))
                     .currency("USD")
                     .accountNumber("1234567890")
                     .accountHolderName("Jane Doe")

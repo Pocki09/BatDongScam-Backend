@@ -7,6 +7,8 @@ import com.se100.bds.services.payment.dto.CreatePayoutSessionResponse;
 import com.se100.bds.services.payment.dto.PayoutSessionResponse;
 
 public interface PaymentGatewayService {
+    CreatePaymentSessionResponse createPaymentSession(CreatePaymentSessionRequest request);
+
     CreatePaymentSessionResponse createPaymentSession(CreatePaymentSessionRequest request, String idempotencyKey);
 
     CreatePaymentSessionResponse getPaymentSession(String paymentId);

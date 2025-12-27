@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 @Data
@@ -16,7 +17,7 @@ import java.util.Map;
 public class CreatePaymentSessionRequest {
 
     @Schema(description = "Amount in minor units (e.g. cents)", example = "1000", requiredMode = Schema.RequiredMode.REQUIRED)
-    private Integer amount;
+    private BigDecimal amount;
 
     @Schema(description = "Currency code", example = "USD", requiredMode = Schema.RequiredMode.REQUIRED)
     private String currency;
