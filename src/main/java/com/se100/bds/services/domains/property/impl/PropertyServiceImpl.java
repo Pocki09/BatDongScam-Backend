@@ -443,7 +443,7 @@ public class PropertyServiceImpl implements PropertyService {
         return propertyMapper.mapTo(saved, PropertyDetails.class);
     }
 
-    PropertyDetails handleAdminUpdateStatus(Property property, Constants.PropertyStatusEnum targetStatus) {
+    private PropertyDetails handleAdminUpdateStatus(Property property, Constants.PropertyStatusEnum targetStatus) {
         if (!ADMIN_STATUS_UPDATABLE.contains(targetStatus)) {
             throw new IllegalArgumentException("Unsupported status update: " + targetStatus);
         }
@@ -468,8 +468,13 @@ public class PropertyServiceImpl implements PropertyService {
                         null
                 );
             }
-            case PENDING, REJECTED -> {
+            case PENDING -> {
                 property.setApprovedAt(null);
+                property.setAssignedAgent(null);
+            }
+            case REJECTED -> {
+                property.setApprovedAt(null);
+                // TODO: verify that we need to do this
                 property.setAssignedAgent(null);
                 // notify owner about rejection
                 notificationService.createNotification(
@@ -487,7 +492,7 @@ public class PropertyServiceImpl implements PropertyService {
                     property.setApprovedAt(LocalDateTime.now());
                 }
             }
-            default -> {}
+            default -> log.warn("Ignoring unhandled actions for admin status update to {}", targetStatus);
         }
 
         property.setStatus(targetStatus);

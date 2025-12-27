@@ -59,6 +59,16 @@ public class ResponseFactory {
         );
     }
 
+    public <T> ResponseEntity<SingleResponse<T>> sendSingle(
+            T data,
+            String message,
+            HttpStatus status
+    ) {
+        return ResponseEntity.status(status).body(
+                createSingleResponse(status, message, data)
+        );
+    }
+
     public <T> ResponseEntity<PageResponse<T>> successPage(
             Page<T> page,
             String message

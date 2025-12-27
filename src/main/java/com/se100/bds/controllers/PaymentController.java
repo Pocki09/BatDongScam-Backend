@@ -27,6 +27,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -181,7 +182,8 @@ public class PaymentController extends AbstractBaseController {
         var currentUser = userService.getUser();
         if (currentUser.getRole() != Constants.RoleEnum.ADMIN) {
             if (payment.getPayer() == null || !payment.getPayer().getId().equals(userService.getUserId())) {
-                return responseFactory.failedSingle(null, "Access denied to the requested payment");
+                return responseFactory.sendSingle(null,
+                        "Access denied to the requested payment", HttpStatus.FORBIDDEN);
             }
         }
         return responseFactory.successSingle(payment, "Payment retrieved successfully");
@@ -201,7 +203,8 @@ public class PaymentController extends AbstractBaseController {
     ) {
         PaymentDetailResponse payment = paymentService.getPaymentById(paymentId);
         if (payment.getPayer() == null || !payment.getPayer().getId().equals(userService.getUserId())) {
-            return responseFactory.failedSingle(null, "Access denied to the requested payment");
+            return responseFactory.sendSingle(null,
+                    "Access denied to the requested payment", HttpStatus.FORBIDDEN);
         }
         var paymentSession = paymentGatewayService.getPaymentSession(payment.getPaywayPaymentId());
         return responseFactory.successSingle(paymentSession.getCheckoutUrl(), "Payment link generated successfully");

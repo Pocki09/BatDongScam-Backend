@@ -107,7 +107,7 @@ public class PaymentServiceImpl implements PaymentService {
         var rq = CreatePaymentSessionRequest.builder()
             .metadata(Map.of(
                 "paymentType", Constants.PaymentTypeEnum.SERVICE_FEE,
-                "propertyId", savedPayment.getId().toString(),
+                "propertyId", savedPayment.getProperty().getId().toString(),
                 "paymentId", savedPayment.getId().toString()
             ))
             .amount(savedPayment.getAmount())
@@ -115,7 +115,7 @@ public class PaymentServiceImpl implements PaymentService {
             .description("Service fee payment for property: " + property.getTitle())
             .build();
 
-        var paymentSession = paymentGatewayService.createPaymentSession(rq, "");
+        var paymentSession = paymentGatewayService.createPaymentSession(rq);
 
         savedPayment.setPaywayPaymentId(paymentSession.getId());
 

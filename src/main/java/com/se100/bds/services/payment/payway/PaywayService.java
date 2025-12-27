@@ -109,6 +109,11 @@ public class PaywayService implements PaymentGatewayService {
     }
 
     @Override
+    public CreatePaymentSessionResponse createPaymentSession(CreatePaymentSessionRequest request) {
+        return createPaymentSession(request, null);
+    }
+
+    @Override
     public CreatePaymentSessionResponse createPaymentSession(CreatePaymentSessionRequest request, String idempotencyKey) {
         if (request == null) {
             throw new IllegalArgumentException("request is required");
