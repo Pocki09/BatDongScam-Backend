@@ -27,6 +27,19 @@ public class DocumentDummyData {
     private final PropertyRepository propertyRepository;
     private final Random random = new Random();
 
+    private final List<String> documentUrls = List.of(
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917874/pexels-pixabay-261679_e8ktx7.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917873/pexels-cytonn-955394_a7nivi.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917872/contract_mc8xl9.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917872/pexels-pixabay-48148_ujtscb.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917871/document-428331_1280_t8go55.jpg"
+    );
+
+    private String getRandomDocumentUrl() {
+        int randomIndex = random.nextInt(documentUrls.size());
+        return documentUrls.get(randomIndex);
+    }
+
     public void createDummy() {
         createDummyDocumentTypes();
         createDummyIdentificationDocuments();
@@ -112,10 +125,7 @@ public class DocumentDummyData {
                         .property(property)
                         .documentNumber(String.format("DOC%09d", random.nextInt(999999999)))
                         .documentName(docType.getName() + " - " + property.getTitle())
-                        .filePath(String.format("/uploads/documents/property_%s/%s_%d.pdf",
-                                property.getId(),
-                                docType.getName().toLowerCase().replace(" ", "_"),
-                                i))
+                        .filePath(getRandomDocumentUrl())
                         .issueDate(LocalDate.now().minusYears(random.nextInt(10)))
                         .expiryDate(LocalDate.now().plusYears(5 + random.nextInt(10)))
                         .issuingAuthority(getRandomAuthority())
