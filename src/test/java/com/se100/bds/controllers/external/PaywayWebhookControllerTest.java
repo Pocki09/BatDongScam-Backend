@@ -1,14 +1,14 @@
 package com.se100.bds.controllers.external;
 
-import com.se100.bds.dtos.requests.payment.CreateBonusPaymentRequest;
-import com.se100.bds.dtos.requests.payment.CreateSalaryPaymentRequest;
 import com.se100.bds.dtos.requests.payment.UpdatePaymentStatusRequest;
 import com.se100.bds.dtos.responses.payment.PaymentDetailResponse;
 import com.se100.bds.dtos.responses.payment.PaymentListItem;
+import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.services.domains.payment.PaymentService;
 import com.se100.bds.services.payment.payway.PaywayWebhookSignatureVerifier;
 import com.se100.bds.utils.Constants.PaymentStatusEnum;
 import com.se100.bds.utils.Constants.PaymentTypeEnum;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -61,6 +61,11 @@ class PaywayWebhookControllerTest {
                 }
 
                 @Override
+                public Page<PaymentListItem> getPaymentsOfProperty(Pageable pageable, @NotNull UUID propertyId) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
                 public PaymentDetailResponse getPaymentById(UUID paymentId) {
                     throw new UnsupportedOperationException();
                 }
@@ -71,12 +76,7 @@ class PaywayWebhookControllerTest {
                 }
 
                 @Override
-                public PaymentDetailResponse createSalaryPayment(CreateSalaryPaymentRequest request) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public PaymentDetailResponse createBonusPayment(CreateBonusPaymentRequest request) {
+                public PaymentDetailResponse createServiceFeePayment(Property property) {
                     throw new UnsupportedOperationException();
                 }
 

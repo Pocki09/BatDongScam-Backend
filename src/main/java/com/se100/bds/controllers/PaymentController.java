@@ -1,14 +1,15 @@
 package com.se100.bds.controllers;
 
 import com.se100.bds.controllers.base.AbstractBaseController;
-import com.se100.bds.dtos.requests.payment.CreateBonusPaymentRequest;
-import com.se100.bds.dtos.requests.payment.CreateSalaryPaymentRequest;
 import com.se100.bds.dtos.requests.payment.UpdatePaymentStatusRequest;
 import com.se100.bds.dtos.responses.PageResponse;
 import com.se100.bds.dtos.responses.SingleResponse;
 import com.se100.bds.dtos.responses.payment.PaymentDetailResponse;
 import com.se100.bds.dtos.responses.payment.PaymentListItem;
 import com.se100.bds.services.domains.payment.PaymentService;
+import com.se100.bds.services.domains.user.UserService;
+import com.se100.bds.services.payment.PaymentGatewayService;
+import com.se100.bds.utils.Constants;
 import com.se100.bds.utils.Constants.PaymentStatusEnum;
 import com.se100.bds.utils.Constants.PaymentTypeEnum;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +27,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -51,6 +53,8 @@ import static com.se100.bds.utils.Constants.SECURITY_SCHEME_NAME;
 public class PaymentController extends AbstractBaseController {
 
     private final PaymentService paymentService;
+    private final UserService userService;
+    private final PaymentGatewayService paymentGatewayService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
@@ -124,11 +128,34 @@ public class PaymentController extends AbstractBaseController {
         return responseFactory.successPage(payments, "Payments retrieved successfully");
     }
 
-    @GetMapping("/{paymentId}")
+    // Get payments for owner's property
+    @GetMapping("/property/{propertyId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROPERTY_OWNER')")
+    @Operation(
+            summary = "Get payments of property",
+            description = "Retrieve paginated payments associated with a specific property (for property owners)",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<PageResponse<PaymentListItem>> getPaymentsOfProperty(
+            @Parameter(description = "Property ID", required = true)
+            @PathVariable UUID propertyId,
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<PaymentListItem> payments = paymentService.getPaymentsOfProperty(pageable, propertyId);
+
+        return responseFactory.successPage(payments, "Property payments retrieved successfully");
+    }
+
+    @GetMapping("/admin/{paymentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
     @Operation(
-            summary = "Get payment details",
-            description = "Retrieve a payment resource by ID with payer/payee context",
+            summary = "Get payment details for admin",
+            description = "Retrieve a payment resource by ID",
             security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
     )
     public ResponseEntity<SingleResponse<PaymentDetailResponse>> getPaymentById(
@@ -137,6 +164,50 @@ public class PaymentController extends AbstractBaseController {
     ) {
         PaymentDetailResponse payment = paymentService.getPaymentById(paymentId);
         return responseFactory.successSingle(payment, "Payment retrieved successfully");
+    }
+
+    // Get payment detail by ID for non-admins (only if they are the payer)
+    @GetMapping("/{paymentId}")
+    @PreAuthorize("hasAnyRole('PROPERTY_OWNER', 'CUSTOMER', 'ADMIN')")
+    @Operation(
+            summary = "Get payment details (Owner)",
+            description = "Retrieve a payment resource by ID if the authenticated owner is the payer",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<SingleResponse<PaymentDetailResponse>> getPaymentByIdForOwner(
+            @Parameter(description = "Payment ID", required = true)
+            @PathVariable UUID paymentId
+    ) {
+        PaymentDetailResponse payment = paymentService.getPaymentById(paymentId);
+        var currentUser = userService.getUser();
+        if (currentUser.getRole() != Constants.RoleEnum.ADMIN) {
+            if (payment.getPayer() == null || !payment.getPayer().getId().equals(userService.getUserId())) {
+                return responseFactory.sendSingle(null,
+                        "Access denied to the requested payment", HttpStatus.FORBIDDEN);
+            }
+        }
+        return responseFactory.successSingle(payment, "Payment retrieved successfully");
+    }
+
+    // get payment link for payment id for authenticated users
+    @PostMapping("/{paymentId}/link")
+    @PreAuthorize("hasAnyRole('PROPERTY_OWNER', 'CUSTOMER', 'ADMIN')")
+    @Operation(
+            summary = "Get payment link for payment",
+            description = "Generate a payment link for the specified payment ID if the authenticated user is the payer",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<SingleResponse<String>> getPaymentLink(
+            @Parameter(description = "Payment ID", required = true)
+            @PathVariable UUID paymentId
+    ) {
+        PaymentDetailResponse payment = paymentService.getPaymentById(paymentId);
+        if (payment.getPayer() == null || !payment.getPayer().getId().equals(userService.getUserId())) {
+            return responseFactory.sendSingle(null,
+                    "Access denied to the requested payment", HttpStatus.FORBIDDEN);
+        }
+        var paymentSession = paymentGatewayService.getPaymentSession(payment.getPaywayPaymentId());
+        return responseFactory.successSingle(paymentSession.getCheckoutUrl(), "Payment link generated successfully");
     }
 
     @PatchMapping("/{paymentId}/status")
@@ -153,33 +224,5 @@ public class PaymentController extends AbstractBaseController {
     ) {
         PaymentDetailResponse payment = paymentService.updatePaymentStatus(paymentId, request);
         return responseFactory.successSingle(payment, "Payment status updated successfully");
-    }
-
-    @PostMapping("/salary")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
-    @Operation(
-            summary = "Create salary payment",
-            description = "Creates a salary payment record for a sales agent (manual payout flow).",
-            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
-    )
-    public ResponseEntity<SingleResponse<PaymentDetailResponse>> createSalaryPayment(
-            @Valid @RequestBody CreateSalaryPaymentRequest request
-    ) {
-        PaymentDetailResponse payment = paymentService.createSalaryPayment(request);
-        return responseFactory.successSingle(payment, "Salary payment created successfully");
-    }
-
-    @PostMapping("/bonus")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
-    @Operation(
-            summary = "Create bonus payment",
-            description = "Creates a bonus payment record for a sales agent (manual payout flow).",
-            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
-    )
-    public ResponseEntity<SingleResponse<PaymentDetailResponse>> createBonusPayment(
-            @Valid @RequestBody CreateBonusPaymentRequest request
-    ) {
-        PaymentDetailResponse payment = paymentService.createBonusPayment(request);
-        return responseFactory.successSingle(payment, "Bonus payment created successfully");
     }
 }

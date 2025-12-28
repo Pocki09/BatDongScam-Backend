@@ -7,12 +7,13 @@ import com.se100.bds.services.domains.payment.webhook.PaymentGatewayWebhookEvent
 import com.se100.bds.services.domains.payment.webhook.PaymentGatewayWebhookProcessor;
 import com.se100.bds.services.domains.payment.webhook.PaymentSucceededSideEffectHandler;
 import com.se100.bds.utils.Constants.PaymentStatusEnum;
-import com.se100.bds.utils.Constants.PaymentTypeEnum;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -67,6 +68,7 @@ public class PaymentGatewayWebhookProcessorImpl implements PaymentGatewayWebhook
         }
 
         payment.setStatus(PaymentStatusEnum.SUCCESS);
+        payment.setPaidTime(LocalDateTime.now());
         paymentRepository.save(payment);
 
         // Dispatch side effects for the payment type.

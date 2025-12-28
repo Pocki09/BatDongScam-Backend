@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
@@ -20,7 +21,7 @@ public class CreatePaymentSessionResponse {
     private String id;
 
     @Schema(description = "Amount in minor units")
-    private Integer amount;
+    private BigDecimal amount;
 
     private String currency;
 
