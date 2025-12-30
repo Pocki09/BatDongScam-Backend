@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.location.City;
 import com.se100.bds.models.entities.location.District;
 import com.se100.bds.models.entities.location.Ward;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -20,6 +22,7 @@ public class LocationDummyData {
 
     private final CityRepository cityRepository;
     private Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
     private List<String> locationUrl = List.of(
             "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916992/vietnam_huxruo.jpg",
@@ -265,7 +268,10 @@ public class LocationDummyData {
 
     private City createCity(String name, String description, BigDecimal totalArea,
                            BigDecimal avgLandPrice, Integer population) {
-        return City.builder()
+        LocalDateTime createdAt = timeGenerator.getRandomTime();
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+
+        City city = City.builder()
                 .cityName(name)
                 .description(description)
                 .imgUrl(getRandomMediaUrl())
@@ -275,11 +281,18 @@ public class LocationDummyData {
                 .isActive(true)
                 .districts(new ArrayList<>())
                 .build();
+
+        city.setCreatedAt(createdAt);
+        city.setUpdatedAt(updatedAt);
+        return city;
     }
 
     private District createDistrict(City city, String name, BigDecimal totalArea,
                                    BigDecimal avgLandPrice, Integer population) {
-        return District.builder()
+        LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(city.getCreatedAt(), null);
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+
+        District district = District.builder()
                 .city(city)
                 .districtName(name)
                 .description("District in " + city.getCityName())
@@ -290,11 +303,18 @@ public class LocationDummyData {
                 .isActive(true)
                 .wards(new ArrayList<>())
                 .build();
+
+        district.setCreatedAt(createdAt);
+        district.setUpdatedAt(updatedAt);
+        return district;
     }
 
     private Ward createWard(District district, String name, BigDecimal totalArea,
                            BigDecimal avgLandPrice, Integer population) {
-        return Ward.builder()
+        LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(district.getCreatedAt(), null);
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+
+        Ward ward = Ward.builder()
                 .district(district)
                 .wardName(name)
                 .description("Ward in " + district.getDistrictName())
@@ -305,6 +325,10 @@ public class LocationDummyData {
                 .isActive(true)
                 .properties(new ArrayList<>())
                 .build();
+
+        ward.setCreatedAt(createdAt);
+        ward.setUpdatedAt(updatedAt);
+        return ward;
     }
 }
 

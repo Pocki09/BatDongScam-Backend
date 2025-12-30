@@ -1,11 +1,13 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.property.PropertyType;
 import com.se100.bds.repositories.domains.property.PropertyTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +17,7 @@ import java.util.List;
 public class PropertyTypeDummyData {
 
     private final PropertyTypeRepository propertyTypeRepository;
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
     public void createDummy() {
         createDummyPropertyTypes();
@@ -41,13 +44,20 @@ public class PropertyTypeDummyData {
     }
 
     private PropertyType createPropertyType(String typeName, String description) {
-        return PropertyType.builder()
+        LocalDateTime createdAt = timeGenerator.getRandomTime();
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+
+        PropertyType propertyType = PropertyType.builder()
                 .typeName(typeName)
                 .description(description)
                 .avatarUrl(null)
                 .isActive(true)
                 .properties(new ArrayList<>())
                 .build();
+
+        propertyType.setCreatedAt(createdAt);
+        propertyType.setUpdatedAt(updatedAt);
+        return propertyType;
     }
 }
 

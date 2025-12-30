@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.models.entities.user.Customer;
 import com.se100.bds.models.entities.user.SaleAgent;
@@ -27,8 +28,9 @@ public class UserDummyData {
     private final PasswordEncoder passwordEncoder;
     private final WardRepository wardRepository;
     private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
-    private List<String> userAvatar = List.of(
+    private final List<String> userAvatar = List.of(
             "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1765724410/customer1_u13w9m.jpg",
             "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1765724409/customer2_zd8xqj.avif",
             "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1765724409/customer3_inmwbr.avif",
@@ -138,7 +140,10 @@ public class UserDummyData {
         // Generate avatar URL based on gender
         String avatarUrl = getRandomMediaUrl();
 
-        return User.builder()
+        LocalDateTime createdAt = timeGenerator.getRandomTime();
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+
+        User user = User.builder()
                 .email(email)
                 .phoneNumber(phoneNumber)
                 .zaloContact(phoneNumber)
@@ -160,6 +165,11 @@ public class UserDummyData {
                 .lastLoginAt(LocalDateTime.now().minusDays(random.nextInt(30)))
                 .notifications(new ArrayList<>())
                 .build();
+
+        user.setCreatedAt(createdAt);
+        user.setUpdatedAt(updatedAt);
+
+        return user;
     }
 
     private SaleAgent createSaleAgent(User user, String employeeCode) {

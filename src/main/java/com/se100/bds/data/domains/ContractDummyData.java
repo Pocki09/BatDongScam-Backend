@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.contract.Contract;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.user.Customer;
@@ -31,6 +32,7 @@ public class ContractDummyData {
     private final SaleAgentRepository saleAgentRepository;
 
     private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
     public void createDummy() {
         createDummyContracts();
@@ -65,13 +67,21 @@ public class ContractDummyData {
             BigDecimal commissionAmount = totalAmount.multiply(property.getCommissionRate());
             BigDecimal serviceFeeAmount = totalAmount.multiply(new BigDecimal("0.01")); // 1% service fee
 
-            LocalDate startDate = LocalDate.now().minusDays(random.nextInt(180));
+            LocalDateTime createdAt = timeGenerator.getRandomTime();
+            LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+
+            LocalDate startDate = createdAt.toLocalDate().plusDays(random.nextInt(30));
             LocalDate endDate = contractType == Constants.ContractTypeEnum.RENTAL
                     ? startDate.plusYears(1)
                     : startDate.plusDays(90);
 
             Constants.ContractStatusEnum[] statuses = Constants.ContractStatusEnum.values();
             Constants.ContractStatusEnum status = statuses[random.nextInt(statuses.length)];
+
+            LocalDateTime signedAt = timeGenerator.getRandomTimeAfter(createdAt, updatedAt);
+            LocalDateTime completedAt = status == Constants.ContractStatusEnum.COMPLETED
+                    ? timeGenerator.getRandomTimeAfter(signedAt, null)
+                    : null;
 
             Contract contract = Contract.builder()
                     .property(property)
@@ -98,12 +108,13 @@ public class ContractDummyData {
                     .finalPaymentAmount(totalAmount.subtract(depositAmount))
                     .latePaymentPenaltyRate(new BigDecimal("0.05"))
                     .specialConditions("No special conditions")
-                    .signedAt(LocalDateTime.now().minusDays(random.nextInt(180)))
-                    .completedAt(status == Constants.ContractStatusEnum.COMPLETED
-                            ? LocalDateTime.now().minusDays(random.nextInt(90))
-                            : LocalDateTime.now().plusDays(365))
+                    .signedAt(signedAt)
+                    .completedAt(completedAt)
                     .payments(new ArrayList<>())
                     .build();
+
+            contract.setCreatedAt(createdAt);
+            contract.setUpdatedAt(updatedAt);
 
             contracts.add(contract);
         }

@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.appointment.Appointment;
 import com.se100.bds.models.entities.contract.Contract;
 import com.se100.bds.repositories.domains.appointment.AppointmentRepository;
@@ -8,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
 
@@ -19,6 +21,7 @@ public class ReviewDummyData {
     private final AppointmentRepository appointmentRepository;
     private final ContractRepository contractRepository;
     private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new  TimeGenerator();
 
     public void createDummy() {
         createDummyReviews();
@@ -36,6 +39,10 @@ public class ReviewDummyData {
             if ("COMPLETED".equals(appointment.getStatus()) && random.nextDouble() < 0.6) { // 60% of completed appointments get reviews
                 appointment.setRating((short) (3 + random.nextInt(3))); // Rating 3-5
                 appointment.setComment(generateAppointmentReviewComment());
+
+                LocalDateTime reviewTime = timeGenerator.getRandomTimeAfter(appointment.getUpdatedAt(), null);
+                appointment.setUpdatedAt(reviewTime);
+
                 appointmentRepository.save(appointment);
                 appointmentReviewCount++;
             }
@@ -47,8 +54,12 @@ public class ReviewDummyData {
             if (contract.getStatus() == com.se100.bds.utils.Constants.ContractStatusEnum.COMPLETED && random.nextDouble() < 0.7) { // 70% of completed contracts get reviews
                 contract.setRating((short) (3 + random.nextInt(3))); // Rating 3-5
                 contract.setComment(generateContractReviewComment());
-                contractRepository.save(contract);
 
+                LocalDateTime reviewTime = timeGenerator.getRandomTimeAfter(contract.getUpdatedAt(), null);
+                contract.setUpdatedAt(reviewTime);
+
+                contractRepository.save(contract);
+                contractReviewCount++;
             }
         }
 

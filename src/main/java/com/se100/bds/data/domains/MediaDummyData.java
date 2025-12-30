@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.property.Media;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.repositories.domains.property.MediaRepository;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -21,6 +23,7 @@ public class MediaDummyData {
     private final MediaRepository mediaRepository;
     private final PropertyRepository propertyRepository;
     private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
     private final List<String> mediaUrl = List.of(
             "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916112/thiet-ke-nha-2-tang-hien-dai-mat-tien-8m_nwrk53.jpg",
@@ -83,6 +86,9 @@ public class MediaDummyData {
                     mimeType = mediaType == Constants.MediaTypeEnum.VIDEO ? "video/mp4" : "application/pdf";
                 }
 
+                LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(property.getCreatedAt(), null);
+                LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+
                 Media media = Media.builder()
                         .property(property)
                         .mediaType(mediaType)
@@ -96,6 +102,8 @@ public class MediaDummyData {
                         .documentType(mediaType == Constants.MediaTypeEnum.DOCUMENT ? "Property Certificate" : null)
                         .build();
 
+                media.setCreatedAt(createdAt);
+                media.setUpdatedAt(updatedAt);
                 mediaList.add(media);
             }
         }

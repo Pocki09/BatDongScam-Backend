@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.document.DocumentType;
 import com.se100.bds.models.entities.document.IdentificationDocument;
 import com.se100.bds.models.entities.property.Property;
@@ -26,6 +27,7 @@ public class DocumentDummyData {
     private final IdentificationDocumentRepository identificationDocumentRepository;
     private final PropertyRepository propertyRepository;
     private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
     private final List<String> documentUrls = List.of(
             "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917874/pexels-pixabay-261679_e8ktx7.jpg",
@@ -120,6 +122,12 @@ public class DocumentDummyData {
                         ? Constants.VerificationStatusEnum.VERIFIED
                         : Constants.VerificationStatusEnum.PENDING;
 
+                LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(property.getCreatedAt(), null);
+                LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+                LocalDateTime verifiedAt = status == Constants.VerificationStatusEnum.VERIFIED
+                        ? timeGenerator.getRandomTimeAfter(createdAt, updatedAt)
+                        : null;
+
                 IdentificationDocument document = IdentificationDocument.builder()
                         .documentType(docType)
                         .property(property)
@@ -130,14 +138,14 @@ public class DocumentDummyData {
                         .expiryDate(LocalDate.now().plusYears(5 + random.nextInt(10)))
                         .issuingAuthority(getRandomAuthority())
                         .verificationStatus(status)
-                        .verifiedAt(status == Constants.VerificationStatusEnum.VERIFIED
-                                ? LocalDateTime.now().minusDays(random.nextInt(180))
-                                : null)
+                        .verifiedAt(verifiedAt)
                         .rejectionReason(status == Constants.VerificationStatusEnum.REJECTED
                                 ? "Document illegible or incomplete"
                                 : null)
                         .build();
 
+                document.setCreatedAt(createdAt);
+                document.setUpdatedAt(updatedAt);
                 documents.add(document);
             }
         }

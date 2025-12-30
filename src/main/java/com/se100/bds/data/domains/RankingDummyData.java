@@ -348,6 +348,10 @@ public class RankingDummyData {
         log.info("Creating customer potential rankings for {}/{}", month, year);
 
         List<Customer> customers = customerRepository.findAll();
+        if (customers.isEmpty()) {
+            log.warn("No customers found, skipping potential rankings for {}/{}", month, year);
+            return;
+        }
         List<IndividualCustomerPotentialMonth> rankings = new ArrayList<>();
 
         for (Customer customer : customers) {
