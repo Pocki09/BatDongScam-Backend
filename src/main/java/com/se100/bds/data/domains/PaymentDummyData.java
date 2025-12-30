@@ -35,7 +35,7 @@ public class PaymentDummyData {
     private void createDummyPayments() {
         log.info("Creating dummy payments");
 
-        List<Contract> contracts = contractRepository.findAll();
+        List<Contract> contracts = contractRepository.findAllWithCustomerAndUser();
         if (contracts.isEmpty()) {
             log.warn("Cannot create payments - no contracts found");
             return;
@@ -45,8 +45,12 @@ public class PaymentDummyData {
 
         for (Contract contract : contracts) {
             // Create deposit payment
-            LocalDateTime depositCreatedAt = timeGenerator.getRandomTimeAfter(contract.getCreatedAt(), contract.getSignedAt());
-            LocalDateTime depositUpdatedAt = timeGenerator.getRandomTimeAfter(depositCreatedAt, null);
+            LocalDateTime depositStartTime = contract.getSignedAt() != null ? contract.getSignedAt() : contract.getCreatedAt();
+            if (depositStartTime == null || depositStartTime.isAfter(LocalDateTime.now())) {
+                depositStartTime = LocalDateTime.now().minusDays(1);
+            }
+            LocalDateTime depositCreatedAt = timeGenerator.getRandomTimeAfter(depositStartTime, LocalDateTime.now());
+            LocalDateTime depositUpdatedAt = timeGenerator.getRandomTimeAfter(depositCreatedAt, LocalDateTime.now());
 
             Payment deposit = Payment.builder()
                     .contract(contract)
@@ -75,10 +79,14 @@ public class PaymentDummyData {
                     LocalDate dueDate = contract.getStartDate().plusMonths(i);
                     LocalDateTime paidTime = random.nextBoolean() ? dueDate.plusDays(random.nextInt(5)).atTime(13, 20) : null;
 
-                    LocalDateTime paymentCreatedAt = timeGenerator.getRandomTimeBeforeDays(dueDate.atStartOfDay(), 7);
+                    LocalDateTime installmentStartTime = contract.getSignedAt() != null ? contract.getSignedAt() : contract.getCreatedAt();
+                    if (installmentStartTime == null || installmentStartTime.isAfter(LocalDateTime.now())) {
+                        installmentStartTime = LocalDateTime.now().minusDays(1);
+                    }
+                    LocalDateTime paymentCreatedAt = timeGenerator.getRandomTimeAfter(installmentStartTime, LocalDateTime.now());
                     LocalDateTime paymentUpdatedAt = paidTime != null ?
                             timeGenerator.getRandomTimeAfter(paymentCreatedAt, paidTime) :
-                            timeGenerator.getRandomTimeAfter(paymentCreatedAt, null);
+                            timeGenerator.getRandomTimeAfter(paymentCreatedAt, LocalDateTime.now());
 
                     Payment installment = Payment.builder()
                             .contract(contract)
@@ -103,10 +111,14 @@ public class PaymentDummyData {
                 LocalDate fullPayDueDate = contract.getStartDate().plusDays(30);
                 LocalDateTime fullPaidTime = random.nextBoolean() ? fullPayDueDate.atTime(13, 20) : null;
 
-                LocalDateTime fullPayCreatedAt = timeGenerator.getRandomTimeAfter(contract.getSignedAt(), contract.getStartDate().atStartOfDay());
+                LocalDateTime fullPayStartTime = contract.getSignedAt() != null ? contract.getSignedAt() : contract.getCreatedAt();
+                if (fullPayStartTime == null || fullPayStartTime.isAfter(LocalDateTime.now())) {
+                    fullPayStartTime = LocalDateTime.now().minusDays(1);
+                }
+                LocalDateTime fullPayCreatedAt = timeGenerator.getRandomTimeAfter(fullPayStartTime, LocalDateTime.now());
                 LocalDateTime fullPayUpdatedAt = fullPaidTime != null ?
                         timeGenerator.getRandomTimeAfter(fullPayCreatedAt, fullPaidTime) :
-                        timeGenerator.getRandomTimeAfter(fullPayCreatedAt, null);
+                        timeGenerator.getRandomTimeAfter(fullPayCreatedAt, LocalDateTime.now());
 
                 Payment fullPay = Payment.builder()
                         .contract(contract)
@@ -132,4 +144,3 @@ public class PaymentDummyData {
         log.info("Saved {} payments to database", payments.size());
     }
 }
-

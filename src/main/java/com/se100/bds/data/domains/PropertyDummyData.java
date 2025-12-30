@@ -44,12 +44,26 @@ public class PropertyDummyData {
         log.info("Creating dummy properties");
 
         List<PropertyOwner> owners = propertyOwnerRepository.findAll();
-        List<SaleAgent> agents = saleAgentRepository.findAll();
-        List<PropertyType> types = propertyTypeRepository.findAll();
-        List<Ward> wards = wardRepository.findAll();
+        if (owners.isEmpty()) {
+            log.warn("Cannot create properties - no property owners found");
+            return;
+        }
 
-        if (owners.isEmpty() || agents.isEmpty() || types.isEmpty() || wards.isEmpty()) {
-            log.warn("Cannot create properties - missing required data");
+        List<SaleAgent> agents = saleAgentRepository.findAll();
+        if (agents.isEmpty()) {
+            log.warn("Cannot create properties - no sale agents found");
+            return;
+        }
+
+        List<PropertyType> types = propertyTypeRepository.findAll();
+        if (types.isEmpty()) {
+            log.warn("Cannot create properties - no property types found");
+            return;
+        }
+
+        List<Ward> wards = wardRepository.findAll();
+        if (wards.isEmpty()) {
+            log.warn("Cannot create properties - no wards found");
             return;
         }
 
@@ -72,7 +86,7 @@ public class PropertyDummyData {
 
             LocalDateTime createdAt = timeGenerator.getRandomTime();
             LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
-            LocalDateTime approvedAt = timeGenerator.getRandomTimeAfter(createdAt, updatedAt);
+            LocalDateTime approvedAt = timeGenerator.getRandomTimeAfter(updatedAt, null);
 
             Property property = Property.builder()
                     .owner(owner)

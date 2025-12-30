@@ -53,16 +53,22 @@ public class CustomerPreferencesDummyData {
         log.info("Creating dummy customer preferences");
 
         List<Customer> customers = customerRepository.findAll();
+        if (customers.isEmpty()) {
+            log.warn("Cannot create customer preferences - no customers found");
+            return;
+        }
+
         List<Property> properties = propertyRepository.findAll();
+        if (properties.isEmpty()) {
+            log.warn("Cannot create customer preferences - no properties found");
+            return;
+        }
+
         List<City> cities = cityRepository.findAll();
         List<District> districts = districtRepository.findAll();
         List<Ward> wards = wardRepository.findAll();
         List<PropertyType> propertyTypes = propertyTypeRepository.findAll();
 
-        if (customers.isEmpty() || properties.isEmpty()) {
-            log.warn("Cannot create customer preferences - missing required data");
-            return;
-        }
 
         List<CustomerFavoriteProperty> favorites = new ArrayList<>();
         List<CustomerPreferredCity> preferredCities = new ArrayList<>();

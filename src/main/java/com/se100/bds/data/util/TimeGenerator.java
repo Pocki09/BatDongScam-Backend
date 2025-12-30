@@ -1,9 +1,12 @@
 package com.se100.bds.data.util;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 public class TimeGenerator {
 
     public LocalDateTime getRandomTime() {
@@ -26,7 +29,8 @@ public class TimeGenerator {
 
         // 1. Guard against null or invalid ranges
         if (time == null || !time.isBefore(maxTime)) {
-            throw new IllegalArgumentException("Start time must be before maxTime and neither can be null");
+            log.error("Start time must be before maxTime and neither can be null");
+            maxTime = LocalDateTime.now();
         }
 
         // 2. Calculate the total seconds available in the window

@@ -42,7 +42,7 @@ public class PropertyOwnerDummyData {
         // Create 20 Property Owners
         for (int i = 1; i <= 20; i++) {
             LocalDateTime createdAt = timeGenerator.getRandomTime();
-            LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+            LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
 
             User user = createUser(
                     String.format("owner%d@example.com", i),
@@ -111,7 +111,7 @@ public class PropertyOwnerDummyData {
     }
 
     private PropertyOwner createPropertyOwner(User user, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        LocalDateTime approvedAt = timeGenerator.getRandomTimeAfter(createdAt, updatedAt);
+        LocalDateTime approvedAt = timeGenerator.getRandomTimeAfter(updatedAt, LocalDateTime.now());
 
         PropertyOwner owner = PropertyOwner.builder()
                 .user(user)

@@ -50,7 +50,7 @@ public class NotificationDummyData {
 
                 LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(user.getCreatedAt(), null);
                 LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
-                LocalDateTime readAt = isRead ? timeGenerator.getRandomTimeAfter(createdAt, updatedAt) : null;
+                LocalDateTime readAt = isRead ? timeGenerator.getRandomTimeAfter(updatedAt, null) : null;
 
                 Notification notification = Notification.builder()
                         .recipient(user)
@@ -129,4 +129,3 @@ public class NotificationDummyData {
         }
     }
 }
-

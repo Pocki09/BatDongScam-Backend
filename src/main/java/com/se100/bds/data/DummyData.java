@@ -104,3 +104,4 @@ public class DummyData implements CommandLineRunner {
         log.info("Done initializing dummy data");
     }
 }
+

@@ -141,7 +141,7 @@ public class UserDummyData {
         String avatarUrl = getRandomMediaUrl();
 
         LocalDateTime createdAt = timeGenerator.getRandomTime();
-        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
 
         User user = User.builder()
                 .email(email)

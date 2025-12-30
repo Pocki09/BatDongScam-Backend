@@ -45,7 +45,7 @@ public class PropertyTypeDummyData {
 
     private PropertyType createPropertyType(String typeName, String description) {
         LocalDateTime createdAt = timeGenerator.getRandomTime();
-        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
 
         PropertyType propertyType = PropertyType.builder()
                 .typeName(typeName)
@@ -60,4 +60,3 @@ public class PropertyTypeDummyData {
         return propertyType;
     }
 }
-

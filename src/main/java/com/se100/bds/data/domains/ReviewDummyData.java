@@ -35,31 +35,35 @@ public class ReviewDummyData {
 
         // Create reviews for completed appointments
         List<Appointment> appointments = appointmentRepository.findAll();
-        for (Appointment appointment : appointments) {
-            if ("COMPLETED".equals(appointment.getStatus()) && random.nextDouble() < 0.6) { // 60% of completed appointments get reviews
-                appointment.setRating((short) (3 + random.nextInt(3))); // Rating 3-5
-                appointment.setComment(generateAppointmentReviewComment());
+        if (!appointments.isEmpty()) {
+            for (Appointment appointment : appointments) {
+                if ("COMPLETED".equals(appointment.getStatus()) && random.nextDouble() < 0.6) { // 60% of completed appointments get reviews
+                    appointment.setRating((short) (3 + random.nextInt(3))); // Rating 3-5
+                    appointment.setComment(generateAppointmentReviewComment());
 
-                LocalDateTime reviewTime = timeGenerator.getRandomTimeAfter(appointment.getUpdatedAt(), null);
-                appointment.setUpdatedAt(reviewTime);
+                    LocalDateTime reviewTime = timeGenerator.getRandomTimeAfter(appointment.getUpdatedAt().isBefore(LocalDateTime.now()) ? appointment.getUpdatedAt() : LocalDateTime.now().minusDays(1), LocalDateTime.now());
+                    appointment.setUpdatedAt(reviewTime);
 
-                appointmentRepository.save(appointment);
-                appointmentReviewCount++;
+                    appointmentRepository.save(appointment);
+                    appointmentReviewCount++;
+                }
             }
         }
 
         // Create reviews for completed contracts
         List<Contract> contracts = contractRepository.findAll();
-        for (Contract contract : contracts) {
-            if (contract.getStatus() == com.se100.bds.utils.Constants.ContractStatusEnum.COMPLETED && random.nextDouble() < 0.7) { // 70% of completed contracts get reviews
-                contract.setRating((short) (3 + random.nextInt(3))); // Rating 3-5
-                contract.setComment(generateContractReviewComment());
+        if (!contracts.isEmpty()) {
+            for (Contract contract : contracts) {
+                if (contract.getStatus() == com.se100.bds.utils.Constants.ContractStatusEnum.COMPLETED && random.nextDouble() < 0.7) { // 70% of completed contracts get reviews
+                    contract.setRating((short) (3 + random.nextInt(3))); // Rating 3-5
+                    contract.setComment(generateContractReviewComment());
 
-                LocalDateTime reviewTime = timeGenerator.getRandomTimeAfter(contract.getUpdatedAt(), null);
-                contract.setUpdatedAt(reviewTime);
+                    LocalDateTime reviewTime = timeGenerator.getRandomTimeAfter(contract.getUpdatedAt().isBefore(LocalDateTime.now()) ? contract.getUpdatedAt() : LocalDateTime.now().minusDays(1), LocalDateTime.now());
+                    contract.setUpdatedAt(reviewTime);
 
-                contractRepository.save(contract);
-                contractReviewCount++;
+                    contractRepository.save(contract);
+                    contractReviewCount++;
+                }
             }
         }
 

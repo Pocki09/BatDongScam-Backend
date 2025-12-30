@@ -1,6 +1,7 @@
 package com.se100.bds.repositories.domains.contract;
 
 import com.se100.bds.models.entities.contract.Contract;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -17,5 +18,8 @@ public interface ContractRepository extends JpaRepository<Contract, UUID>, JpaSp
 
     @Query("SELECT COUNT(c) FROM Contract c WHERE YEAR(c.signedAt) = :year AND MONTH(c.signedAt) = :month AND c.signedAt IS NOT NULL")
     int countSignedInMonth(@Param("month") int month, @Param("year") int year);
-}
 
+    @Query("SELECT c FROM Contract c")
+    @EntityGraph(attributePaths = {"customer", "customer.user"})
+    List<Contract> findAllWithCustomerAndUser();
+}

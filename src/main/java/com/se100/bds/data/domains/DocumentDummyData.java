@@ -102,10 +102,14 @@ public class DocumentDummyData {
         log.info("Creating dummy identification documents");
 
         List<DocumentType> documentTypes = documentTypeRepository.findAll();
-        List<Property> properties = propertyRepository.findAll();
+        if (documentTypes.isEmpty()) {
+            log.warn("Cannot create identification documents - no document types found");
+            return;
+        }
 
-        if (documentTypes.isEmpty() || properties.isEmpty()) {
-            log.warn("Cannot create identification documents - missing required data");
+        List<Property> properties = propertyRepository.findAll();
+        if (properties.isEmpty()) {
+            log.warn("Cannot create identification documents - no properties found");
             return;
         }
 
@@ -122,10 +126,10 @@ public class DocumentDummyData {
                         ? Constants.VerificationStatusEnum.VERIFIED
                         : Constants.VerificationStatusEnum.PENDING;
 
-                LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(property.getCreatedAt(), null);
-                LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+                LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(property.getCreatedAt().isBefore(LocalDateTime.now()) ? property.getCreatedAt() : LocalDateTime.now().minusDays(1), LocalDateTime.now());
+                LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
                 LocalDateTime verifiedAt = status == Constants.VerificationStatusEnum.VERIFIED
-                        ? timeGenerator.getRandomTimeAfter(createdAt, updatedAt)
+                        ? timeGenerator.getRandomTimeAfter(updatedAt, LocalDateTime.now())
                         : null;
 
                 IdentificationDocument document = IdentificationDocument.builder()

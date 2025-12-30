@@ -41,19 +41,45 @@ public class ContractDummyData {
     private void createDummyContracts() {
         log.info("Creating dummy contracts");
 
-        List<Property> properties = propertyRepository.findAll();
-        List<Customer> customers = customerRepository.findAll();
-        List<SaleAgent> agents = saleAgentRepository.findAll();
-
-        if (properties.isEmpty() || customers.isEmpty() || agents.isEmpty()) {
-            log.warn("Cannot create contracts - missing required data");
-            return;
-        }
-
         List<Contract> contracts = new ArrayList<>();
 
         // Create 50 contracts
         for (int i = 1; i <= 50; i++) {
+            LocalDateTime createdAt = timeGenerator.getRandomTime();
+
+            // Get list of properties with valid date
+            List<Property> properties = propertyRepository.findAllByCreatedAtBefore(createdAt);
+            if (properties.isEmpty()) {
+                // Fallback to all properties if no properties found before createdAt
+                properties = propertyRepository.findAll();
+            }
+            if (properties.isEmpty()) {
+                log.warn("No properties available to create contracts, stopping at {} contracts", i - 1);
+                break;
+            }
+
+            // Get list of customers with valid date
+            List<Customer> customers = customerRepository.findAllByCreatedAtBefore(createdAt);
+            if (customers.isEmpty()) {
+                // Fallback to all customers if no customers found before createdAt
+                customers = customerRepository.findAll();
+            }
+            if (customers.isEmpty()) {
+                log.warn("No customers available to create contracts, stopping at {} contracts", i - 1);
+                break;
+            }
+
+            // Get list of agents with valid date
+            List<SaleAgent> agents = saleAgentRepository.findAllByCreatedAtBefore(createdAt);
+            if (agents.isEmpty()) {
+                // Fallback to all agents if no agents found before createdAt
+                agents = saleAgentRepository.findAll();
+            }
+            if (agents.isEmpty()) {
+                log.warn("No agents available to create contracts, stopping at {} contracts", i - 1);
+                break;
+            }
+
             Property property = properties.get(random.nextInt(properties.size()));
             Customer customer = customers.get(random.nextInt(customers.size()));
             SaleAgent agent = agents.get(random.nextInt(agents.size()));
@@ -65,10 +91,8 @@ public class ContractDummyData {
             BigDecimal totalAmount = property.getPriceAmount();
             BigDecimal depositAmount = totalAmount.multiply(new BigDecimal("0.1")); // 10% deposit
             BigDecimal commissionAmount = totalAmount.multiply(property.getCommissionRate());
-            BigDecimal serviceFeeAmount = totalAmount.multiply(new BigDecimal("0.01")); // 1% service fee
 
-            LocalDateTime createdAt = timeGenerator.getRandomTime();
-            LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+            LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
 
             LocalDate startDate = createdAt.toLocalDate().plusDays(random.nextInt(30));
             LocalDate endDate = contractType == Constants.ContractTypeEnum.RENTAL
@@ -78,9 +102,9 @@ public class ContractDummyData {
             Constants.ContractStatusEnum[] statuses = Constants.ContractStatusEnum.values();
             Constants.ContractStatusEnum status = statuses[random.nextInt(statuses.length)];
 
-            LocalDateTime signedAt = timeGenerator.getRandomTimeAfter(createdAt, updatedAt);
+            LocalDateTime signedAt = timeGenerator.getRandomTimeAfter(updatedAt, LocalDateTime.now());
             LocalDateTime completedAt = status == Constants.ContractStatusEnum.COMPLETED
-                    ? timeGenerator.getRandomTimeAfter(signedAt, null)
+                    ? timeGenerator.getRandomTimeAfter(signedAt, LocalDateTime.now())
                     : null;
 
             Contract contract = Contract.builder()
@@ -123,4 +147,3 @@ public class ContractDummyData {
         log.info("Saved {} contracts to database", contracts.size());
     }
 }
-

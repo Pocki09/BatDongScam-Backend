@@ -269,7 +269,7 @@ public class LocationDummyData {
     private City createCity(String name, String description, BigDecimal totalArea,
                            BigDecimal avgLandPrice, Integer population) {
         LocalDateTime createdAt = timeGenerator.getRandomTime();
-        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
 
         City city = City.builder()
                 .cityName(name)
@@ -289,8 +289,8 @@ public class LocationDummyData {
 
     private District createDistrict(City city, String name, BigDecimal totalArea,
                                    BigDecimal avgLandPrice, Integer population) {
-        LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(city.getCreatedAt(), null);
-        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+        LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(city.getCreatedAt().isBefore(LocalDateTime.now()) ? city.getCreatedAt() : LocalDateTime.now().minusDays(1), LocalDateTime.now());
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
 
         District district = District.builder()
                 .city(city)
@@ -311,8 +311,8 @@ public class LocationDummyData {
 
     private Ward createWard(District district, String name, BigDecimal totalArea,
                            BigDecimal avgLandPrice, Integer population) {
-        LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(district.getCreatedAt(), null);
-        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+        LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(district.getCreatedAt().isBefore(LocalDateTime.now()) ? district.getCreatedAt() : LocalDateTime.now().minusDays(1), LocalDateTime.now());
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
 
         Ward ward = Ward.builder()
                 .district(district)
