@@ -291,8 +291,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         boolean isCustomer = appointment.getCustomer() != null &&
                 appointment.getCustomer().getId().equals(currentUser.getId());
         boolean isAdmin = currentUser.getRole() == Constants.RoleEnum.ADMIN;
+        boolean isAgent = appointment.getAgent() != null &&
+                appointment.getAgent().getId().equals(currentUser.getId());
 
-        if (!isCustomer && !isAdmin) {
+        if (!isCustomer && !isAdmin && !isAgent) {
             throw new IllegalStateException("You are not authorized to complete this appointment");
         }
 
