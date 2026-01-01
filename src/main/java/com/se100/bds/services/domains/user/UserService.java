@@ -12,6 +12,7 @@ import com.se100.bds.models.entities.user.SaleAgent;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.securities.JwtUserDetails;
 import com.se100.bds.utils.Constants;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -51,7 +52,7 @@ public interface UserService {
 
     Page<User> findAll(Pageable pageable);
 
-    User findById(UUID id);
+    @NotNull User findById(UUID id);
 
     SaleAgent findSaleAgentById(UUID agentId);
 
