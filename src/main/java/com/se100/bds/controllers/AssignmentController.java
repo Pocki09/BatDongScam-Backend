@@ -84,6 +84,7 @@ public class AssignmentController extends AbstractBaseController {
         return responseFactory.successPage(freeAgents, "Free agents list retrieved successfully");
     }
 
+    //! TODO: deprecate this endpoint in favor of more specific ones below
     @PostMapping("/admin/assign")
     @Operation(
             summary = "Assign or remove agent from property or appointment",

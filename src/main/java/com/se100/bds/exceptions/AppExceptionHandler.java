@@ -4,6 +4,7 @@ import com.se100.bds.dtos.responses.error.DetailedErrorResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,6 +88,7 @@ public class AppExceptionHandler {
             ConstraintViolationException.class,
             MissingRequestHeaderException.class,
             MissingServletRequestParameterException.class,
+            EntityNotFoundException.class, // why bad request? because entity not found during request processing
             MalformedJwtException.class
     })
     public final ResponseEntity<ErrorResponse> handleBadRequestException(final Exception e) {
