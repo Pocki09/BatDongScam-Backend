@@ -830,11 +830,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                     agentAppointment.getStatus() != Constants.AppointmentStatusEnum.CONFIRMED
             ) continue;
             if (diffInMinutes < Constants.DEFAULT_APPOINTMENT_DURATION_MINUTES) {
-                throw new IllegalStateException("Agent is already assigned to another appointment at the same"
+                throw new IllegalStateException("Agent is already assigned to another appointment at the same "
                         + "requested date and time: " + appointment.getRequestedDate());
             }
-            throw new IllegalStateException("Agent is already assigned to another appointment at the same"
-                    + "requested date and time: " + appointment.getRequestedDate());
         }
         return true;
     }
