@@ -15,6 +15,10 @@ public final class Constants {
 
     public static final BigDecimal DEFAULT_PROPERTY_COMMISSION_RATE = new BigDecimal("0.05");
 
+    // Will be used to set default appointment end time = start time + duration
+    // to ensure enough time is reserved when booking
+    public static final int DEFAULT_APPOINTMENT_DURATION_MINUTES = 30;
+
     @Getter
     @AllArgsConstructor
     public enum RoleEnum {

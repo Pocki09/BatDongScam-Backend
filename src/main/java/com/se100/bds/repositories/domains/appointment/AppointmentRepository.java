@@ -78,4 +78,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID>,
 
     @EntityGraph(attributePaths = {"property", "property.ward", "property.ward.district", "property.ward.district.city", "property.mediaList", "property.propertyType", "agent", "agent.user", "customer", "customer.user", "property.owner", "property.owner.user"})
     List<Appointment> findAllByCustomer_IdInAndAgent_Id(Collection<UUID> customerIds, UUID agentId);
+
+    List<Appointment> findAllByAgent_Id(UUID agentId);
 }

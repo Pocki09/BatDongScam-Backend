@@ -18,11 +18,11 @@ public class AbstractBaseEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-//    @CreationTimestamp
+    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-//    @UpdateTimestamp
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }

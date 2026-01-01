@@ -38,6 +38,7 @@ import com.se100.bds.services.fileupload.CloudinaryService;
 import com.se100.bds.utils.Constants;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -57,10 +58,8 @@ import org.springframework.validation.FieldError;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -436,7 +435,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public User findById(UUID id) {
+    public @NotNull User findById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
     }

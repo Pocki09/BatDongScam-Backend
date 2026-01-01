@@ -32,6 +32,8 @@ import com.se100.bds.utils.Constants;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,7 +90,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Determine the customer: use provided customerId (for admin/agent) or current user
         UUID targetCustomerId = request.getCustomerId() != null ? request.getCustomerId() : currentUser.getId();
-        
+
         // Get customer entity
         Customer customer = customerRepository.findById(targetCustomerId)
                 .orElseThrow(() -> new NotFoundException("Customer not found: " + targetCustomerId));
@@ -177,7 +180,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         String confirmationMessage = assignedAgent != null
             ? "Appointment created and assigned to agent " + assignedAgent.getUser().getFirstName() + " " + assignedAgent.getUser().getLastName()
-            : "Your viewing appointment has been booked. You will be notified when an agent confirms the appointment.";
+            : "Your viewing appointment has been booked. You will be notified when an admin confirms the appointment.";
 
         return appointmentMapper.buildBookingResponse(saved, confirmationMessage);
     }
@@ -288,8 +291,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         boolean isCustomer = appointment.getCustomer() != null &&
                 appointment.getCustomer().getId().equals(currentUser.getId());
         boolean isAdmin = currentUser.getRole() == Constants.RoleEnum.ADMIN;
+        boolean isAgent = appointment.getAgent() != null &&
+                appointment.getAgent().getId().equals(currentUser.getId());
 
-        if (!isCustomer && !isAdmin) {
+        if (!isCustomer && !isAdmin && !isAgent) {
             throw new IllegalStateException("You are not authorized to complete this appointment");
         }
 
@@ -321,6 +326,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                         appointment.getProperty().getMediaList().get(0).getFilePath();
 
         // Notify customer
+        assert appointment.getCustomer() != null;
         notificationService.createNotification(
             appointment.getCustomer().getUser(),
             Constants.NotificationTypeEnum.APPOINTMENT_COMPLETED,
@@ -698,29 +704,36 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public boolean assignAgent(UUID agentId, UUID appointmentId) {
+    public void removeAgent(UUID appointmentId) {
         // Find the appointment
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new EntityNotFoundException("Appointment not found with id: " + appointmentId));
 
-        // If agentId is null, remove current agent
-        if (agentId == null) {
-            if (appointment.getAgent() != null) {
-                appointment.setAgent(null);
-                appointment.setStatus(Constants.AppointmentStatusEnum.PENDING);
-                appointment.setConfirmedDate(null);
-                appointmentRepository.save(appointment);
-                log.info("Removed agent from appointment: {}", appointmentId);
-                return true;
-            }
-            return false; // No agent was assigned
+        if (appointment.getAgent() != null) {
+            appointment.setAgent(null);
+            appointment.setStatus(Constants.AppointmentStatusEnum.PENDING);
+            appointment.setConfirmedDate(null);
+            appointmentRepository.save(appointment);
+            log.info("Removed agent from appointment: {}", appointmentId);
         }
+    }
+
+    @Override
+    @Transactional
+    public void assignAgent(@NotNull UUID agentId, UUID appointmentId) {
+        // Find the appointment
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new EntityNotFoundException("Appointment not found with id: " + appointmentId));
 
         // Find the new agent
-        User agentUser = userService.findById(agentId);
-        if (agentUser == null || agentUser.getSaleAgent() == null) {
-            throw new IllegalArgumentException("User is not a sales agent");
+        User agentUser;
+        try {
+            agentUser = userService.findById(agentId);
+        } catch (EntityNotFoundException e) {
+            throw new NotFoundException("Sale agent not found with id: " + agentId);
         }
+
+        if (validateAssignAgent(agentId, appointmentId, agentUser, appointment)) return;
 
         // Remove old agent if exists and assign new agent
         if (appointment.getAgent() != null) {
@@ -769,7 +782,58 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Track appointment assignment action for agent ranking
         rankingService.agentAction(agentId, Constants.AgentActionEnum.APPOINTMENT_ASSIGNED, null);
+    }
 
+    // Helper method to validate agent assignment, returns false if no assignment should be made
+    // For each invalid case, throws an exception.
+    @SuppressWarnings("D")
+    private boolean validateAssignAgent(@NonNull UUID agentId, UUID appointmentId, User agentUser, Appointment appointment) {
+        if (agentUser.getSaleAgent() == null) {
+            throw new IllegalArgumentException("User is not a sales agent");
+        }
+
+        // if the agent is already assigned to the appointment, do nothing
+        if (appointment.getAgent() != null && appointment.getAgent().getId().equals(agentId)) {
+            log.info("Agent {} is already assigned to appointment: {}", agentId, appointmentId);
+            return false;
+        }
+
+        // if the agent has reached max appointments per day, throw exception
+        int currentAssignments = countByAgentId(agentId);
+
+        if (currentAssignments >= agentUser.getSaleAgent().getMaxProperties()) {
+            throw new IllegalStateException("Agent has reached the maximum number of concurrent appointments");
+        }
+
+        // if the appointment is cancelled or completed, cannot assign agent
+        if (appointment.getStatus() == Constants.AppointmentStatusEnum.CANCELLED ||
+            appointment.getStatus() == Constants.AppointmentStatusEnum.COMPLETED) {
+            throw new IllegalStateException("Cannot assign agent to a cancelled or completed appointment");
+        }
+
+        // if the appointment's requested date is in the past, cannot assign agent
+        if (appointment.getRequestedDate() != null && appointment.getRequestedDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Cannot assign agent to an appointment with a past requested date");
+        }
+
+        // if the agent is already assigned to another appointment at the same requested date and time, throw exception
+        // also ensure that there's a buffer time between appointments
+        List<Appointment> agentAppointments = appointmentRepository.findAllByAgent_Id(agentId);
+        for (Appointment agentAppointment : agentAppointments) {
+            if (agentAppointment.getRequestedDate() == null || appointment.getRequestedDate() == null)
+                continue;
+            var requestedDate = appointment.getRequestedDate();
+            var agentRequestedDate = agentAppointment.getRequestedDate();
+            var diffInMinutes = Math.abs(Duration.between(requestedDate, agentRequestedDate).toMinutes());
+            if (
+                    agentAppointment.getStatus() != Constants.AppointmentStatusEnum.PENDING &&
+                    agentAppointment.getStatus() != Constants.AppointmentStatusEnum.CONFIRMED
+            ) continue;
+            if (diffInMinutes < Constants.DEFAULT_APPOINTMENT_DURATION_MINUTES) {
+                throw new IllegalStateException("Agent is already assigned to another appointment at the same "
+                        + "requested date and time: " + appointment.getRequestedDate());
+            }
+        }
         return true;
     }
 
@@ -826,6 +890,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                                 appointment.getProperty().getMediaList().get(0).getFilePath();
 
                 // Notify customer
+                assert appointment.getCustomer() != null;
                 notificationService.createNotification(
                     appointment.getCustomer().getUser(),
                     Constants.NotificationTypeEnum.APPOINTMENT_COMPLETED,
