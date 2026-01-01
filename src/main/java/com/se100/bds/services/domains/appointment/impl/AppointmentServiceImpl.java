@@ -324,6 +324,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                         appointment.getProperty().getMediaList().get(0).getFilePath();
 
         // Notify customer
+        assert appointment.getCustomer() != null;
         notificationService.createNotification(
             appointment.getCustomer().getUser(),
             Constants.NotificationTypeEnum.APPOINTMENT_COMPLETED,
