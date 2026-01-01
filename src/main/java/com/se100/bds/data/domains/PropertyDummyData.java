@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.property.PropertyType;
@@ -33,6 +34,7 @@ public class PropertyDummyData {
     private final WardRepository wardRepository;
 
     private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
     public void createDummy() {
         createDummyProperties();
@@ -42,12 +44,26 @@ public class PropertyDummyData {
         log.info("Creating dummy properties");
 
         List<PropertyOwner> owners = propertyOwnerRepository.findAll();
-        List<SaleAgent> agents = saleAgentRepository.findAll();
-        List<PropertyType> types = propertyTypeRepository.findAll();
-        List<Ward> wards = wardRepository.findAll();
+        if (owners.isEmpty()) {
+            log.warn("Cannot create properties - no property owners found");
+            return;
+        }
 
-        if (owners.isEmpty() || agents.isEmpty() || types.isEmpty() || wards.isEmpty()) {
-            log.warn("Cannot create properties - missing required data");
+        List<SaleAgent> agents = saleAgentRepository.findAll();
+        if (agents.isEmpty()) {
+            log.warn("Cannot create properties - no sale agents found");
+            return;
+        }
+
+        List<PropertyType> types = propertyTypeRepository.findAll();
+        if (types.isEmpty()) {
+            log.warn("Cannot create properties - no property types found");
+            return;
+        }
+
+        List<Ward> wards = wardRepository.findAll();
+        if (wards.isEmpty()) {
+            log.warn("Cannot create properties - no wards found");
             return;
         }
 
@@ -67,6 +83,10 @@ public class PropertyDummyData {
             BigDecimal area = new BigDecimal(50 + random.nextInt(450)); // 50-500 sqm
             BigDecimal pricePerSqm = new BigDecimal(50000000 + random.nextInt(200000000)); // 50M-250M VND/sqm
             BigDecimal priceAmount = area.multiply(pricePerSqm);
+
+            LocalDateTime createdAt = timeGenerator.getRandomTime();
+            LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+            LocalDateTime approvedAt = timeGenerator.getRandomTimeAfter(updatedAt, null);
 
             Property property = Property.builder()
                     .owner(owner)
@@ -93,12 +113,15 @@ public class PropertyDummyData {
                     .serviceFeeCollectedAmount(random.nextDouble() < 0.8 ? priceAmount.multiply(new BigDecimal("0.02")) : BigDecimal.ZERO)
                     .status(random.nextDouble() < 0.8 ? Constants.PropertyStatusEnum.AVAILABLE : Constants.PropertyStatusEnum.PENDING)
                     .viewCount(random.nextInt(1000))
-                    .approvedAt(LocalDateTime.now().minusDays(random.nextInt(180)))
+                    .approvedAt(approvedAt)
                     .mediaList(new ArrayList<>())
                     .appointments(new ArrayList<>())
                     .contracts(new ArrayList<>())
                     .documents(new ArrayList<>())
                     .build();
+
+            property.setCreatedAt(createdAt);
+            property.setUpdatedAt(updatedAt);
 
             properties.add(property);
         }

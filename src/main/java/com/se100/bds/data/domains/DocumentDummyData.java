@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.document.DocumentType;
 import com.se100.bds.models.entities.document.IdentificationDocument;
 import com.se100.bds.models.entities.property.Property;
@@ -26,6 +27,20 @@ public class DocumentDummyData {
     private final IdentificationDocumentRepository identificationDocumentRepository;
     private final PropertyRepository propertyRepository;
     private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
+
+    private final List<String> documentUrls = List.of(
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917874/pexels-pixabay-261679_e8ktx7.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917873/pexels-cytonn-955394_a7nivi.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917872/contract_mc8xl9.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917872/pexels-pixabay-48148_ujtscb.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766917871/document-428331_1280_t8go55.jpg"
+    );
+
+    private String getRandomDocumentUrl() {
+        int randomIndex = random.nextInt(documentUrls.size());
+        return documentUrls.get(randomIndex);
+    }
 
     public void createDummy() {
         createDummyDocumentTypes();
@@ -87,10 +102,14 @@ public class DocumentDummyData {
         log.info("Creating dummy identification documents");
 
         List<DocumentType> documentTypes = documentTypeRepository.findAll();
-        List<Property> properties = propertyRepository.findAll();
+        if (documentTypes.isEmpty()) {
+            log.warn("Cannot create identification documents - no document types found");
+            return;
+        }
 
-        if (documentTypes.isEmpty() || properties.isEmpty()) {
-            log.warn("Cannot create identification documents - missing required data");
+        List<Property> properties = propertyRepository.findAll();
+        if (properties.isEmpty()) {
+            log.warn("Cannot create identification documents - no properties found");
             return;
         }
 
@@ -107,27 +126,30 @@ public class DocumentDummyData {
                         ? Constants.VerificationStatusEnum.VERIFIED
                         : Constants.VerificationStatusEnum.PENDING;
 
+                LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(property.getCreatedAt().isBefore(LocalDateTime.now()) ? property.getCreatedAt() : LocalDateTime.now().minusDays(1), LocalDateTime.now());
+                LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
+                LocalDateTime verifiedAt = status == Constants.VerificationStatusEnum.VERIFIED
+                        ? timeGenerator.getRandomTimeAfter(updatedAt, LocalDateTime.now())
+                        : null;
+
                 IdentificationDocument document = IdentificationDocument.builder()
                         .documentType(docType)
                         .property(property)
                         .documentNumber(String.format("DOC%09d", random.nextInt(999999999)))
                         .documentName(docType.getName() + " - " + property.getTitle())
-                        .filePath(String.format("/uploads/documents/property_%s/%s_%d.pdf",
-                                property.getId(),
-                                docType.getName().toLowerCase().replace(" ", "_"),
-                                i))
+                        .filePath(getRandomDocumentUrl())
                         .issueDate(LocalDate.now().minusYears(random.nextInt(10)))
                         .expiryDate(LocalDate.now().plusYears(5 + random.nextInt(10)))
                         .issuingAuthority(getRandomAuthority())
                         .verificationStatus(status)
-                        .verifiedAt(status == Constants.VerificationStatusEnum.VERIFIED
-                                ? LocalDateTime.now().minusDays(random.nextInt(180))
-                                : null)
+                        .verifiedAt(verifiedAt)
                         .rejectionReason(status == Constants.VerificationStatusEnum.REJECTED
                                 ? "Document illegible or incomplete"
                                 : null)
                         .build();
 
+                document.setCreatedAt(createdAt);
+                document.setUpdatedAt(updatedAt);
                 documents.add(document);
             }
         }

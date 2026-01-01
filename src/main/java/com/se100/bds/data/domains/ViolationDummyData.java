@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.property.Media;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.user.User;
@@ -34,6 +35,7 @@ public class ViolationDummyData {
     private final PropertyRepository propertyRepository;
     private final ViolationReportScheduler violationReportScheduler;
     private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
     /**
      * Check if violation data already exists
@@ -96,10 +98,14 @@ public class ViolationDummyData {
         log.info("Creating dummy violation reports");
 
         List<User> users = userRepository.findAll();
-        List<Property> properties = propertyRepository.findAll();
-
         if (users.isEmpty()) {
             log.warn("Cannot create violations - no users found");
+            return;
+        }
+
+        List<Property> properties = propertyRepository.findAll();
+        if (properties.isEmpty()) {
+            log.warn("Cannot create violations - no properties found");
             return;
         }
 
@@ -141,6 +147,11 @@ public class ViolationDummyData {
             Constants.ViolationTypeEnum violationType = violationTypes[random.nextInt(violationTypes.length)];
             Constants.ViolationStatusEnum status = statuses[random.nextInt(statuses.length)];
 
+            LocalDateTime createdAt = timeGenerator.getRandomTime();
+            LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
+            LocalDateTime resolvedAt = status == Constants.ViolationStatusEnum.RESOLVED ?
+                    timeGenerator.getRandomTimeAfter(updatedAt, LocalDateTime.now()) : null;
+
             ViolationReport violation = ViolationReport.builder()
                     .reporterUser(reporter)
                     .relatedEntityType(reportedType)
@@ -151,12 +162,15 @@ public class ViolationDummyData {
                     .description(generateViolationDescription(violationType, reportedType))
                     .status(status)
                     .resolutionNotes(status == Constants.ViolationStatusEnum.RESOLVED ? generateResolutionNotes() : null)
-                    .resolvedAt(status == Constants.ViolationStatusEnum.RESOLVED ? LocalDateTime.now().minusDays(random.nextInt(30)) : null)
+                    .resolvedAt(resolvedAt)
                     .penaltyApplied(status == Constants.ViolationStatusEnum.RESOLVED && random.nextBoolean()
                             ? Constants.PenaltyAppliedEnum.values()[random.nextInt(Constants.PenaltyAppliedEnum.values().length)]
                             : null)
                     .mediaList(new ArrayList<>())
                     .build();
+
+            violation.setCreatedAt(createdAt);
+            violation.setUpdatedAt(updatedAt);
 
             int mediaCount = 1 + random.nextInt(5); // 1-5 media files
             for (int j = 0; j < mediaCount; j++) {

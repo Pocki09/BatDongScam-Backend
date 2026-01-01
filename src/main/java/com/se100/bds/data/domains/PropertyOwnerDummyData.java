@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.models.entities.user.PropertyOwner;
 import com.se100.bds.models.entities.user.User;
@@ -25,6 +26,7 @@ public class PropertyOwnerDummyData {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final WardRepository wardRepository;
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
     public void createDummy() {
         createDummyPropertyOwners();
@@ -39,16 +41,21 @@ public class PropertyOwnerDummyData {
 
         // Create 20 Property Owners
         for (int i = 1; i <= 20; i++) {
+            LocalDateTime createdAt = timeGenerator.getRandomTime();
+            LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
+
             User user = createUser(
                     String.format("owner%d@example.com", i),
                     String.format("092%07d", i),
                     "Owner",
                     String.format("Number%d", i),
                     wards.isEmpty() ? null : wards.get(random.nextInt(wards.size())),
-                    String.format("ID%09d", 100000000 + i)
+                    String.format("ID%09d", 100000000 + i),
+                    createdAt,
+                    updatedAt
             );
 
-            PropertyOwner propertyOwner = createPropertyOwner(user);
+            PropertyOwner propertyOwner = createPropertyOwner(user, createdAt, updatedAt);
             user.setPropertyOwner(propertyOwner);
             owners.add(user);
         }
@@ -57,7 +64,8 @@ public class PropertyOwnerDummyData {
         log.info("Saved {} property owners to database", owners.size());
     }
 
-    private User createUser(String email, String phoneNumber, String firstName, String lastName, Ward ward, String identificationNumber) {
+    private User createUser(String email, String phoneNumber, String firstName, String lastName, Ward ward,
+                           String identificationNumber, LocalDateTime createdAt, LocalDateTime updatedAt) {
         Random random = new Random();
 
         // Generate random date of birth (age between 25 and 70 years old for property owners)
@@ -74,7 +82,7 @@ public class PropertyOwnerDummyData {
         String avatarUrl = String.format("https://avatar.iran.liara.run/public/%s?username=%s",
                 gender.toLowerCase(), email.split("@")[0]);
 
-        return User.builder()
+        User user = User.builder()
                 .email(email)
                 .phoneNumber(phoneNumber)
                 .zaloContact(phoneNumber)
@@ -96,13 +104,23 @@ public class PropertyOwnerDummyData {
                 .lastLoginAt(LocalDateTime.now().minusDays(random.nextInt(30)))
                 .notifications(new ArrayList<>())
                 .build();
+
+        user.setCreatedAt(createdAt);
+        user.setUpdatedAt(updatedAt);
+        return user;
     }
 
-    private PropertyOwner createPropertyOwner(User user) {
-        return PropertyOwner.builder()
+    private PropertyOwner createPropertyOwner(User user, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        LocalDateTime approvedAt = timeGenerator.getRandomTimeAfter(updatedAt, LocalDateTime.now());
+
+        PropertyOwner owner = PropertyOwner.builder()
                 .user(user)
-                .approvedAt(LocalDateTime.now().minusDays((long) (Math.random() * 365)))
+                .approvedAt(approvedAt)
                 .properties(new ArrayList<>())
                 .build();
+
+        owner.setCreatedAt(createdAt);
+        owner.setUpdatedAt(updatedAt);
+        return owner;
     }
 }

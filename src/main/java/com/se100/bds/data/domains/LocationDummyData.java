@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.location.City;
 import com.se100.bds.models.entities.location.District;
 import com.se100.bds.models.entities.location.Ward;
@@ -9,8 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -18,6 +21,30 @@ import java.util.List;
 public class LocationDummyData {
 
     private final CityRepository cityRepository;
+    private Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
+
+    private List<String> locationUrl = List.of(
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916992/vietnam_huxruo.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916991/ho-chi-minh-city-at-night-22c7df816ce4493eb0e86cf54fe03309_zjmiye.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916990/pexels-huy-nguyen-748440234-19838813_lv1qpx.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916989/things-to-do-hoi-an-japanese-bridge_s9rbwz.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916989/Hoi-An-Ancient-Town-at-Night_kxmkpo.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916988/shutterstock-362736344_tu5efq.webp",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916986/Ho-Chi-Minh-City_w17xsn.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916985/Hoi-An_ivg4ow.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916984/Hoi-An-Vietnam_okhhze.webp",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916984/da-nang-things-to-do-hand-of-god-golden-bridge_zlwqzj.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916983/a4fd6b39-16b6-4230-bcf1-155a0d9a72c1_ankgji.avif",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916983/Defining-Vietnam-and-its-Major-Cities-132162474_zxz0ir.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766916983/da-nang-vietnam-que-faire-en-2-jours-1_vouffm.jpg"
+    );
+
+    private String getRandomMediaUrl() {
+        int randomIndex = random.nextInt(locationUrl.size());
+        return locationUrl.get(randomIndex);
+    }
+
 
     public void createDummy() {
         if (any()) {
@@ -241,46 +268,67 @@ public class LocationDummyData {
 
     private City createCity(String name, String description, BigDecimal totalArea,
                            BigDecimal avgLandPrice, Integer population) {
-        return City.builder()
+        LocalDateTime createdAt = timeGenerator.getRandomTime();
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
+
+        City city = City.builder()
                 .cityName(name)
                 .description(description)
-                .imgUrl(null)
+                .imgUrl(getRandomMediaUrl())
                 .totalArea(totalArea)
                 .avgLandPrice(avgLandPrice)
                 .population(population)
                 .isActive(true)
                 .districts(new ArrayList<>())
                 .build();
+
+        city.setCreatedAt(createdAt);
+        city.setUpdatedAt(updatedAt);
+        return city;
     }
 
     private District createDistrict(City city, String name, BigDecimal totalArea,
                                    BigDecimal avgLandPrice, Integer population) {
-        return District.builder()
+        LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(city.getCreatedAt().isBefore(LocalDateTime.now()) ? city.getCreatedAt() : LocalDateTime.now().minusDays(1), LocalDateTime.now());
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
+
+        District district = District.builder()
                 .city(city)
                 .districtName(name)
                 .description("District in " + city.getCityName())
-                .imgUrl(null)
+                .imgUrl(getRandomMediaUrl())
                 .totalArea(totalArea)
                 .avgLandPrice(avgLandPrice)
                 .population(population)
                 .isActive(true)
                 .wards(new ArrayList<>())
                 .build();
+
+        district.setCreatedAt(createdAt);
+        district.setUpdatedAt(updatedAt);
+        return district;
     }
 
     private Ward createWard(District district, String name, BigDecimal totalArea,
                            BigDecimal avgLandPrice, Integer population) {
-        return Ward.builder()
+        LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(district.getCreatedAt().isBefore(LocalDateTime.now()) ? district.getCreatedAt() : LocalDateTime.now().minusDays(1), LocalDateTime.now());
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
+
+        Ward ward = Ward.builder()
                 .district(district)
                 .wardName(name)
                 .description("Ward in " + district.getDistrictName())
-                .imgUrl(null)
+                .imgUrl(getRandomMediaUrl())
                 .totalArea(totalArea)
                 .avgLandPrice(avgLandPrice)
                 .population(population)
                 .isActive(true)
                 .properties(new ArrayList<>())
                 .build();
+
+        ward.setCreatedAt(createdAt);
+        ward.setUpdatedAt(updatedAt);
+        return ward;
     }
 }
 

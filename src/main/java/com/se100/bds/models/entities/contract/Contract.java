@@ -47,7 +47,7 @@ public class Contract extends AbstractBaseEntity {
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
-    @Column(name = "end_date", nullable = false)
+    @Column(name = "end_date")
     private LocalDate endDate;
 
     @Column(name = "special_terms", nullable = false, columnDefinition = "TEXT")
@@ -103,7 +103,7 @@ public class Contract extends AbstractBaseEntity {
     @Column(name = "signed_at", nullable = false)
     private LocalDateTime signedAt;
 
-    @Column(name = "completed_at", nullable = false)
+    @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.models.entities.user.Customer;
 import com.se100.bds.models.entities.user.SaleAgent;
@@ -26,6 +27,23 @@ public class UserDummyData {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final WardRepository wardRepository;
+    private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
+
+    private final List<String> userAvatar = List.of(
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1765724410/customer1_u13w9m.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1765724409/customer2_zd8xqj.avif",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1765724409/customer3_inmwbr.avif",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1765724408/customer4_z8b5hc.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1765724410/customer5_srdvbs.avif",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1765724410/customer6_khivf9.jpg",
+            "https://res.cloudinary.com/dzpv3mfjt/image/upload/v1765724244/15d86c07-2482-4c1a-a731-2e6065aa2b70.png"
+    );
+
+    private String getRandomMediaUrl() {
+        int randomIndex = random.nextInt(userAvatar.size());
+        return userAvatar.get(randomIndex);
+    }
 
     public void createDummy() {
         if (any()) {
@@ -120,10 +138,12 @@ public class UserDummyData {
         LocalDate issueDate = dayOfBirth.plusYears(18).plusDays(random.nextInt(365 * (yearsOld - 18)));
 
         // Generate avatar URL based on gender
-        String avatarUrl = String.format("https://avatar.iran.liara.run/public/%s?username=%s",
-                gender.toLowerCase(), email.split("@")[0]);
+        String avatarUrl = getRandomMediaUrl();
 
-        return User.builder()
+        LocalDateTime createdAt = timeGenerator.getRandomTime();
+        LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
+
+        User user = User.builder()
                 .email(email)
                 .phoneNumber(phoneNumber)
                 .zaloContact(phoneNumber)
@@ -140,11 +160,16 @@ public class UserDummyData {
                 .nation("Vietnam")
                 .issueDate(issueDate)
                 .issuingAuthority("Public Security Department")
-                .frontIdPicturePath(String.format("/uploads/id_cards/%s_front.jpg", identificationNumber))
-                .backIdPicturePath(String.format("/uploads/id_cards/%s_back.jpg", identificationNumber))
+                .frontIdPicturePath("https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766918567/Screenshot_2025-12-28_174206_vgddnp.png")
+                .backIdPicturePath("https://res.cloudinary.com/dzpv3mfjt/image/upload/v1766918567/Screenshot_2025-12-28_174206_vgddnp.png")
                 .lastLoginAt(LocalDateTime.now().minusDays(random.nextInt(30)))
                 .notifications(new ArrayList<>())
                 .build();
+
+        user.setCreatedAt(createdAt);
+        user.setUpdatedAt(updatedAt);
+
+        return user;
     }
 
     private SaleAgent createSaleAgent(User user, String employeeCode) {

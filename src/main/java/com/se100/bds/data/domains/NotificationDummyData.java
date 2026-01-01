@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.notification.Notification;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.repositories.domains.notification.NotificationRepository;
@@ -22,6 +23,7 @@ public class NotificationDummyData {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
     public void createDummy() {
         createDummyNotifications();
@@ -46,6 +48,10 @@ public class NotificationDummyData {
                 Constants.NotificationTypeEnum type = getRandomNotificationType();
                 boolean isRead = random.nextDouble() < 0.6; // 60% read
 
+                LocalDateTime createdAt = timeGenerator.getRandomTimeAfter(user.getCreatedAt(), null);
+                LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, null);
+                LocalDateTime readAt = isRead ? timeGenerator.getRandomTimeAfter(updatedAt, null) : null;
+
                 Notification notification = Notification.builder()
                         .recipient(user)
                         .type(type)
@@ -56,9 +62,11 @@ public class NotificationDummyData {
                         .deliveryStatus(Constants.NotificationStatusEnum.SENT)
                         .isRead(isRead)
                         .imgUrl("/images/notification-default.png")
-                        .readAt(isRead ? LocalDateTime.now().minusDays(random.nextInt(30)) : null)
+                        .readAt(readAt)
                         .build();
 
+                notification.setCreatedAt(createdAt);
+                notification.setUpdatedAt(updatedAt);
                 notifications.add(notification);
             }
         }
@@ -121,4 +129,3 @@ public class NotificationDummyData {
         }
     }
 }
-

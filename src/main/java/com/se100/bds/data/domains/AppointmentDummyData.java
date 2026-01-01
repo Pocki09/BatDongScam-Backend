@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.appointment.Appointment;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.user.Customer;
@@ -28,6 +29,8 @@ public class AppointmentDummyData {
     private final CustomerRepository customerRepository;
     private final SaleAgentRepository saleAgentRepository;
 
+    private final TimeGenerator timeGenerator = new TimeGenerator();
+
     private final Random random = new Random();
 
     public void createDummy() {
@@ -37,24 +40,38 @@ public class AppointmentDummyData {
     private void createDummyAppointments() {
         log.info("Creating dummy appointments");
 
-        List<Property> properties = propertyRepository.findAll();
-        List<Customer> customers = customerRepository.findAll();
-        List<SaleAgent> agents = saleAgentRepository.findAll();
-
-        if (properties.isEmpty() || customers.isEmpty() || agents.isEmpty()) {
-            log.warn("Cannot create appointments - missing required data");
-            return;
-        }
-
         List<Appointment> appointments = new ArrayList<>();
 
         // Create 300 appointments
         for (int i = 1; i <= 300; i++) {
-            Property property = properties.get(random.nextInt(properties.size()));
-            Customer customer = customers.get(random.nextInt(customers.size()));
 
             LocalDateTime requestedDate = LocalDateTime.now()
                     .plusDays(random.nextInt(60) - 30); // Between 30 days ago and 30 days ahead
+            LocalDateTime createdDate = timeGenerator.getRandomTimeBeforeDays(requestedDate, 7);
+
+            // Get list of customer with valid date
+            List<Customer> customers = customerRepository.findAllByCreatedAtBefore(createdDate);
+            if (customers.isEmpty()) {
+                // Fallback to all customers if no customers found before createdDate
+                customers = customerRepository.findAll();
+            }
+            if (customers.isEmpty()) {
+                log.warn("No customers available to create appointments, stopping at {} appointments", i - 1);
+                break;
+            }
+            Customer customer = customers.get(random.nextInt(customers.size()));
+
+            // Get list of properties with valid date
+            List<Property> properties = propertyRepository.findAllByCreatedAtBefore(createdDate);
+            if (properties.isEmpty()) {
+                // Fallback to all properties if no properties found before createdDate
+                properties = propertyRepository.findAll();
+            }
+            if (properties.isEmpty()) {
+                log.warn("No properties available to create appointments, stopping at {} appointments", i - 1);
+                break;
+            }
+            Property property = properties.get(random.nextInt(properties.size()));
 
             Constants.AppointmentStatusEnum[] statuses = {
                     Constants.AppointmentStatusEnum.PENDING,
@@ -64,12 +81,21 @@ public class AppointmentDummyData {
             };
             Constants.AppointmentStatusEnum status = statuses[random.nextInt(statuses.length)];
 
+            // Get list of agent with valid date
+            List<SaleAgent> agents = saleAgentRepository.findAllByCreatedAtBefore(createdDate);
+            if (agents.isEmpty()) {
+                // Fallback to all agents if no agents found before createdDate
+                agents = saleAgentRepository.findAll();
+            }
+
             // Only assign agent if status is not PENDING
             SaleAgent agent = null;
             LocalDateTime confirmedDate = null;
-            if (status != Constants.AppointmentStatusEnum.PENDING) {
+            LocalDateTime updatedDate = null;
+            if (status != Constants.AppointmentStatusEnum.PENDING && !agents.isEmpty()) {
                 agent = agents.get(random.nextInt(agents.size()));
                 confirmedDate = requestedDate.plusHours(random.nextInt(48));
+                updatedDate = confirmedDate;
             }
 
             String[] interestLevels = {"LOW", "MEDIUM", "HIGH", "VERY_HIGH"};
@@ -86,6 +112,9 @@ public class AppointmentDummyData {
                     .viewingOutcome(status == Constants.AppointmentStatusEnum.COMPLETED ? generateViewingOutcome() : null)
                     .customerInterestLevel(status == Constants.AppointmentStatusEnum.COMPLETED ? interestLevels[random.nextInt(interestLevels.length)] : null)
                     .build();
+
+            appointment.setCreatedAt(createdDate);
+            appointment.setUpdatedAt(updatedDate);
 
             appointments.add(appointment);
         }

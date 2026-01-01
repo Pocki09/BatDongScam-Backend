@@ -1,5 +1,6 @@
 package com.se100.bds.data.domains;
 
+import com.se100.bds.data.util.TimeGenerator;
 import com.se100.bds.models.entities.contract.Contract;
 import com.se100.bds.models.entities.contract.Payment;
 import com.se100.bds.repositories.domains.contract.ContractRepository;
@@ -25,6 +26,7 @@ public class PaymentDummyData {
     private final PaymentRepository paymentRepository;
     private final ContractRepository contractRepository;
     private final Random random = new Random();
+    private final TimeGenerator timeGenerator = new TimeGenerator();
 
     public void createDummy() {
         createDummyPayments();
@@ -33,7 +35,7 @@ public class PaymentDummyData {
     private void createDummyPayments() {
         log.info("Creating dummy payments");
 
-        List<Contract> contracts = contractRepository.findAll();
+        List<Contract> contracts = contractRepository.findAllWithCustomerAndUser();
         if (contracts.isEmpty()) {
             log.warn("Cannot create payments - no contracts found");
             return;
@@ -43,6 +45,13 @@ public class PaymentDummyData {
 
         for (Contract contract : contracts) {
             // Create deposit payment
+            LocalDateTime depositStartTime = contract.getSignedAt() != null ? contract.getSignedAt() : contract.getCreatedAt();
+            if (depositStartTime == null || depositStartTime.isAfter(LocalDateTime.now())) {
+                depositStartTime = LocalDateTime.now().minusDays(1);
+            }
+            LocalDateTime depositCreatedAt = timeGenerator.getRandomTimeAfter(depositStartTime, LocalDateTime.now());
+            LocalDateTime depositUpdatedAt = timeGenerator.getRandomTimeAfter(depositCreatedAt, LocalDateTime.now());
+
             Payment deposit = Payment.builder()
                     .contract(contract)
                     .property(contract.getProperty())
@@ -58,6 +67,8 @@ public class PaymentDummyData {
                     .penaltyAmount(BigDecimal.ZERO)
                     .notes("Initial deposit payment")
                     .build();
+            deposit.setCreatedAt(depositCreatedAt);
+            deposit.setUpdatedAt(depositUpdatedAt);
             payments.add(deposit);
 
             // Create installment or full payment based on contract type
@@ -67,6 +78,15 @@ public class PaymentDummyData {
                 for (int i = 0; i < months; i++) {
                     LocalDate dueDate = contract.getStartDate().plusMonths(i);
                     LocalDateTime paidTime = random.nextBoolean() ? dueDate.plusDays(random.nextInt(5)).atTime(13, 20) : null;
+
+                    LocalDateTime installmentStartTime = contract.getSignedAt() != null ? contract.getSignedAt() : contract.getCreatedAt();
+                    if (installmentStartTime == null || installmentStartTime.isAfter(LocalDateTime.now())) {
+                        installmentStartTime = LocalDateTime.now().minusDays(1);
+                    }
+                    LocalDateTime paymentCreatedAt = timeGenerator.getRandomTimeAfter(installmentStartTime, LocalDateTime.now());
+                    LocalDateTime paymentUpdatedAt = paidTime != null ?
+                            timeGenerator.getRandomTimeAfter(paymentCreatedAt, paidTime) :
+                            timeGenerator.getRandomTimeAfter(paymentCreatedAt, LocalDateTime.now());
 
                     Payment installment = Payment.builder()
                             .contract(contract)
@@ -82,17 +102,31 @@ public class PaymentDummyData {
                             .penaltyAmount(BigDecimal.ZERO)
                             .notes(String.format("Monthly payment %d/%d", i + 1, months))
                             .build();
+                    installment.setCreatedAt(paymentCreatedAt);
+                    installment.setUpdatedAt(paymentUpdatedAt);
                     payments.add(installment);
                 }
             } else {
                 // Create full payment
+                LocalDate fullPayDueDate = contract.getStartDate().plusDays(30);
+                LocalDateTime fullPaidTime = random.nextBoolean() ? fullPayDueDate.atTime(13, 20) : null;
+
+                LocalDateTime fullPayStartTime = contract.getSignedAt() != null ? contract.getSignedAt() : contract.getCreatedAt();
+                if (fullPayStartTime == null || fullPayStartTime.isAfter(LocalDateTime.now())) {
+                    fullPayStartTime = LocalDateTime.now().minusDays(1);
+                }
+                LocalDateTime fullPayCreatedAt = timeGenerator.getRandomTimeAfter(fullPayStartTime, LocalDateTime.now());
+                LocalDateTime fullPayUpdatedAt = fullPaidTime != null ?
+                        timeGenerator.getRandomTimeAfter(fullPayCreatedAt, fullPaidTime) :
+                        timeGenerator.getRandomTimeAfter(fullPayCreatedAt, LocalDateTime.now());
+
                 Payment fullPay = Payment.builder()
                         .contract(contract)
                         .property(contract.getProperty())
                         .paymentType(Constants.PaymentTypeEnum.FULL_PAY)
                         .amount(contract.getRemainingAmount())
-                        .dueDate(contract.getStartDate().plusDays(30))
-                        .paidTime(random.nextBoolean() ? contract.getStartDate().plusDays(30).atTime(13, 20) : null)
+                        .dueDate(fullPayDueDate)
+                        .paidTime(fullPaidTime)
                         .installmentNumber(null)
                         .paymentMethod("Bank Transfer")
                         .transactionReference(String.format("TXN%012d", random.nextInt(999999999)))
@@ -100,6 +134,8 @@ public class PaymentDummyData {
                         .penaltyAmount(BigDecimal.ZERO)
                         .notes("Full payment for property purchase")
                         .build();
+                fullPay.setCreatedAt(fullPayCreatedAt);
+                fullPay.setUpdatedAt(fullPayUpdatedAt);
                 payments.add(fullPay);
             }
         }
@@ -108,4 +144,3 @@ public class PaymentDummyData {
         log.info("Saved {} payments to database", payments.size());
     }
 }
-
