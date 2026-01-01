@@ -53,8 +53,10 @@ public interface AppointmentService {
     // Helper methods
     int countByAgentId(UUID agentId);
 
+    void removeAgent(UUID appointmentId);
+
     // Assignment
-    boolean assignAgent(UUID agentId, UUID appointmentId);
+    void assignAgent(UUID agentId, UUID appointmentId);
 
     // Update appointment details
     boolean updateAppointmentDetails(

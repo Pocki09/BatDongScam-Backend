@@ -99,28 +99,29 @@ public class AssignmentController extends AbstractBaseController {
             @Parameter(description = "Target type: 'PROPERTY' or 'APPOINTMENT'", required = true)
             @RequestParam String targetType) {
 
-        boolean result;
         String message;
 
         if ("PROPERTY".equalsIgnoreCase(targetType)) {
-            result = propertyService.assignAgent(agentId, targetId);
+            // TODO: refactor propertyService.assignAgent to the same contract as appointmentService
+            propertyService.assignAgent(agentId, targetId);
             if (agentId == null) {
-                message = result ? "Agent removed from property successfully" : "No agent was assigned to this property";
+                message = "Agent removed from property successfully";
             } else {
                 message = "Agent assigned to property successfully";
             }
         } else if ("APPOINTMENT".equalsIgnoreCase(targetType)) {
-            result = appointmentService.assignAgent(agentId, targetId);
             if (agentId == null) {
-                message = result ? "Agent removed from appointment successfully" : "No agent was assigned to this appointment";
+                appointmentService.removeAgent(targetId);
+                message = "Agent removed from appointment successfully";
             } else {
+                appointmentService.assignAgent(agentId, targetId);
                 message = "Agent assigned to appointment successfully";
             }
         } else {
             throw new IllegalArgumentException("Invalid target type. Must be 'PROPERTY' or 'APPOINTMENT'");
         }
 
-        return responseFactory.successSingle(result, message);
+        return responseFactory.successSingle(null, message);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -136,16 +137,18 @@ public class AssignmentController extends AbstractBaseController {
             @Parameter(description = "Agent ID (null to remove)")
             @RequestParam(required = false) UUID agentId) {
 
-        boolean result = appointmentService.assignAgent(agentId, appointmentId);
-
-        String message;
         if (agentId == null) {
-            message = result ? "Agent removed from viewing successfully" : "No agent was assigned to this viewing";
+            appointmentService.removeAgent(appointmentId);
         } else {
-            message = result ? "Agent assigned to viewing successfully" : "Viewing already assigned to this agent";
+            appointmentService.assignAgent(agentId, appointmentId);
         }
 
-        return responseFactory.successSingle(result, message);
+        String message = agentId == null
+                ? "Agent removed from viewing successfully"
+                : "Agent assigned to viewing successfully";
+
+        // you can map the resulting entity and return it if needed. I sure do not give a single damn fuck
+        return responseFactory.successSingle(null, message);
     }
 
     @PreAuthorize("hasRole('SALESAGENT')")

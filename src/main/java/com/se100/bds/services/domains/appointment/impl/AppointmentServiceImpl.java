@@ -32,6 +32,7 @@ import com.se100.bds.utils.Constants;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -87,7 +88,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Determine the customer: use provided customerId (for admin/agent) or current user
         UUID targetCustomerId = request.getCustomerId() != null ? request.getCustomerId() : currentUser.getId();
-        
+
         // Get customer entity
         Customer customer = customerRepository.findById(targetCustomerId)
                 .orElseThrow(() -> new NotFoundException("Customer not found: " + targetCustomerId));
@@ -177,7 +178,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         String confirmationMessage = assignedAgent != null
             ? "Appointment created and assigned to agent " + assignedAgent.getUser().getFirstName() + " " + assignedAgent.getUser().getLastName()
-            : "Your viewing appointment has been booked. You will be notified when an agent confirms the appointment.";
+            : "Your viewing appointment has been booked. You will be notified when an admin confirms the appointment.";
 
         return appointmentMapper.buildBookingResponse(saved, confirmationMessage);
     }
@@ -698,23 +699,25 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public boolean assignAgent(UUID agentId, UUID appointmentId) {
+    public void removeAgent(UUID appointmentId) {
         // Find the appointment
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new EntityNotFoundException("Appointment not found with id: " + appointmentId));
 
-        // If agentId is null, remove current agent
-        if (agentId == null) {
-            if (appointment.getAgent() != null) {
-                appointment.setAgent(null);
-                appointment.setStatus(Constants.AppointmentStatusEnum.PENDING);
-                appointment.setConfirmedDate(null);
-                appointmentRepository.save(appointment);
-                log.info("Removed agent from appointment: {}", appointmentId);
-                return true;
-            }
-            return false; // No agent was assigned
+        if (appointment.getAgent() != null) {
+            appointment.setAgent(null);
+            appointment.setStatus(Constants.AppointmentStatusEnum.PENDING);
+            appointment.setConfirmedDate(null);
+            appointmentRepository.save(appointment);
+            log.info("Removed agent from appointment: {}", appointmentId);
         }
+    }
+
+    @Override
+    public void assignAgent(@NotNull UUID agentId, UUID appointmentId) {
+        // Find the appointment
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new EntityNotFoundException("Appointment not found with id: " + appointmentId));
 
         // Find the new agent
         User agentUser = userService.findById(agentId);
@@ -769,8 +772,6 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Track appointment assignment action for agent ranking
         rankingService.agentAction(agentId, Constants.AgentActionEnum.APPOINTMENT_ASSIGNED, null);
-
-        return true;
     }
 
     @Override
