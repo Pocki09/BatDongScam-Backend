@@ -4,6 +4,7 @@ import com.se100.bds.dtos.responses.error.DetailedErrorResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -85,6 +87,8 @@ public class AppExceptionHandler {
             InvalidDataAccessApiUsageException.class,
             ConstraintViolationException.class,
             MissingRequestHeaderException.class,
+            MissingServletRequestParameterException.class,
+            EntityNotFoundException.class, // why bad request? because entity not found during request processing
             MalformedJwtException.class
     })
     public final ResponseEntity<ErrorResponse> handleBadRequestException(final Exception e) {

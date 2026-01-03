@@ -100,10 +100,10 @@ public class AppointmentController extends AbstractBaseController {
     }
 
     @PatchMapping("/{appointmentId}/complete")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'SALESAGENT')")
     @Operation(
             summary = "Mark appointment as completed",
-            description = "Allows customers (their own appointments) or admins to mark an appointment as completed once the viewing happened.",
+            description = "Allows customers (their own appointments), sale agents, or admins to mark an appointment as completed once the viewing happened.",
             security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
     )
     public ResponseEntity<SingleResponse<Boolean>> completeAppointment(
@@ -241,6 +241,43 @@ public class AppointmentController extends AbstractBaseController {
 
         String message = result
                 ? "Appointment rated successfully"
+                : "No changes were made to the appointment";
+
+        return responseFactory.successSingle(result, message);
+    }
+
+    @PreAuthorize("hasAnyRole('SALESAGENT', 'ADMIN')")
+    @PatchMapping("/{appointmentId}")
+    @Operation(
+            summary = "Agent Update appointment details",
+            description = "Update appointment details such as agent notes, viewing outcome, customer interest level, status, and cancellation reason. Only non-null fields will be updated.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<SingleResponse<Boolean>> updateAppointmentDetails(
+            @Parameter(description = "Appointment ID", required = true)
+            @PathVariable UUID appointmentId,
+            @Parameter(description = "Agent notes")
+            @RequestParam(required = false) String agentNotes,
+            @Parameter(description = "Viewing outcome")
+            @RequestParam(required = false) String viewingOutcome,
+            @Parameter(description = "Customer interest level (e.g., LOW, MEDIUM, HIGH, VERY_HIGH)")
+            @RequestParam(required = false) String customerInterestLevel,
+            @Parameter(description = "Appointment status")
+            @RequestParam(required = false) Constants.AppointmentStatusEnum status,
+            @Parameter(description = "Cancellation reason (used when status is CANCELLED)")
+            @RequestParam(required = false) String cancelledReason) {
+
+        boolean result = appointmentService.updateAppointmentDetails(
+                appointmentId,
+                agentNotes,
+                viewingOutcome,
+                customerInterestLevel,
+                status,
+                cancelledReason
+        );
+
+        String message = result
+                ? "Appointment details updated successfully"
                 : "No changes were made to the appointment";
 
         return responseFactory.successSingle(result, message);

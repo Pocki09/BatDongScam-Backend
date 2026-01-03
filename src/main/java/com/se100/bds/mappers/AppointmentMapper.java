@@ -10,7 +10,9 @@ import com.se100.bds.models.entities.appointment.Appointment;
 import com.se100.bds.models.entities.user.PropertyOwner;
 import com.se100.bds.models.entities.user.SaleAgent;
 import com.se100.bds.models.entities.user.User;
+import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.spi.MappingContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -23,92 +25,140 @@ public class AppointmentMapper extends BaseMapper {
 
     @Override
     protected void configureCustomMappings() {
-        // Configure mapping from Appointment to ViewingDetails
+        // NOTE: ModelMapper can occasionally mis-handle nested lambda getters inside addMappings
+        // and end up invoking Appointment.getProperty() on the wrong receiver type.
+        // For DTOs that read from nested associations heavily, prefer converters.
+
+        Converter<Appointment, ViewingDetailsCustomer> viewingDetailsCustomerConverter =
+                new Converter<>() {
+                    @Override
+                    public ViewingDetailsCustomer convert(MappingContext<Appointment, ViewingDetailsCustomer> context) {
+                        Appointment src = context.getSource();
+                        if (src == null) {
+                            return null;
+                        }
+
+                        ViewingDetailsCustomer dst = new ViewingDetailsCustomer();
+
+                        // Base response fields
+                        dst.setId(src.getId());
+                        dst.setCreatedAt(src.getCreatedAt());
+                        dst.setUpdatedAt(src.getUpdatedAt());
+
+                        // Appointment core
+                        dst.setRequestedDate(src.getRequestedDate());
+                        dst.setConfirmedDate(src.getConfirmedDate());
+                        dst.setStatus(src.getStatus());
+                        dst.setRating(src.getRating());
+                        dst.setComment(src.getComment());
+                        dst.setCustomerRequirements(src.getCustomerRequirements());
+
+                        // Property-derived fields (defensively handle null)
+                        if (src.getProperty() != null) {
+                            dst.setTitle(src.getProperty().getTitle());
+                            dst.setPriceAmount(src.getProperty().getPriceAmount());
+                            dst.setArea(src.getProperty().getArea());
+                            dst.setDescription(src.getProperty().getDescription());
+                            dst.setRooms(src.getProperty().getRooms());
+                            dst.setBathRooms(src.getProperty().getBathrooms());
+                            dst.setBedRooms(src.getProperty().getBedrooms());
+                            dst.setFloors(src.getProperty().getFloors());
+                            dst.setHouseOrientation(src.getProperty().getHouseOrientation());
+                            dst.setBalconyOrientation(src.getProperty().getBalconyOrientation());
+                        }
+
+                        dst.setNotes(src.getAgentNotes());
+                        return dst;
+                    }
+                };
+
         modelMapper.typeMap(Appointment.class, ViewingDetailsCustomer.class)
-            .addMappings(mapper -> {
-                // Map property fields to ViewingDetails (defensively handle null property)
-                mapper.map(src -> src.getProperty() != null ? src.getProperty().getTitle() : null,
-                    ViewingDetailsCustomer::setTitle);
-                mapper.map(src -> src.getProperty() != null ? src.getProperty().getPriceAmount() : null,
-                    ViewingDetailsCustomer::setPriceAmount);
-                mapper.map(src -> src.getProperty() != null ? src.getProperty().getArea() : null,
-                    ViewingDetailsCustomer::setArea);
-                mapper.map(src -> src.getProperty() != null ? src.getProperty().getDescription() : null,
-                    ViewingDetailsCustomer::setDescription);
-                mapper.map(src -> src.getProperty() != null ? src.getProperty().getRooms() : null,
-                    ViewingDetailsCustomer::setRooms);
-                mapper.map(src -> src.getProperty() != null ? src.getProperty().getBathrooms() : null,
-                    ViewingDetailsCustomer::setBathRooms);
-                mapper.map(src -> src.getProperty() != null ? src.getProperty().getBedrooms() : null,
-                    ViewingDetailsCustomer::setBedRooms);
-                mapper.map(src -> src.getProperty() != null ? src.getProperty().getFloors() : null,
-                    ViewingDetailsCustomer::setFloors);
-                mapper.map(src -> src.getProperty() != null ? src.getProperty().getHouseOrientation() : null,
-                    ViewingDetailsCustomer::setHouseOrientation);
-                mapper.map(src -> src.getProperty() != null ? src.getProperty().getBalconyOrientation() : null,
-                    ViewingDetailsCustomer::setBalconyOrientation);
-                mapper.map(Appointment::getAgentNotes, ViewingDetailsCustomer::setNotes);
-                });
+                .setConverter(viewingDetailsCustomerConverter);
 
-        // Configure mapping from Appointment to ViewingListItemDto
+        Converter<Appointment, ViewingListItem> viewingListItemConverter =
+                new Converter<>() {
+                    @Override
+                    public ViewingListItem convert(MappingContext<Appointment, ViewingListItem> context) {
+                        Appointment src = context.getSource();
+                        if (src == null) {
+                            return null;
+                        }
+
+                        ViewingListItem dst = new ViewingListItem();
+
+                        // Base response fields
+                        dst.setId(src.getId());
+                        dst.setCreatedAt(src.getCreatedAt());
+                        dst.setUpdatedAt(src.getUpdatedAt());
+
+                        // Core appointment fields
+                        dst.setRequestedDate(src.getRequestedDate());
+                        dst.setStatus(src.getStatus());
+
+                        // Property-derived fields used by listing
+                        if (src.getProperty() != null) {
+                            dst.setPropertyName(src.getProperty().getTitle());
+                            dst.setPrice(src.getProperty().getPriceAmount());
+                            dst.setArea(src.getProperty().getArea());
+
+                            if (src.getProperty().getWard() != null) {
+                                dst.setWardName(src.getProperty().getWard().getWardName());
+                                if (src.getProperty().getWard().getDistrict() != null) {
+                                    dst.setDistrictName(src.getProperty().getWard().getDistrict().getDistrictName());
+                                    if (src.getProperty().getWard().getDistrict().getCity() != null) {
+                                        dst.setCityName(src.getProperty().getWard().getDistrict().getCity().getCityName());
+                                    }
+                                }
+                            }
+                        }
+
+                        // Customer/agent display fields + thumbnail are enriched later in enrichViewingListItem()
+                        // so we intentionally don't set them here.
+
+                        return dst;
+                    }
+                };
+
         modelMapper.typeMap(Appointment.class, ViewingListItem.class)
-                .addMappings(mapper -> {
-                    // Map basic appointment fields
-                    mapper.map(Appointment::getRequestedDate, ViewingListItem::setRequestedDate);
-                    mapper.map(Appointment::getStatus, ViewingListItem::setStatus);
+                .setConverter(viewingListItemConverter);
 
-                    // Map property fields
-                        mapper.map(src -> src.getProperty() != null ? src.getProperty().getTitle() : null,
-                            ViewingListItem::setPropertyName);
-                        mapper.map(src -> src.getProperty() != null ? src.getProperty().getPriceAmount() : null,
-                            ViewingListItem::setPrice);
-                        mapper.map(src -> src.getProperty() != null ? src.getProperty().getArea() : null,
-                            ViewingListItem::setArea);
+        Converter<Appointment, BookAppointmentResponse> bookAppointmentResponseConverter =
+                new Converter<>() {
+                    @Override
+                    public BookAppointmentResponse convert(MappingContext<Appointment, BookAppointmentResponse> context) {
+                        Appointment src = context.getSource();
+                        if (src == null) {
+                            return null;
+                        }
 
-                    // Map location fields
-                        mapper.map(src -> src.getProperty() != null && src.getProperty().getWard() != null
-                                ? src.getProperty().getWard().getWardName()
-                                : null,
-                            ViewingListItem::setWardName);
-                        mapper.map(src -> src.getProperty() != null && src.getProperty().getWard() != null
-                                && src.getProperty().getWard().getDistrict() != null
-                                ? src.getProperty().getWard().getDistrict().getDistrictName()
-                                : null,
-                            ViewingListItem::setDistrictName);
-                        mapper.map(src -> src.getProperty() != null && src.getProperty().getWard() != null
-                                && src.getProperty().getWard().getDistrict() != null
-                                && src.getProperty().getWard().getDistrict().getCity() != null
-                                ? src.getProperty().getWard().getDistrict().getCity().getCityName()
-                                : null,
-                            ViewingListItem::setCityName);
+                        BookAppointmentResponse dst = new BookAppointmentResponse();
+                        dst.setAppointmentId(src.getId());
 
-                    // Skip customer and agent - will be set manually in service to avoid lazy loading issues
-                    mapper.skip(ViewingListItem::setCustomerName);
-                    mapper.skip(ViewingListItem::setCustomerTier);
-                    mapper.skip(ViewingListItem::setSalesAgentName);
-                    mapper.skip(ViewingListItem::setSalesAgentTier);
-                });
+                        if (src.getProperty() != null) {
+                            dst.setPropertyId(src.getProperty().getId());
+                            dst.setPropertyTitle(src.getProperty().getTitle());
+                            dst.setPropertyAddress(src.getProperty().getFullAddress());
+                        }
+
+                        dst.setRequestedDate(src.getRequestedDate());
+                        dst.setStatus(src.getStatus() != null ? src.getStatus().name() : null);
+                        dst.setCustomerRequirements(src.getCustomerRequirements());
+
+                        if (src.getAgent() != null) {
+                            dst.setAgentId(src.getAgent().getId());
+                            if (src.getAgent().getUser() != null) {
+                                dst.setAgentName(src.getAgent().getUser().getFullName());
+                            }
+                        }
+
+                        // Created/updated are available from AbstractBaseEntity
+                        dst.setCreatedAt(src.getCreatedAt());
+                        return dst;
+                    }
+                };
 
         modelMapper.typeMap(Appointment.class, BookAppointmentResponse.class)
-                .addMappings(mapper -> {
-                    mapper.map(Appointment::getId, BookAppointmentResponse::setAppointmentId);
-                        mapper.map(src -> src.getProperty() != null ? src.getProperty().getId() : null,
-                            BookAppointmentResponse::setPropertyId);
-                        mapper.map(src -> src.getProperty() != null ? src.getProperty().getTitle() : null,
-                            BookAppointmentResponse::setPropertyTitle);
-                        mapper.map(src -> src.getProperty() != null ? src.getProperty().getFullAddress() : null,
-                            BookAppointmentResponse::setPropertyAddress);
-                    mapper.map(Appointment::getRequestedDate, BookAppointmentResponse::setRequestedDate);
-                        mapper.map(src -> src.getStatus() != null ? src.getStatus().name() : null,
-                            BookAppointmentResponse::setStatus);
-                    mapper.map(Appointment::getCustomerRequirements, BookAppointmentResponse::setCustomerRequirements);
-                    mapper.map(src -> src.getAgent() != null ? src.getAgent().getId() : null, BookAppointmentResponse::setAgentId);
-                        mapper.map(src -> src.getAgent() != null && src.getAgent().getUser() != null
-                                ? src.getAgent().getUser().getFullName()
-                                : null,
-                            BookAppointmentResponse::setAgentName);
-                    mapper.map(Appointment::getCreatedAt, BookAppointmentResponse::setCreatedAt);
-                });
+                .setConverter(bookAppointmentResponseConverter);
     }
 
     /**
@@ -116,12 +166,19 @@ public class AppointmentMapper extends BaseMapper {
      */
     public PropertyOwnerSimpleCard buildOwnerCard(PropertyOwner owner, String tier) {
         return PropertyOwnerSimpleCard.builder()
+                // Base fields (AbstractBaseDataResponse)
                 .id(owner.getId())
+                .createdAt(owner.getCreatedAt())
+                .updatedAt(owner.getUpdatedAt())
+
+                // User fields
                 .firstName(owner.getUser().getFirstName())
                 .lastName(owner.getUser().getLastName())
                 .phoneNumber(owner.getUser().getPhoneNumber())
                 .zaloContact(owner.getUser().getZaloContact())
                 .email(owner.getUser().getEmail())
+
+                // Domain fields
                 .tier(tier)
                 .build();
     }
