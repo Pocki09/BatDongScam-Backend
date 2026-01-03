@@ -253,6 +253,9 @@ public class PublicController extends AbstractBaseController {
             @Parameter(description = "Agent's tier")
             @RequestParam(required = false) List<Constants.PerformanceTierEnum> agentTier,
 
+            @Parameter(description = "Is the property has agent assigned?")
+            @RequestParam(required = false) Boolean hasAgent,
+
             @Parameter(description = "Get top K property? This sorted by most popular property. If admin, don't touch it")
             @RequestParam(required = true, defaultValue = "false") Boolean topK,
 
@@ -307,6 +310,7 @@ public class PublicController extends AbstractBaseController {
                 agentId,
                 agentName,
                 agentTier,
+                hasAgent,
                 minPrice,
                 maxPrice,
                 minArea,

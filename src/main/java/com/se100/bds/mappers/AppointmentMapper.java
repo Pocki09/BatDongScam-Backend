@@ -143,6 +143,49 @@ public class AppointmentMapper extends BaseMapper {
     }
 
     /**
+     * I FUCKING SWEAR TO GOD I HAVE NO FUCKING IDEA WHY THIS SHIT WORKS BUT THE MAPPER DOESN'T
+     * THE LAST TIME I USE MAPPER IN THIS SHIT LANGUAGE
+     */
+    public ViewingListItem mapToViewingListItem(Appointment appointment) {
+        ViewingListItem dto = new ViewingListItem();
+
+        // Map basic appointment fields
+        dto.setId(appointment.getId());
+        dto.setCreatedAt(appointment.getCreatedAt());
+        dto.setUpdatedAt(appointment.getUpdatedAt());
+        dto.setRequestedDate(appointment.getRequestedDate());
+        dto.setStatus(appointment.getStatus());
+
+        // Map property fields (safely handle null)
+        if (appointment.getProperty() != null) {
+            dto.setPropertyName(appointment.getProperty().getTitle());
+            dto.setPrice(appointment.getProperty().getPriceAmount());
+            dto.setArea(appointment.getProperty().getArea());
+
+            // Map location fields
+            if (appointment.getProperty().getWard() != null) {
+                dto.setWardName(appointment.getProperty().getWard().getWardName());
+
+                if (appointment.getProperty().getWard().getDistrict() != null) {
+                    dto.setDistrictName(appointment.getProperty().getWard().getDistrict().getDistrictName());
+
+                    if (appointment.getProperty().getWard().getDistrict().getCity() != null) {
+                        dto.setCityName(appointment.getProperty().getWard().getDistrict().getCity().getCityName());
+                    }
+                }
+            }
+
+            // Set thumbnail
+            if (appointment.getProperty().getMediaList() != null &&
+                !appointment.getProperty().getMediaList().isEmpty()) {
+                dto.setThumbnailUrl(appointment.getProperty().getMediaList().get(0).getFilePath());
+            }
+        }
+
+        return dto;
+    }
+
+    /**
      * Enrich ViewingListItemDto with customer and agent data
      * This must be called after the base mapping to populate lazy-loaded relationships
      */
@@ -156,13 +199,6 @@ public class AppointmentMapper extends BaseMapper {
             dto.setSalesAgentName(appointment.getAgent().getUser().getFullName());
         }
         dto.setSalesAgentTier(agentTier);
-
-        // Set thumbnail
-        if (appointment.getProperty() != null &&
-            appointment.getProperty().getMediaList() != null &&
-            !appointment.getProperty().getMediaList().isEmpty()) {
-            dto.setThumbnailUrl(appointment.getProperty().getMediaList().get(0).getFilePath());
-        }
     }
 
     /**

@@ -30,7 +30,7 @@ public interface PropertyService {
                                               List<UUID> propertyTypeIds, UUID ownerId, String ownerName,
                                               List<Constants.ContributionTierEnum> ownerTier,
                                               UUID agentId, String agentName,
-                                              List<Constants.PerformanceTierEnum> agentTier,
+                                              List<Constants.PerformanceTierEnum> agentTier, Boolean hasAgent,
                                               BigDecimal minPrice, BigDecimal maxPrice, BigDecimal minArea, BigDecimal maxArea,
                                               Integer rooms, Integer bathrooms, Integer bedrooms, Integer floors, Constants.OrientationEnum houseOrientation, Constants.OrientationEnum balconyOrientation,
                                               List<Constants.TransactionTypeEnum> transactionType, List<Constants.PropertyStatusEnum> statuses, boolean topK,

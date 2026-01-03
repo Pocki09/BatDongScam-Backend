@@ -456,6 +456,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ViewingListItem> getViewingListItems(
             Pageable pageable,
             String propertyName, List<UUID> propertyTypeIds,
@@ -545,7 +546,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         List<ViewingListItem> viewingListItems = pagedAppointments.stream()
                 .map(appointment -> {
                     // Map basic fields using the mapper
-                    ViewingListItem dto = appointmentMapper.mapTo(appointment, ViewingListItem.class);
+                    ViewingListItem dto = appointmentMapper.mapToViewingListItem(appointment);
 
                     // Get customer tier
                     String customerTier = rankingService.getCurrentTier(
@@ -625,6 +626,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ViewingListItem> getMyViewingListItems(
             Pageable pageable,
             String customerName,
@@ -665,8 +667,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Map appointments to ViewingListItem with enriched data
         List<ViewingListItem> viewingListItems = pagedAppointments.stream()
                 .map(appointment -> {
-                    // Map basic fields using the mapper
-                    ViewingListItem dto = appointmentMapper.mapTo(appointment, ViewingListItem.class);
+                    // Map basic fields using the manual mapper (avoiding Hibernate proxy issues)
+                    ViewingListItem dto = appointmentMapper.mapToViewingListItem(appointment);
 
                     // Get customer tier
                     String customerTier = rankingService.getCurrentTier(

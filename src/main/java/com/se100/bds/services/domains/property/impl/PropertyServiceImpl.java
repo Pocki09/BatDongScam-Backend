@@ -102,7 +102,7 @@ public class PropertyServiceImpl implements PropertyService {
     public Page<PropertyCard> getAllCardsWithFilters(List<UUID> cityIds, List<UUID> districtIds, List<UUID> wardIds,
                                                      List<UUID> propertyTypeIds, UUID ownerId, String ownerName,
                                                      List<Constants.ContributionTierEnum> ownerTier,
-                                                     UUID agentId, String agentName, List<Constants.PerformanceTierEnum> agentTier,
+                                                     UUID agentId, String agentName, List<Constants.PerformanceTierEnum> agentTier, Boolean hasAgent,
                                                      BigDecimal minPrice, BigDecimal maxPrice, BigDecimal minArea, BigDecimal maxArea,
                                                      Integer rooms, Integer bathrooms, Integer bedrooms, Integer floors,
                                                      Constants.OrientationEnum houseOrientation, Constants.OrientationEnum balconyOrientation,
@@ -157,27 +157,31 @@ public class PropertyServiceImpl implements PropertyService {
         }
 
         List<UUID> agentIds;
-        if (agentId != null) {
-            agentIds = List.of(agentId);
-        } else {
-            String searchName = agentName != null ? agentName : "";
-            List<User> agents = userService.getAllByName(searchName);
-            if (agentTier != null && !agentTier.isEmpty()) {
-                int currentMonth = LocalDateTime.now().getMonthValue();
-                int currentYear = LocalDateTime.now().getYear();
-
-                agentIds = agents.stream()
-                        .map(User::getId)
-                        .filter(id -> {
-                            String tier = rankingService.getTier(id, Constants.RoleEnum.SALESAGENT, currentMonth, currentYear);
-                            return tier != null && agentTier.stream().anyMatch(filter -> filter.name().equals(tier));
-                        })
-                        .toList();
+        if (hasAgent) {
+            if (agentId != null) {
+                agentIds = List.of(agentId);
             } else {
-                agentIds = agents.stream()
-                        .map(User::getId)
-                        .toList();
+                String searchName = agentName != null ? agentName : "";
+                List<User> agents = userService.getAllByName(searchName);
+                if (agentTier != null && !agentTier.isEmpty()) {
+                    int currentMonth = LocalDateTime.now().getMonthValue();
+                    int currentYear = LocalDateTime.now().getYear();
+
+                    agentIds = agents.stream()
+                            .map(User::getId)
+                            .filter(id -> {
+                                String tier = rankingService.getTier(id, Constants.RoleEnum.SALESAGENT, currentMonth, currentYear);
+                                return tier != null && agentTier.stream().anyMatch(filter -> filter.name().equals(tier));
+                            })
+                            .toList();
+                } else {
+                    agentIds = agents.stream()
+                            .map(User::getId)
+                            .toList();
+                }
             }
+        } else {
+            agentIds = null;
         }
 
         List<String> statusStrings = (statuses != null && !statuses.isEmpty())
