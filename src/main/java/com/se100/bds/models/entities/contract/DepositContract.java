@@ -1,5 +1,6 @@
 package com.se100.bds.models.entities.contract;
 
+import com.se100.bds.utils.Constants.MainContractTypeEnum;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,6 +15,11 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class DepositContract extends Contract {
 
+    /// The type of main contract this deposit is for (RENTAL or PURCHASE)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "main_contract_type", nullable = false)
+    private MainContractTypeEnum mainContractType;
+
     /// The deposit amount paid by the customer
     @Column(name = "deposit_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal depositAmount;
@@ -24,10 +30,6 @@ public class DepositContract extends Contract {
     @Column(name = "agreed_price", nullable = false, precision = 15, scale = 2)
     private BigDecimal agreedPrice;
 
-    /// Commission amount for this deposit contract
-    @Column(name = "commission_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal commissionAmount;
-
     // Relationship to the main contract (rental or purchase)
     // This will be set when the main contract is created from this deposit
 
@@ -36,4 +38,8 @@ public class DepositContract extends Contract {
 
     @OneToOne(mappedBy = "depositContract", fetch = FetchType.LAZY)
     private PurchaseContract purchaseContract;
+
+    public boolean isLinkedToMainContract() {
+        return (rentalContract != null) || (purchaseContract != null);
+    }
 }

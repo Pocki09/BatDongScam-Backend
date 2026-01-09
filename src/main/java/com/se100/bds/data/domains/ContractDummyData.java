@@ -121,7 +121,6 @@ public class ContractDummyData {
             depositContract.setSignedAt(signedAt);
             depositContract.setDepositAmount(depositAmount);
             depositContract.setAgreedPrice(totalAmount);
-            depositContract.setCommissionAmount(commissionAmount.multiply(new BigDecimal("0.1"))); // 10% of commission for deposit
             depositContract.setCreatedAt(createdAt);
             depositContract.setUpdatedAt(updatedAt);
             depositContract.setPayments(new ArrayList<>());
@@ -164,7 +163,6 @@ public class ContractDummyData {
                 LocalDate mainEndDate = mainStartDate.plusDays(90); // 90 days to complete purchase
 
                 BigDecimal advancePayment = totalAmount.multiply(new BigDecimal("0.3")); // 30% advance
-                BigDecimal remainingAmount = totalAmount.subtract(advancePayment).subtract(depositAmount);
 
                 PurchaseContract purchaseContract = new PurchaseContract();
                 purchaseContract.setProperty(property);
@@ -181,7 +179,6 @@ public class ContractDummyData {
                 purchaseContract.setDepositContract(depositContract);
                 purchaseContract.setPropertyValue(totalAmount);
                 purchaseContract.setAdvancePaymentAmount(advancePayment);
-                purchaseContract.setRemainingAmount(remainingAmount);
                 purchaseContract.setCommissionAmount(commissionAmount);
                 purchaseContract.setLatePaymentPenaltyRate(new BigDecimal("0.05"));
                 purchaseContract.setCreatedAt(createdAt);

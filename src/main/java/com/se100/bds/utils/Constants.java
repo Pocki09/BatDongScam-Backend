@@ -146,6 +146,22 @@ public final class Constants {
 
     @Getter
     @AllArgsConstructor
+    public enum MainContractTypeEnum {
+        PURCHASE("PURCHASE"),
+        RENTAL("RENTAL");
+
+        private final String value;
+
+        public static ContractTypeEnum get(final String name) {
+            return Stream.of(ContractTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid contract type name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
     public enum ContractStatusEnum {
         /// draft state
         DRAFT("DRAFT"),
