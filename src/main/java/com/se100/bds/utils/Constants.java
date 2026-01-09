@@ -130,6 +130,7 @@ public final class Constants {
     @Getter
     @AllArgsConstructor
     public enum ContractTypeEnum {
+        DEPOSIT("DEPOSIT"),
         PURCHASE("PURCHASE"),
         RENTAL("RENTAL");
 
@@ -146,10 +147,18 @@ public final class Constants {
     @Getter
     @AllArgsConstructor
     public enum ContractStatusEnum {
+        /// draft state
         DRAFT("DRAFT"),
-        PENDING_SIGNING("PENDING_SIGNING"),
+        /// waiting for acceptance from both parties (customer and property owner).
+        /// this is only contract acceptance, does not hold signature-equivalent legal bindings
+        PENDING_ACCEPT("PENDING_ACCEPT"),
+        /// both parties accepted, waiting for official documentations to be made and legalised
+        WAITING_OFFICIAL("WAITING_OFFICIAL"),
+        /// in effect with legal bindings (exists a signed contract document)
         ACTIVE("ACTIVE"),
+        /// completed contract in case of rental
         COMPLETED("COMPLETED"),
+        /// contract terminated before end date
         CANCELLED("CANCELLED");
 
         private final String value;
@@ -159,23 +168,6 @@ public final class Constants {
                     .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid contract status name: %s", name)));
-        }
-    }
-
-    @Getter
-    @AllArgsConstructor
-    public enum ContractPaymentTypeEnum {
-        MORTGAGE("MORTGAGE"),
-        MONTHLY_RENT("MONTHLY_RENT"),
-        PAID_IN_FULL("PAID_IN_FULL");
-
-        private final String value;
-
-        public static ContractPaymentTypeEnum get(final String name) {
-            return Stream.of(ContractPaymentTypeEnum.values())
-                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid contract payment type name: %s", name)));
         }
     }
 

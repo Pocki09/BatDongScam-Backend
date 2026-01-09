@@ -2,10 +2,7 @@ package com.se100.bds.dtos.requests.property;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.se100.bds.utils.Constants;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -40,7 +37,7 @@ public class CreatePropertyRequest {
     private String fullAddress;
 
     @NotNull(message = "Area is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Area must be greater than 0")
+    @Positive(message = "Area must be greater than 0")
     private BigDecimal area;
 
     private Integer rooms;
@@ -58,8 +55,11 @@ public class CreatePropertyRequest {
     private Integer yearBuilt;
 
     @NotNull(message = "Price amount is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price amount must be greater than 0")
+    @Positive(message = "Price amount must be greater than 0")
     private BigDecimal priceAmount;
 
     private String amenities;
+
+    @Size(max = 5000, message = "Internal extra notes cannot exceed 5000 characters")
+    private String internalExtraNotes;
 }
