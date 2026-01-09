@@ -2,6 +2,7 @@ package com.se100.bds.services.domains.contract;
 
 import com.se100.bds.dtos.requests.contract.CancelContractRequest;
 import com.se100.bds.dtos.requests.contract.CreateContractRequest;
+import com.se100.bds.dtos.requests.contract.CreateDepositContractRequest;
 import com.se100.bds.dtos.requests.contract.UpdateContractRequest;
 import com.se100.bds.dtos.responses.contract.ContractDetailResponse;
 import com.se100.bds.dtos.responses.contract.ContractListItem;
@@ -17,6 +18,8 @@ import java.util.UUID;
 public interface ContractService {
 
     CreateContractResponse createContract(CreateContractRequest request);
+    CreateContractResponse createDepositContract(CreateDepositContractRequest request);
+
 //
 //    /**
 //     * Get contract by ID
