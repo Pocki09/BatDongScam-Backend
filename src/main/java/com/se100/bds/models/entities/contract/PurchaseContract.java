@@ -1,5 +1,6 @@
 package com.se100.bds.models.entities.contract;
 
+import com.se100.bds.utils.Constants.PaymentStatusEnum;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,16 +28,22 @@ public class PurchaseContract extends Contract {
     @Column(name = "advance_payment_amount", precision = 15, scale = 2)
     private BigDecimal advancePaymentAmount;
 
-    /// Remaining amount to be paid
-    @Column(name = "remaining_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal remainingAmount;
-
     /// Commission amount for this purchase contract
     @Column(name = "commission_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal commissionAmount;
 
-    /// Late payment penalty rate (e.g., 0.05 for 5% per month)
-    @Column(name = "late_payment_penalty_rate", nullable = false, precision = 5, scale = 4)
-    private BigDecimal latePaymentPenaltyRate;
+    /// Calculates the remaining amount to be paid based on property value minus successful payments
+    public BigDecimal getRemainingAmount() {
+        if (propertyValue == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal totalPaid = getPayments().stream()
+                .filter(p -> p.getStatus() == PaymentStatusEnum.SUCCESS)
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return propertyValue.subtract(totalPaid);
+    }
 }
 

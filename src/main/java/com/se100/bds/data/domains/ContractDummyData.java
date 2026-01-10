@@ -180,7 +180,6 @@ public class ContractDummyData {
                 purchaseContract.setPropertyValue(totalAmount);
                 purchaseContract.setAdvancePaymentAmount(advancePayment);
                 purchaseContract.setCommissionAmount(commissionAmount);
-                purchaseContract.setLatePaymentPenaltyRate(new BigDecimal("0.05"));
                 purchaseContract.setCreatedAt(createdAt);
                 purchaseContract.setUpdatedAt(updatedAt);
                 purchaseContract.setPayments(new ArrayList<>());
