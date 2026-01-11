@@ -28,6 +28,7 @@ import com.se100.bds.repositories.domains.user.SaleAgentRepository;
 import com.se100.bds.services.domains.contract.DepositContractService;
 import com.se100.bds.services.domains.contract.PurchaseContractService;
 import com.se100.bds.services.domains.notification.NotificationService;
+import com.se100.bds.services.domains.report.FinancialUpdateService;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.services.payment.PaymentGatewayService;
 import com.se100.bds.services.payment.dto.CreatePaymentSessionRequest;
@@ -78,6 +79,7 @@ public class PurchaseContractServiceImpl implements PurchaseContractService {
     private static final int DEFAULT_PAYMENT_DUE_DAYS = 7;
     private static final String CURRENCY_VND = "VND";
     private static final String PAYOS_METHOD = "PAYOS";
+    private final FinancialUpdateService financialUpdateService;
 
     // ========================
     // PURCHASE CONTRACT CRUD
@@ -551,6 +553,13 @@ public class PurchaseContractServiceImpl implements PurchaseContractService {
 
         // Payout to owner = propertyValue - commission
         BigDecimal payoutAmount = contract.getPropertyValue().subtract(contract.getCommissionAmount());
+        var currentTime = LocalDate.now();
+        financialUpdateService.transaction(
+                contract.getProperty().getId(),
+                contract.getCommissionAmount(),
+                currentTime.getMonthValue(),
+                currentTime.getYear()
+        );
         triggerPayoutToOwner(contract, payoutAmount, "Property purchase payment");
 
         // Complete linked deposit contract if exists

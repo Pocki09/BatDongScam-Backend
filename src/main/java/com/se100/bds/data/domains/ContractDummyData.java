@@ -150,7 +150,6 @@ public class ContractDummyData {
                 rentalContract.setMonthCount(monthCount);
                 rentalContract.setMonthlyRentAmount(totalAmount); // For rental, price is monthly
                 rentalContract.setCommissionAmount(commissionAmount);
-                rentalContract.setAdvancePaymentAmount(totalAmount); // 1 month advance
                 rentalContract.setLatePaymentPenaltyRate(new BigDecimal("0.05"));
                 rentalContract.setAccumulatedUnpaidPenalty(BigDecimal.ZERO);
                 rentalContract.setUnpaidMonthsCount(0);

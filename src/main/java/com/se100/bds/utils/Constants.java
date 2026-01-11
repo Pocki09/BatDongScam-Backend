@@ -188,6 +188,24 @@ public final class Constants {
 
     @Getter
     @AllArgsConstructor
+    public enum SecurityDepositStatusEnum {
+        NOT_PAID("NOT_PAID"),
+        HELD("HELD"),
+        RETURNED_TO_CUSTOMER("RETURNED_TO_CUSTOMER"),
+        TRANSFERRED_TO_OWNER("TRANSFERRED_TO_OWNER");
+
+        private final String value;
+
+        public static SecurityDepositStatusEnum get(final String name) {
+            return Stream.of(SecurityDepositStatusEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid security deposit status: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
     public enum PaymentTypeEnum {
         DEPOSIT("DEPOSIT"),
         ADVANCE("ADVANCE"),

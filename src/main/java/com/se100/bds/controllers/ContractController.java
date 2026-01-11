@@ -4,12 +4,10 @@ import com.se100.bds.controllers.base.AbstractBaseController;
 import com.se100.bds.dtos.requests.contract.*;
 import com.se100.bds.dtos.responses.PageResponse;
 import com.se100.bds.dtos.responses.SingleResponse;
-import com.se100.bds.dtos.responses.contract.DepositContractDetailResponse;
-import com.se100.bds.dtos.responses.contract.DepositContractListItem;
-import com.se100.bds.dtos.responses.contract.PurchaseContractDetailResponse;
-import com.se100.bds.dtos.responses.contract.PurchaseContractListItem;
+import com.se100.bds.dtos.responses.contract.*;
 import com.se100.bds.services.domains.contract.DepositContractService;
 import com.se100.bds.services.domains.contract.PurchaseContractService;
+import com.se100.bds.services.domains.contract.RentalContractService;
 import com.se100.bds.utils.Constants.ContractStatusEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -46,6 +44,7 @@ public class ContractController extends AbstractBaseController {
 
     private final DepositContractService depositContractService;
     private final PurchaseContractService purchaseContractService;
+    private final RentalContractService rentalContractService;
 
     // =============================
     // DEPOSIT CONTRACT ENDPOINTS
@@ -630,5 +629,340 @@ public class ContractController extends AbstractBaseController {
     ) {
         var response = purchaseContractService.voidPurchaseContract(contractId);
         return responseFactory.successSingle(response, "Purchase contract voided successfully");
+    }
+
+    // ==============================
+    // RENTAL CONTRACT ENDPOINTS
+    // ==============================
+
+    @PostMapping("/rental")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALESAGENT')")
+    @Operation(
+            summary = "Create a new rental contract",
+            description = "Creates a new rental contract in DRAFT status. Only admin and sales agents can create. " +
+                    "Only one non-DRAFT rental contract is allowed per property. " +
+                    "If depositContractId is provided, validates deposit is ACTIVE, not expired, and monthlyRentAmount matches agreedPrice.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Rental contract created successfully",
+                    content = @Content(schema = @Schema(implementation = SingleResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid request or validation failed"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Property, customer, agent, or deposit contract not found")
+    })
+    public ResponseEntity<SingleResponse<RentalContractDetailResponse>> createRentalContract(
+            @Valid @RequestBody CreateRentalContractRequest request
+    ) {
+        var response = rentalContractService.createRentalContract(request);
+        return responseFactory.successSingle(response, "Rental contract created successfully");
+    }
+
+    @GetMapping("/rental/{contractId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALESAGENT', 'CUSTOMER', 'PROPERTY_OWNER')")
+    @Operation(
+            summary = "Get rental contract by ID",
+            description = "Returns detailed rental contract information. Access is restricted based on role.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Rental contract retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = SingleResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Contract not found")
+    })
+    public ResponseEntity<SingleResponse<RentalContractDetailResponse>> getRentalContractById(
+            @Parameter(description = "Contract ID", required = true)
+            @PathVariable UUID contractId
+    ) {
+        var response = rentalContractService.getRentalContractById(contractId);
+        return responseFactory.successSingle(response, "Rental contract retrieved successfully");
+    }
+
+    @GetMapping("/rental")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALESAGENT')")
+    @Operation(
+            summary = "Get paginated list of rental contracts",
+            description = "Query rental contracts with various filters. Agents can only see their assigned contracts.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Rental contracts retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<PageResponse<RentalContractListItem>> getRentalContracts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Sort by field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction")
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection,
+
+            @Parameter(description = "Filter by statuses")
+            @RequestParam(required = false) List<ContractStatusEnum> statuses,
+
+            @Parameter(description = "Filter by customer ID")
+            @RequestParam(required = false) UUID customerId,
+
+            @Parameter(description = "Filter by agent ID")
+            @RequestParam(required = false) UUID agentId,
+
+            @Parameter(description = "Filter by property ID")
+            @RequestParam(required = false) UUID propertyId,
+
+            @Parameter(description = "Filter by property owner ID")
+            @RequestParam(required = false) UUID ownerId,
+
+            @Parameter(description = "Filter by start date from")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDateFrom,
+
+            @Parameter(description = "Filter by start date to")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDateTo,
+
+            @Parameter(description = "Filter by end date from")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDateFrom,
+
+            @Parameter(description = "Filter by end date to")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDateTo,
+
+            @Parameter(description = "Search by contract number or property title")
+            @RequestParam(required = false) String search
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+
+        Page<RentalContractListItem> contracts = rentalContractService.getRentalContracts(
+                pageable, statuses, customerId, agentId, propertyId, ownerId,
+                startDateFrom, startDateTo, endDateFrom, endDateTo, search
+        );
+
+        return responseFactory.successPage(contracts, "Rental contracts retrieved successfully");
+    }
+
+    @PutMapping("/rental/{contractId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALESAGENT')")
+    @Operation(
+            summary = "Update rental contract",
+            description = "Update rental contract details. Only allowed for DRAFT status.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Rental contract updated successfully",
+                    content = @Content(schema = @Schema(implementation = SingleResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid request or contract not in DRAFT status"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Contract not found")
+    })
+    public ResponseEntity<SingleResponse<RentalContractDetailResponse>> updateRentalContract(
+            @Parameter(description = "Contract ID", required = true)
+            @PathVariable UUID contractId,
+
+            @Valid @RequestBody UpdateRentalContractRequest request
+    ) {
+        var response = rentalContractService.updateRentalContract(contractId, request);
+        return responseFactory.successSingle(response, "Rental contract updated successfully");
+    }
+
+    @DeleteMapping("/rental/{contractId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALESAGENT')")
+    @Operation(
+            summary = "Delete rental contract",
+            description = "Hard delete a rental contract. Only allowed for DRAFT status.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Rental contract deleted successfully"),
+            @ApiResponse(responseCode = "400", description = "Contract not in DRAFT status"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Contract not found")
+    })
+    public ResponseEntity<SingleResponse<Void>> deleteRentalContract(
+            @Parameter(description = "Contract ID", required = true)
+            @PathVariable UUID contractId
+    ) {
+        rentalContractService.deleteRentalContract(contractId);
+        return responseFactory.successSingle(null, "Rental contract deleted successfully");
+    }
+
+    @PostMapping("/rental/{contractId}/approve")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALESAGENT')")
+    @Operation(
+            summary = "Approve rental contract",
+            description = "Transitions contract from DRAFT to WAITING_OFFICIAL.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Rental contract approved successfully",
+                    content = @Content(schema = @Schema(implementation = SingleResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Contract not in DRAFT status"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Contract not found")
+    })
+    public ResponseEntity<SingleResponse<RentalContractDetailResponse>> approveRentalContract(
+            @Parameter(description = "Contract ID", required = true)
+            @PathVariable UUID contractId
+    ) {
+        var response = rentalContractService.approveRentalContract(contractId);
+        return responseFactory.successSingle(response, "Rental contract approved successfully");
+    }
+
+    @PostMapping("/rental/{contractId}/create-security-deposit-payment")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALESAGENT')")
+    @Operation(
+            summary = "Create security deposit payment",
+            description = "Creates security deposit payment for the customer. Only when contract is in WAITING_OFFICIAL state and security deposit amount > 0.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Security deposit payment created successfully",
+                    content = @Content(schema = @Schema(implementation = SingleResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Contract not in WAITING_OFFICIAL status or no security deposit"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Contract not found")
+    })
+    public ResponseEntity<SingleResponse<RentalContractDetailResponse>> createSecurityDepositPayment(
+            @Parameter(description = "Contract ID", required = true)
+            @PathVariable UUID contractId
+    ) {
+        var response = rentalContractService.createSecurityDepositPayment(contractId);
+        return responseFactory.successSingle(response, "Security deposit payment created successfully");
+    }
+
+    @PostMapping("/rental/{contractId}/complete-paperwork")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALESAGENT')")
+    @Operation(
+            summary = "Mark paperwork complete",
+            description = "Marks the legal paperwork as complete. Security deposit must be paid first if amount > 0. " +
+                    "Transitions to ACTIVE and completes linked deposit contract.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Paperwork marked complete",
+                    content = @Content(schema = @Schema(implementation = SingleResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Contract not in WAITING_OFFICIAL status or security deposit not paid"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Contract not found")
+    })
+    public ResponseEntity<SingleResponse<RentalContractDetailResponse>> markRentalPaperworkComplete(
+            @Parameter(description = "Contract ID", required = true)
+            @PathVariable UUID contractId
+    ) {
+        var response = rentalContractService.markRentalPaperworkComplete(contractId);
+        return responseFactory.successSingle(response, "Paperwork marked complete");
+    }
+
+    @PostMapping("/rental/{contractId}/void")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Void rental contract",
+            description = "Admin-only operation to void a contract with no side effects (no money transfers). " +
+                    "Customers and owners must contact admin to cancel/void the contract.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Contract voided successfully",
+                    content = @Content(schema = @Schema(implementation = SingleResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Contract already in terminal state"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Admin only"),
+            @ApiResponse(responseCode = "404", description = "Contract not found")
+    })
+    public ResponseEntity<SingleResponse<RentalContractDetailResponse>> voidRentalContract(
+            @Parameter(description = "Contract ID", required = true)
+            @PathVariable UUID contractId
+    ) {
+        var response = rentalContractService.voidRentalContract(contractId);
+        return responseFactory.successSingle(response, "Rental contract voided successfully");
+    }
+
+    @PostMapping("/rental/{contractId}/decide-security-deposit")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Decide security deposit destination",
+            description = "Admin-only operation to decide where the security deposit goes (return to customer or transfer to owner). " +
+                    "Only callable when contract is ACTIVE or COMPLETED and security deposit is HELD.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Security deposit decision made successfully",
+                    content = @Content(schema = @Schema(implementation = SingleResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Contract not in valid state or security deposit not held"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Admin only"),
+            @ApiResponse(responseCode = "404", description = "Contract not found")
+    })
+    public ResponseEntity<SingleResponse<RentalContractDetailResponse>> decideSecurityDeposit(
+            @Parameter(description = "Contract ID", required = true)
+            @PathVariable UUID contractId,
+
+            @Valid @RequestBody SecurityDepositDecisionRequest request
+    ) {
+        var response = rentalContractService.decideSecurityDeposit(contractId, request);
+        return responseFactory.successSingle(response, "Security deposit decision made successfully");
+    }
+
+    @PostMapping("/rental/{contractId}/complete")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Complete rental contract",
+            description = "Admin-only operation to complete a rental contract when rental period ends. " +
+                    "Transitions from ACTIVE to COMPLETED and sends notifications about security deposit.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Rental contract completed successfully",
+                    content = @Content(schema = @Schema(implementation = SingleResponse.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Contract not in ACTIVE state"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Admin only"),
+            @ApiResponse(responseCode = "404", description = "Contract not found")
+    })
+    public ResponseEntity<SingleResponse<RentalContractDetailResponse>> completeRentalContract(
+            @Parameter(description = "Contract ID", required = true)
+            @PathVariable UUID contractId
+    ) {
+        var response = rentalContractService.completeRentalContract(contractId);
+        return responseFactory.successSingle(response, "Rental contract completed successfully");
     }
 }
