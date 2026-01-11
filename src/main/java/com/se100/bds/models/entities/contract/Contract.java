@@ -69,14 +69,6 @@ public abstract class Contract extends AbstractBaseEntity {
     @Column(name = "special_terms", columnDefinition = "TEXT")
     private String specialTerms;
 
-    // Accepted status by parties
-
-    @Column(name = "customer_accepted", nullable = false)
-    private Boolean customerAccepted;
-
-    @Column(name = "owner_accepted", nullable = false)
-    private Boolean ownerAccepted;
-
     // Cancellation specific fields
 
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")

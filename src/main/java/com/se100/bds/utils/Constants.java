@@ -165,10 +165,9 @@ public final class Constants {
     public enum ContractStatusEnum {
         /// draft state
         DRAFT("DRAFT"),
-        /// waiting for acceptance from both parties (customer and property owner).
-        /// this is only contract acceptance, does not hold signature-equivalent legal bindings
-        PENDING_ACCEPT("PENDING_ACCEPT"),
-        /// both parties accepted, waiting for official documentations to be made and legalised
+        /// waiting for remaining payments to be made
+        PENDING_PAYMENT("PENDING_PAYMENT"),
+        /// all remaining balance paid, waiting for official documentations to be made and legalised
         WAITING_OFFICIAL("WAITING_OFFICIAL"),
         /// in effect with legal bindings (exists a signed contract document)
         ACTIVE("ACTIVE"),

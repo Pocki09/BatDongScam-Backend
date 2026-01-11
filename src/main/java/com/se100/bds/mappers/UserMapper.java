@@ -20,6 +20,7 @@ public class UserMapper extends BaseMapper {
         super(modelMapper);
     }
 
+    @SuppressWarnings("D")
     @Override
     protected void configureCustomMappings() {
         modelMapper.typeMap(User.class, MeResponse.class)

@@ -108,6 +108,10 @@ public class ContractDummyData {
             LocalDate depositEndDate = depositStartDate.plusDays(30); // Deposit valid for 30 days
 
             DepositContract depositContract = new DepositContract();
+            var mainContractType = isRental
+                    ? Constants.MainContractTypeEnum.RENTAL
+                    : Constants.MainContractTypeEnum.PURCHASE;
+            depositContract.setMainContractType(mainContractType);
             depositContract.setProperty(property);
             depositContract.setCustomer(customer);
             depositContract.setAgent(agent);
@@ -116,8 +120,6 @@ public class ContractDummyData {
             depositContract.setStartDate(depositStartDate);
             depositContract.setEndDate(depositEndDate);
             depositContract.setSpecialTerms("Standard deposit terms and conditions apply");
-            depositContract.setCustomerAccepted(true);
-            depositContract.setOwnerAccepted(true);
             depositContract.setSignedAt(signedAt);
             depositContract.setDepositAmount(depositAmount);
             depositContract.setAgreedPrice(totalAmount);
@@ -143,8 +145,6 @@ public class ContractDummyData {
                 rentalContract.setStartDate(mainStartDate);
                 rentalContract.setEndDate(mainEndDate);
                 rentalContract.setSpecialTerms("Standard rental terms and conditions apply");
-                rentalContract.setCustomerAccepted(true);
-                rentalContract.setOwnerAccepted(true);
                 rentalContract.setSignedAt(signedAt);
                 rentalContract.setDepositContract(depositContract);
                 rentalContract.setMonthCount(monthCount);
@@ -173,8 +173,6 @@ public class ContractDummyData {
                 purchaseContract.setStartDate(mainStartDate);
                 purchaseContract.setEndDate(mainEndDate);
                 purchaseContract.setSpecialTerms("Standard purchase terms and conditions apply");
-                purchaseContract.setCustomerAccepted(true);
-                purchaseContract.setOwnerAccepted(true);
                 purchaseContract.setSignedAt(signedAt);
                 purchaseContract.setDepositContract(depositContract);
                 purchaseContract.setPropertyValue(totalAmount);
