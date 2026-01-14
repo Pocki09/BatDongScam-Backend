@@ -38,8 +38,8 @@ public interface PropertyService {
     Page<PropertyType> getAllTypes(Pageable pageable);
     PropertyDetails getPropertyDetailsById(UUID propertyId);
     List<Property> getAllByUserIdAndStatus(UUID ownerId, UUID customerId, UUID salesAgentId, List<Constants.PropertyStatusEnum> statuses);
-    PropertyDetails createProperty(CreatePropertyRequest request, MultipartFile[] mediaFiles);
-    PropertyDetails updateProperty(UUID propertyId, UpdatePropertyRequest request, MultipartFile[] mediaFiles);
+    PropertyDetails createProperty(CreatePropertyRequest request, MultipartFile[] mediaFiles, MultipartFile[] documents);
+    PropertyDetails updateProperty(UUID propertyId, UpdatePropertyRequest request, MultipartFile[] mediaFiles, MultipartFile[] documents);
     PropertyDetails updatePropertyStatus(UUID propertyId, UpdatePropertyStatusRequest request);
     void deleteProperty(UUID propertyId);
     void assignAgentToProperty(UUID agentId, UUID propertyId);
@@ -64,4 +64,6 @@ public interface PropertyService {
     String getPropertyTypeName(UUID propertyTypeId);
 
     int countPropertiesByPropertyTypeId(UUID propertyTypeId);
+
+    Page<PropertyCard> getFavoritePropertyCards(List<UUID> propertyIds, Pageable pageable);
 }

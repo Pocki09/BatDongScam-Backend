@@ -91,5 +91,28 @@ public class NotificationController extends AbstractBaseController {
         NotificationDetails notificationDetails = notificationService.getNotificationDetailsById(notificationId);
         return responseFactory.successSingle(notificationDetails, "Notification details retrieved successfully");
     }
-}
 
+    @PatchMapping("/{notificationId}/read")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'PROPERTY_OWNER', 'SALESAGENT', 'ADMIN')")
+    @Operation(
+            summary = "Mark notification as read",
+            description = "Mark a specific notification as read. Users can only mark their own notifications.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Notification marked as read successfully",
+                    content = @Content(schema = @Schema(implementation = SingleResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Notification not found or does not belong to current user")
+    })
+    public ResponseEntity<SingleResponse<NotificationDetails>> markAsRead(
+            @Parameter(description = "Notification ID", required = true)
+            @PathVariable UUID notificationId
+    ) {
+        NotificationDetails notificationDetails = notificationService.markAsRead(notificationId);
+        return responseFactory.successSingle(notificationDetails, "Notification marked as read successfully");
+    }
+}

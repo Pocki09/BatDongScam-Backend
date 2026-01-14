@@ -95,8 +95,30 @@ public class NotificationServiceImpl implements NotificationService {
             throw new EntityNotFoundException("Notification not found with id: " + notificationId);
         }
 
-        notification.setIsRead(Boolean.TRUE);
-        notification.setReadAt(LocalDateTime.now());
+        if (!notification.getIsRead()) {
+            notification.setIsRead(Boolean.TRUE);
+            notification.setReadAt(LocalDateTime.now());
+            notificationRepository.save(notification);
+        }
+
+        return notificationMapper.toNotificationDetails(notification);
+    }
+
+    @Override
+    public NotificationDetails markAsRead(UUID notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found with id: " + notificationId));
+
+        User currentUser = userService.getUser();
+        if (currentUser != null && !notification.getRecipient().getId().equals(currentUser.getId())) {
+            throw new EntityNotFoundException("Notification not found with id: " + notificationId);
+        }
+
+        if (!notification.getIsRead()) {
+            notification.setIsRead(Boolean.TRUE);
+            notification.setReadAt(LocalDateTime.now());
+            notificationRepository.save(notification);
+        }
 
         return notificationMapper.toNotificationDetails(notification);
     }

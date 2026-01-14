@@ -2,12 +2,14 @@ package com.se100.bds.dtos.requests.property;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.se100.bds.utils.Constants;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -62,4 +64,10 @@ public class CreatePropertyRequest {
 
     @Size(max = 5000, message = "Internal extra notes cannot exceed 5000 characters")
     private String internalExtraNotes;
+
+    @Valid
+    private List<DocumentUploadInfo> documentMetadata;
+
+    @Valid
+    private List<MediaUploadInfo> mediaMetadata;
 }

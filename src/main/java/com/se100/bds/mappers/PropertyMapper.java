@@ -11,6 +11,7 @@ import com.se100.bds.repositories.dtos.MediaProjection;
 import com.se100.bds.repositories.dtos.PropertyDetailsProjection;
 import com.se100.bds.services.domains.ranking.RankingService;
 import com.se100.bds.services.dtos.results.PropertyCard;
+import com.se100.bds.utils.Constants;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -46,6 +47,20 @@ public class PropertyMapper extends BaseMapper {
                         }
                         return district;
                     }).map(src -> src, (dest, value) -> dest.setLocation((String) value));
+
+                    // Map transactionType from String to Enum
+                    mapper.using(ctx -> {
+                        PropertyCard propertyCard = (PropertyCard) ctx.getSource();
+                        String transactionTypeStr = propertyCard.getTransactionType();
+                        if (transactionTypeStr != null) {
+                            try {
+                                return Constants.TransactionTypeEnum.valueOf(transactionTypeStr);
+                            } catch (IllegalArgumentException e) {
+                                return null;
+                            }
+                        }
+                        return null;
+                    }).map(src -> src, (dest, value) -> dest.setTransactionType((Constants.TransactionTypeEnum) value));
                 });
 
         // Mapping for Property entity to SimplePropertyCard

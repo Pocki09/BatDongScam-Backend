@@ -34,6 +34,61 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
         p.transactionType,
         p.title,
         MIN(m.filePath),
+        true,
+        COALESCE(CAST(COUNT(DISTINCT m.id) AS int), 0),
+        p.fullAddress,
+        d.districtName,
+        c.cityName,
+        CAST(p.status AS string),
+        p.priceAmount,
+        p.area,
+        po.id,
+        po.user.firstName,
+        po.user.lastName,
+        sa.id,
+        sa.user.firstName,
+        sa.user.lastName
+    )
+    FROM Property p
+    JOIN Ward w ON p.ward.id = w.id
+    JOIN District d ON w.district.id = d.id
+    JOIN City c ON d.city.id = c.id
+    LEFT JOIN PropertyOwner po ON p.owner.id = po.id
+    LEFT JOIN SaleAgent sa ON p.assignedAgent.id = sa.id
+    LEFT JOIN User u ON po.user.id = u.id
+    LEFT JOIN Media m ON m.property.id = p.id
+    WHERE p.id IN :propertyIds
+    GROUP BY
+        p.id,
+        p.createdAt,
+        p.updatedAt,
+        p.transactionType,
+        p.title,
+        p.fullAddress,
+        d.districtName,
+        c.cityName,
+        p.status,
+        p.priceAmount,
+        p.area,
+        po.id,
+        po.user.firstName,
+        po.user.lastName,
+        sa.id,
+        sa.user.firstName,
+        sa.user.lastName
+    """)
+    Page<PropertyCardProtection> findFavoritePropertyCards(
+            Pageable pageable,
+            @Param("propertyIds") List<UUID> propertyIds);
+
+    @Query("""
+    SELECT new com.se100.bds.repositories.dtos.PropertyCardProtection (
+        p.id,
+        p.createdAt,
+        p.updatedAt,
+        p.transactionType,
+        p.title,
+        MIN(m.filePath),
         false,
         COALESCE(CAST(COUNT(DISTINCT m.id) AS int), 0),
         p.fullAddress,
@@ -296,4 +351,3 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, JpaSp
 
     List<Property> findAllByCreatedAtBefore(LocalDateTime createdAtBefore);
 }
-

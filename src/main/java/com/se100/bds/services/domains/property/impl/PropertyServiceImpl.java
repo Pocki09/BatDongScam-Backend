@@ -3,6 +3,8 @@ package com.se100.bds.services.domains.property.impl;
 import com.se100.bds.dtos.responses.property.SimplePropertyCard;
 import com.se100.bds.dtos.requests.property.CreatePropertyRequest;
 import com.se100.bds.dtos.requests.property.CreatePropertyTypeRequest;
+import com.se100.bds.dtos.requests.property.DocumentUploadInfo;
+import com.se100.bds.dtos.requests.property.MediaUploadInfo;
 import com.se100.bds.dtos.requests.property.UpdatePropertyRequest;
 import com.se100.bds.dtos.requests.property.UpdatePropertyStatusRequest;
 import com.se100.bds.dtos.requests.property.UpdatePropertyTypeRequest;
@@ -10,6 +12,8 @@ import com.se100.bds.dtos.responses.property.PropertyDetails;
 import com.se100.bds.dtos.responses.property.PropertyTypeResponse;
 import com.se100.bds.exceptions.NotFoundException;
 import com.se100.bds.mappers.PropertyMapper;
+import com.se100.bds.models.entities.document.DocumentType;
+import com.se100.bds.models.entities.document.IdentificationDocument;
 import com.se100.bds.models.entities.location.Ward;
 import com.se100.bds.models.entities.property.Media;
 import com.se100.bds.models.entities.property.Property;
@@ -17,6 +21,7 @@ import com.se100.bds.models.entities.property.PropertyType;
 import com.se100.bds.models.entities.user.PropertyOwner;
 import com.se100.bds.models.entities.user.SaleAgent;
 import com.se100.bds.models.entities.user.User;
+import com.se100.bds.repositories.domains.document.DocumentTypeRepository;
 import com.se100.bds.repositories.domains.location.WardRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.repositories.domains.property.PropertyTypeRepository;
@@ -27,6 +32,7 @@ import com.se100.bds.repositories.dtos.PropertyCardProtection;
 import com.se100.bds.repositories.dtos.PropertyDetailsProjection;
 import com.se100.bds.services.domains.notification.NotificationService;
 import com.se100.bds.services.domains.payment.PaymentService;
+import com.se100.bds.services.domains.customer.CustomerFavoriteService;
 import com.se100.bds.services.domains.property.PropertyService;
 import com.se100.bds.services.domains.ranking.RankingService;
 import com.se100.bds.services.domains.search.SearchService;
@@ -50,10 +56,15 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -79,6 +90,7 @@ public class PropertyServiceImpl implements PropertyService {
     private final PropertyTypeRepository propertyTypeRepository;
     private final PropertyOwnerRepository propertyOwnerRepository;
     private final WardRepository wardRepository;
+    private final DocumentTypeRepository documentTypeRepository;
     private final PropertyMapper propertyMapper;
     private final UserService userService;
     private final SearchService searchService;
@@ -86,6 +98,7 @@ public class PropertyServiceImpl implements PropertyService {
     private final CloudinaryService cloudinaryService;
     private final PaymentService paymentService;
     private final NotificationService notificationService;
+    private final CustomerFavoriteService customerFavoriteService;
 
     @Override
     public Page<Property> getAll(Pageable pageable) {
@@ -215,9 +228,20 @@ public class PropertyServiceImpl implements PropertyService {
                 currentUser != null ? currentUser.getId() : null
         );
 
+        // Create a map of ID to transactionType for quick lookup
+        Map<UUID, String> transactionTypeMap = new HashMap<>();
+        for (PropertyCardProtection protection : cardProtections) {
+            if (protection.transactionType() != null) {
+                transactionTypeMap.put(protection.id(), protection.transactionType().name());
+            }
+        }
+
         Page<PropertyCard> propertyCardsPage = propertyMapper.mapToPage(cardProtections, PropertyCard.class);
 
         for (PropertyCard propertyCard : propertyCardsPage) {
+            // Set transactionType from the protection record
+            propertyCard.setTransactionType(transactionTypeMap.get(propertyCard.getId()));
+
             if (propertyCard.getOwnerId() != null) {
                 propertyCard.setOwnerTier(rankingService.getCurrentTier(
                         propertyCard.getOwnerId(),
@@ -229,6 +253,11 @@ public class PropertyServiceImpl implements PropertyService {
                         propertyCard.getAgentId(),
                         Constants.RoleEnum.SALESAGENT
                 ));
+            }
+            // mark favorite if current user liked this property
+            if (currentUser != null && customerFavoriteService.isLike(
+                    propertyCard.getId(), currentUser.getId(), Constants.LikeTypeEnum.PROPERTY)) {
+                propertyCard.setFavorite(true);
             }
         }
 
@@ -302,7 +331,7 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     @Transactional
-    public PropertyDetails createProperty(CreatePropertyRequest request, MultipartFile[] mediaFiles) {
+    public PropertyDetails createProperty(CreatePropertyRequest request, MultipartFile[] mediaFiles, MultipartFile[] documents) {
         User currentUser = userService.getUser();
         boolean isAdmin = isAdmin(currentUser);
         boolean isOwner = isPropertyOwner(currentUser);
@@ -310,6 +339,9 @@ public class PropertyServiceImpl implements PropertyService {
         if (!isAdmin && !isOwner) {
             throw new AccessDeniedException("You do not have permission to create properties");
         }
+
+        // Validate compulsory documents are provided
+        validateCompulsoryDocuments(request.getDocumentMetadata(), isAdmin);
 
         PropertyOwner owner = resolveOwnerForCreate(isAdmin, request.getOwnerId(), currentUser.getId());
         PropertyType propertyType = propertyTypeRepository.findById(request.getPropertyTypeId())
@@ -333,9 +365,11 @@ public class PropertyServiceImpl implements PropertyService {
         }
 
         ensureMediaCollection(property);
+        ensureDocumentCollection(property);
         Property persisted = propertyRepository.save(property);
 
-        addMediaFiles(persisted, mediaFiles);
+        addMediaFiles(persisted, mediaFiles, request.getMediaMetadata());
+        addDocumentFiles(persisted, documents, request.getDocumentMetadata());
 
         Property saved = propertyRepository.save(persisted);
         if (isAdmin) {
@@ -354,7 +388,7 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     @Transactional
-    public PropertyDetails updateProperty(UUID propertyId, UpdatePropertyRequest request, MultipartFile[] mediaFiles) {
+    public PropertyDetails updateProperty(UUID propertyId, UpdatePropertyRequest request, MultipartFile[] mediaFiles, MultipartFile[] documents) {
         User currentUser = userService.getUser();
         boolean isAdmin = isAdmin(currentUser);
         boolean isOwner = isPropertyOwner(currentUser);
@@ -394,8 +428,14 @@ public class PropertyServiceImpl implements PropertyService {
 
         //! WARN: this code is trash. this 100% will cause a bug related to media management or when admin refuses to approve
         ensureMediaCollection(property);
+        ensureDocumentCollection(property);
         removeMediaFiles(property, request.getMediaIdsToRemove());
-        addMediaFiles(property, mediaFiles);
+        removeDocumentFiles(property, request.getDocumentIdsToRemove());
+        addMediaFiles(property, mediaFiles, request.getMediaMetadata());
+        addDocumentFiles(property, documents, request.getDocumentMetadata());
+
+        // Validate that property still has all compulsory documents after update
+        validatePropertyHasCompulsoryDocuments(property, isAdmin);
 
         Property saved = propertyRepository.save(property);
         return propertyMapper.mapTo(saved, PropertyDetails.class);
@@ -513,6 +553,19 @@ public class PropertyServiceImpl implements PropertyService {
 
         if (property.getStatus() == Constants.PropertyStatusEnum.DELETED) {
             return;
+        }
+
+        // Check ownership if not admin
+        User currentUser = userService.getUser();
+        boolean isAdmin = currentUser.getRole() == Constants.RoleEnum.ADMIN;
+
+        if (!isAdmin) {
+            // Property owner must own this property
+            if (property.getOwner() == null ||
+                    !property.getOwner().getUser().getId().equals(currentUser.getId())) {
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "You can only delete your own properties");
+            }
         }
 
         property.setStatus(Constants.PropertyStatusEnum.DELETED);
@@ -785,24 +838,53 @@ public class PropertyServiceImpl implements PropertyService {
         return priceAmount.multiply(commissionRate).setScale(2, RoundingMode.HALF_UP);
     }
 
-    private void addMediaFiles(Property property, MultipartFile[] mediaFiles) {
-        if (mediaFiles == null) {
+    private void addMediaFiles(Property property, MultipartFile[] mediaFiles, List<MediaUploadInfo> mediaMetadata) {
+        if (mediaFiles == null || mediaFiles.length == 0) {
             return;
         }
 
-        for (MultipartFile mediaFile : mediaFiles) {
+        // Create a map of file index to metadata for quick lookup
+        Map<Integer, MediaUploadInfo> metadataMap = new HashMap<>();
+        if (mediaMetadata != null) {
+            for (MediaUploadInfo info : mediaMetadata) {
+                if (info.getFileIndex() != null) {
+                    metadataMap.put(info.getFileIndex(), info);
+                }
+            }
+        }
+
+        for (int i = 0; i < mediaFiles.length; i++) {
+            MultipartFile mediaFile = mediaFiles[i];
             if (mediaFile == null || mediaFile.isEmpty()) {
                 continue;
             }
             try {
                 String fileUrl = cloudinaryService.uploadFile(mediaFile, buildMediaFolderPath(property.getId()));
                 String mimeType = mediaFile.getContentType() != null ? mediaFile.getContentType() : "application/octet-stream";
+
+                // Get metadata for this file if provided
+                MediaUploadInfo metadata = metadataMap.get(i);
+
+                // Determine media type - use metadata if provided, otherwise auto-detect from
+                // MIME type
+                Constants.MediaTypeEnum mediaType = determineMediaType(mimeType, metadata);
+
+                // Get file name - use metadata if provided, otherwise use original filename
+                String fileName = (metadata != null && metadata.getFileName() != null)
+                        ? metadata.getFileName()
+                        : (mediaFile.getOriginalFilename() != null ? mediaFile.getOriginalFilename()
+                                : mediaFile.getName());
+
+                // Get document type description (for DOCUMENT media type)
+                String documentType = (metadata != null) ? metadata.getDocumentType() : null;
+
                 Media media = Media.builder()
                         .property(property)
-                        .mediaType(Constants.MediaTypeEnum.IMAGE)
-                        .fileName(mediaFile.getOriginalFilename() != null ? mediaFile.getOriginalFilename() : mediaFile.getName())
+                        .mediaType(mediaType)
+                        .fileName(fileName)
                         .filePath(fileUrl)
                         .mimeType(mimeType)
+                        .documentType(documentType)
                         .build();
                 property.getMediaList().add(media);
             } catch (IOException e) {
@@ -837,7 +919,134 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     private String buildMediaFolderPath(UUID propertyId) {
-        return "properties/" + propertyId;
+        return "properties/" + propertyId + "/images";
+    }
+
+    private void addDocumentFiles(Property property, MultipartFile[] documents,
+            List<DocumentUploadInfo> documentMetadata) {
+        if (documents == null || documents.length == 0) {
+            return;
+        }
+
+        // Create a map of file index to metadata for quick lookup
+        Map<Integer, DocumentUploadInfo> metadataMap = new HashMap<>();
+        if (documentMetadata != null) {
+            for (DocumentUploadInfo info : documentMetadata) {
+                if (info.getFileIndex() != null) {
+                    metadataMap.put(info.getFileIndex(), info);
+                }
+            }
+        }
+
+        // Get or create default document type for files without metadata
+        DocumentType defaultDocumentType = getOrCreateDefaultDocumentType();
+
+        for (int i = 0; i < documents.length; i++) {
+            MultipartFile documentFile = documents[i];
+            if (documentFile == null || documentFile.isEmpty()) {
+                continue;
+            }
+            try {
+                String fileUrl = cloudinaryService.uploadFile(documentFile,
+                        buildDocumentFolderPath(property.getId()));
+                String mimeType = documentFile.getContentType() != null ? documentFile.getContentType()
+                        : "application/octet-stream";
+
+                // Get metadata for this file if provided
+                DocumentUploadInfo metadata = metadataMap.get(i);
+
+                // Determine document type - use metadata if provided, otherwise use default
+                DocumentType documentType;
+                if (metadata != null && metadata.getDocumentTypeId() != null) {
+                    documentType = documentTypeRepository.findById(metadata.getDocumentTypeId())
+                            .orElseThrow(() -> new NotFoundException(
+                                    "Document type not found with id: " + metadata.getDocumentTypeId()));
+                } else {
+                    documentType = defaultDocumentType;
+                }
+
+                // Generate document number - use metadata if provided, otherwise generate
+                // unique short ID (max 20 chars to fit column constraint)
+                String documentNumber = (metadata != null && metadata.getDocumentNumber() != null
+                        && !metadata.getDocumentNumber().isBlank())
+                                ? metadata.getDocumentNumber().substring(0, Math.min(metadata.getDocumentNumber().length(), 20))
+                                : "DOC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+                // Get document name - use metadata if provided, otherwise use original filename
+                String documentName = (metadata != null && metadata.getDocumentName() != null
+                        && !metadata.getDocumentName().isBlank())
+                                ? metadata.getDocumentName()
+                                : (documentFile.getOriginalFilename() != null ? documentFile.getOriginalFilename()
+                                        : documentFile.getName());
+
+                IdentificationDocument document = IdentificationDocument.builder()
+                        .documentType(documentType)
+                        .property(property)
+                        .documentNumber(documentNumber)
+                        .documentName(documentName)
+                        .filePath(fileUrl)
+                        .mimeType(mimeType)
+                        .issueDate(metadata != null ? metadata.getIssueDate() : null)
+                        .expiryDate(metadata != null ? metadata.getExpiryDate() : null)
+                        .issuingAuthority(metadata != null ? metadata.getIssuingAuthority() : null)
+                        .verificationStatus(Constants.VerificationStatusEnum.PENDING)
+                        .build();
+
+                property.getDocuments().add(document);
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to upload property document", e);
+            }
+        }
+    }
+
+    private void removeDocumentFiles(Property property, List<UUID> documentIds) {
+        if (documentIds == null || documentIds.isEmpty() || property.getDocuments().isEmpty()) {
+            return;
+        }
+
+        Iterator<IdentificationDocument> iterator = property.getDocuments().iterator();
+        while (iterator.hasNext()) {
+            IdentificationDocument document = iterator.next();
+            if (documentIds.contains(document.getId())) {
+                try {
+                    cloudinaryService.deleteFile(document.getFilePath());
+                } catch (IOException e) {
+                    throw new IllegalStateException("Failed to delete property document", e);
+                }
+                iterator.remove();
+            }
+        }
+    }
+
+    private void ensureDocumentCollection(Property property) {
+        if (property.getDocuments() == null) {
+            property.setDocuments(new ArrayList<>());
+        }
+    }
+
+    private String buildDocumentFolderPath(UUID propertyId) {
+        return "properties/" + propertyId + "/documents";
+    }
+
+    private DocumentType getOrCreateDefaultDocumentType() {
+        // Try to find an existing non-compulsory document type first
+        List<DocumentType> nonCompulsoryTypes = documentTypeRepository.findAll().stream()
+                .filter(dt -> dt.getIsCompulsory() != null && !dt.getIsCompulsory())
+                .toList();
+
+        if (!nonCompulsoryTypes.isEmpty()) {
+            return nonCompulsoryTypes.get(0);
+        }
+
+        // If no non-compulsory type exists, create a default "General Documents" type
+        DocumentType defaultType = DocumentType.builder()
+                .name("General Property Documents")
+                .description("General documents related to property listings")
+                .isCompulsory(false)
+                .documents(new ArrayList<>())
+                .build();
+
+        return documentTypeRepository.save(defaultType);
     }
 
     private boolean isAdmin(User user) {
@@ -866,5 +1075,132 @@ public class PropertyServiceImpl implements PropertyService {
         }
         return propertyOwnerRepository.findById(ownerIdFromRequest)
                 .orElseThrow(() -> new NotFoundException("Property owner not found with id: " + ownerIdFromRequest));
+    }
+
+    @Override
+    public Page<PropertyCard> getFavoritePropertyCards(List<UUID> propertyIds, Pageable pageable) {
+        if (propertyIds == null || propertyIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Page<PropertyCardProtection> protections = propertyRepository.findFavoritePropertyCards(pageable, propertyIds);
+        Page<PropertyCard> cards = propertyMapper.mapToPage(protections, PropertyCard.class);
+
+        cards.forEach(card -> {
+            card.setFavorite(true);
+            if (card.getOwnerId() != null) {
+                card.setOwnerTier(rankingService.getCurrentTier(card.getOwnerId(), Constants.RoleEnum.PROPERTY_OWNER));
+            }
+            if (card.getAgentId() != null) {
+                card.setAgentTier(rankingService.getCurrentTier(card.getAgentId(), Constants.RoleEnum.SALESAGENT));
+            }
+        });
+
+        return cards;
+    }
+
+    /**
+     * Validates that all compulsory document types are provided in the document
+     * metadata.
+     * Admins are exempt from this validation.
+     *
+     * @param documentMetadata the list of document metadata from the request
+     * @param isAdmin          whether the current user is an admin
+     * @throws IllegalArgumentException if compulsory documents are missing
+     */
+    private void validateCompulsoryDocuments(List<DocumentUploadInfo> documentMetadata, boolean isAdmin) {
+        // Admins can bypass compulsory document validation
+        if (isAdmin) {
+            return;
+        }
+
+        List<DocumentType> compulsoryDocTypes = documentTypeRepository.findAllByIsCompulsoryTrue();
+        if (compulsoryDocTypes.isEmpty()) {
+            return; // No compulsory documents required
+        }
+
+        Set<UUID> providedDocTypeIds = new HashSet<>();
+        if (documentMetadata != null) {
+            for (DocumentUploadInfo info : documentMetadata) {
+                if (info.getDocumentTypeId() != null) {
+                    providedDocTypeIds.add(info.getDocumentTypeId());
+                }
+            }
+        }
+
+        List<String> missingDocTypes = compulsoryDocTypes.stream()
+                .filter(dt -> !providedDocTypeIds.contains(dt.getId()))
+                .map(DocumentType::getName)
+                .collect(Collectors.toList());
+
+        if (!missingDocTypes.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Missing compulsory documents: " + String.join(", ", missingDocTypes) +
+                            ". Please upload all required identification documents.");
+        }
+    }
+
+    /**
+     * Validates that a property has all compulsory document types after an update.
+     * This checks the actual documents attached to the property entity.
+     *
+     * @param property the property to validate
+     * @param isAdmin  whether the current user is an admin
+     * @throws IllegalArgumentException if compulsory documents are missing
+     */
+    private void validatePropertyHasCompulsoryDocuments(Property property, boolean isAdmin) {
+        // Admins can bypass compulsory document validation
+        if (isAdmin) {
+            return;
+        }
+
+        List<DocumentType> compulsoryDocTypes = documentTypeRepository.findAllByIsCompulsoryTrue();
+        if (compulsoryDocTypes.isEmpty()) {
+            return; // No compulsory documents required
+        }
+
+        Set<UUID> existingDocTypeIds = property.getDocuments().stream()
+                .map(doc -> doc.getDocumentType().getId())
+                .collect(Collectors.toSet());
+
+        List<String> missingDocTypes = compulsoryDocTypes.stream()
+                .filter(dt -> !existingDocTypeIds.contains(dt.getId()))
+                .map(DocumentType::getName)
+                .collect(Collectors.toList());
+
+        if (!missingDocTypes.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Property is missing compulsory documents: " + String.join(", ", missingDocTypes) +
+                            ". Cannot update property without all required identification documents.");
+        }
+    }
+
+    /**
+     * Determines the media type based on the MIME type and optional metadata.
+     *
+     * @param mimeType the MIME type of the file
+     * @param metadata optional metadata that may specify the media type
+     * @return the determined MediaTypeEnum
+     */
+    private Constants.MediaTypeEnum determineMediaType(String mimeType, MediaUploadInfo metadata) {
+        // If metadata explicitly specifies media type, use it
+        if (metadata != null && metadata.getMediaType() != null) {
+            return metadata.getMediaType();
+        }
+
+        // Auto-detect from MIME type
+        if (mimeType == null) {
+            return Constants.MediaTypeEnum.IMAGE; // Default to IMAGE
+        }
+
+        String lowerMimeType = mimeType.toLowerCase();
+        if (lowerMimeType.startsWith("image/")) {
+            return Constants.MediaTypeEnum.IMAGE;
+        } else if (lowerMimeType.startsWith("video/")) {
+            return Constants.MediaTypeEnum.VIDEO;
+        } else {
+            // PDFs, docs, and other files are treated as documents
+            return Constants.MediaTypeEnum.DOCUMENT;
+        }
     }
 }

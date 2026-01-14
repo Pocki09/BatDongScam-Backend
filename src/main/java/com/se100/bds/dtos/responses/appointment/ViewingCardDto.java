@@ -23,4 +23,7 @@ public class ViewingCardDto extends AbstractBaseDataResponse {
     private String districtName;
     private String cityName;
     private LocalDateTime requestedDate;
+    private Integer rating;
+    private String comment;
+    private String agentName;
 }

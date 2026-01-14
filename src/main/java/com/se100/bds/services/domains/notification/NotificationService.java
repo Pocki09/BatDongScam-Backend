@@ -21,4 +21,5 @@ public interface NotificationService {
     );
     Page<NotificationItem> getMyNotifications(Pageable pageable);
     NotificationDetails getNotificationDetailsById(UUID notificationId);
+    NotificationDetails markAsRead(UUID notificationId);
 }

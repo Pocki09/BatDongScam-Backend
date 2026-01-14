@@ -16,4 +16,7 @@ import java.util.UUID;
 public class UpdatePropertyRequest extends CreatePropertyRequest {
     @Size(max = 50, message = "Cannot remove more than 50 media items in a single request")
     private List<UUID> mediaIdsToRemove;
+
+    @Size(max = 50, message = "Cannot remove more than 50 document items in a single request")
+    private List<UUID> documentIdsToRemove;
 }

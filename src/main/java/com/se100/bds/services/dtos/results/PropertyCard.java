@@ -17,6 +17,7 @@ public class PropertyCard {
     private UUID id;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String transactionType;
     private String title;
     private String thumbnailUrl;
     private boolean isFavorite;

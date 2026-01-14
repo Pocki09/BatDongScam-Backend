@@ -1,22 +1,30 @@
 package com.se100.bds.services.domains.customer.impl;
 
+import com.se100.bds.dtos.responses.property.SimplePropertyCard;
 import com.se100.bds.models.entities.user.User;
 import com.se100.bds.models.schemas.customer.AbstractCustomerPreferenceMongoSchema;
+import com.se100.bds.models.schemas.customer.CustomerFavoriteProperty;
 import com.se100.bds.repositories.domains.mongo.customer.*;
 import com.se100.bds.services.domains.customer.CustomerFavoriteService;
 import com.se100.bds.services.domains.customer.CustomerPreferenceEntityFactory;
+import com.se100.bds.services.domains.property.PropertyService;
 import com.se100.bds.services.domains.user.UserService;
+import com.se100.bds.services.dtos.results.PropertyCard;
 import com.se100.bds.utils.Constants;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class CustomerFavoriteServiceImpl implements CustomerFavoriteService {
     private final CustomerFavoritePropertyRepository customerFavoritePropertyRepository;
     private final CustomerPreferredCityRepository customerPreferredCityRepository;
@@ -24,6 +32,24 @@ public class CustomerFavoriteServiceImpl implements CustomerFavoriteService {
     private final CustomerPreferredPropertyTypeRepository customerPreferredPropertyTypeRepository;
     private final CustomerPreferredWardRepository customerPreferredWardRepository;
     private final UserService userService;
+    private final PropertyService propertyService;
+
+    public CustomerFavoriteServiceImpl(
+            CustomerFavoritePropertyRepository customerFavoritePropertyRepository,
+            CustomerPreferredCityRepository customerPreferredCityRepository,
+            CustomerPreferredDistrictRepository customerPreferredDistrictRepository,
+            CustomerPreferredPropertyTypeRepository customerPreferredPropertyTypeRepository,
+            CustomerPreferredWardRepository customerPreferredWardRepository,
+            UserService userService,
+            @Lazy PropertyService propertyService) {
+        this.customerFavoritePropertyRepository = customerFavoritePropertyRepository;
+        this.customerPreferredCityRepository = customerPreferredCityRepository;
+        this.customerPreferredDistrictRepository = customerPreferredDistrictRepository;
+        this.customerPreferredPropertyTypeRepository = customerPreferredPropertyTypeRepository;
+        this.customerPreferredWardRepository = customerPreferredWardRepository;
+        this.userService = userService;
+        this.propertyService = propertyService;
+    }
 
     private Map<Constants.LikeTypeEnum, BaseCustomerPreferenceRepository<? extends AbstractCustomerPreferenceMongoSchema>> repositoryMap;
 
@@ -96,6 +122,50 @@ public class CustomerFavoriteServiceImpl implements CustomerFavoriteService {
             log.error("Error checking like status for type {} and id {}", likeType, e.getMessage());
             return false;
         }
+    }
+
+    @Override
+    public Page<SimplePropertyCard> getFavoritePropertyCards(Pageable pageable) {
+        UUID customerId = userService.getUserId();
+
+        // Get all favorite property IDs from MongoDB
+        List<CustomerFavoriteProperty> favorites = customerFavoritePropertyRepository.findByCustomerId(customerId);
+        List<UUID> propertyIds = favorites.stream()
+                .map(CustomerFavoriteProperty::getRefId)
+                .collect(Collectors.toList());
+
+        if (propertyIds.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+
+        // Get property cards from PropertyService
+        Page<PropertyCard> propertyCards = propertyService.getFavoritePropertyCards(propertyIds, pageable);
+
+        // Map PropertyCard to SimplePropertyCard
+        List<SimplePropertyCard> simpleCards = propertyCards.getContent().stream()
+                .map(card -> SimplePropertyCard.builder()
+                        .id(card.getId())
+                        .title(card.getTitle())
+                        .thumbnailUrl(card.getThumbnailUrl())
+                        .transactionType(card.getTransactionType() != null ? Constants.TransactionTypeEnum.get(card.getTransactionType()) : null)
+                        .isFavorite(true)
+                        .numberOfImages(card.getNumberOfImages())
+                        .location(card.getDistrict() + ", " + card.getCity())
+                        .status(card.getStatus())
+                        .price(card.getPrice())
+                        .totalArea(card.getTotalArea())
+                        .ownerId(card.getOwnerId())
+                        .ownerFirstName(card.getOwnerFirstName())
+                        .ownerLastName(card.getOwnerLastName())
+                        .ownerTier(card.getOwnerTier())
+                        .agentId(card.getAgentId())
+                        .agentFirstName(card.getAgentFirstName())
+                        .agentLastName(card.getAgentLastName())
+                        .agentTier(card.getAgentTier())
+                        .build())
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(simpleCards, pageable, propertyCards.getTotalElements());
     }
 
     @SuppressWarnings("unchecked")

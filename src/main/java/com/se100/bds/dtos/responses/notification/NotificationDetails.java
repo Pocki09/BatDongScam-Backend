@@ -3,12 +3,13 @@ package com.se100.bds.dtos.responses.notification;
 import com.se100.bds.dtos.responses.AbstractBaseDataResponse;
 import com.se100.bds.utils.Constants;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 public class NotificationDetails extends AbstractBaseDataResponse {

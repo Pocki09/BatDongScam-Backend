@@ -28,4 +28,6 @@ public class ViewingListItem extends AbstractBaseDataResponse {
     private String customerTier;
     private String salesAgentName;
     private String salesAgentTier;
+    private Integer rating;
+    private String comment;
 }

@@ -37,6 +37,9 @@ public class IdentificationDocument extends AbstractBaseEntity {
     @Column(name = "file_path", nullable = false, length = 500)
     private String filePath;
 
+    @Column(name = "mime_type", length = 100)
+    private String mimeType;
+
     @Column(name = "issue_date")
     private LocalDate issueDate;
 
