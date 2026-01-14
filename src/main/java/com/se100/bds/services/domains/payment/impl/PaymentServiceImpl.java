@@ -115,7 +115,7 @@ public class PaymentServiceImpl implements PaymentService {
                 "paymentId", savedPayment.getId().toString()
             ))
             .amount(savedPayment.getAmount())
-            .currency("VND")
+            .currency(CURRENCY_VND)
             .description("Service fee payment for property: " + property.getTitle())
             .build();
 
@@ -128,44 +128,6 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("Created service fee payment {} for property {}", finalPayment.getId(), property.getId());
 
         return mapToDetailResponse(finalPayment);
-    }
-
-    @Override
-    @Transactional
-    public Payment createContractPayment(
-            Contract contract, PaymentTypeEnum type, BigDecimal amount, String description,  int paymentDueDays
-    ) {
-        Payment payment = Payment.builder()
-                .contract(contract)
-                .property(contract.getProperty())
-                .payer(contract.getCustomer().getUser())
-                .paymentType(type)
-                .amount(amount)
-                .dueDate(LocalDate.now().plusDays(paymentDueDays))
-                .status(Constants.PaymentStatusEnum.PENDING)
-                .paymentMethod(PAYOS_METHOD)
-                .build();
-
-        Payment savedPayment = paymentRepository.save(payment);
-
-        CreatePaymentSessionRequest gatewayRequest = CreatePaymentSessionRequest.builder()
-                .amount(amount)
-                .currency(CURRENCY_VND)
-                .description(description)
-                .metadata(Map.of(
-                        "paymentType", type.getValue(),
-                        "contractId", contract.getId().toString(),
-                        "paymentId", savedPayment.getId().toString()
-                ))
-                .build();
-
-        CreatePaymentSessionResponse gatewayResponse = paymentGatewayService.createPaymentSession(
-                gatewayRequest,
-                savedPayment.getId().toString()
-        );
-
-        savedPayment.setPaywayPaymentId(gatewayResponse.getId());
-        return paymentRepository.save(savedPayment);
     }
 
     @Override

@@ -59,9 +59,6 @@ public interface PaymentService {
      */
     PaymentDetailResponse createServiceFeePayment(Property property);
 
-    Payment createContractPayment(Contract contract, Constants.PaymentTypeEnum type,
-                                  BigDecimal amount, String description,  int paymentDueDays);
-
     /**
      * Process a Payway webhook event (raw request body JSON string).
      * Signature verification is handled at the controller layer.
