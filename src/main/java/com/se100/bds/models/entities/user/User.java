@@ -74,6 +74,8 @@ public class User extends AbstractBaseEntity {
     @Column(name = "bank_account_name", length = 150)
     private String bankAccountName;
 
+    /// This is actually the Bank Code (SWIFT/BIC), but named as bank_bin for historical reasons
+    /// (history is that a dumbass wrote this)
     @Column(name = "bank_bin", length = 20)
     private String bankBin;
 

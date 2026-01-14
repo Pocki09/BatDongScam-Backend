@@ -143,7 +143,32 @@ public class UserDummyData {
         LocalDateTime createdAt = timeGenerator.getRandomTime();
         LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
 
+        // Bank details
+        String swiftCode = "MOCKVN22";
+        String bankAccountNumber = null, bankAccountName = null;
+        switch (role) {
+            case ADMIN -> {
+                bankAccountNumber = "100000000001";
+                bankAccountName = "App Company";
+            }
+            case SALESAGENT -> {
+                bankAccountNumber = "300000000001";
+                bankAccountName = "Sales Agent A";
+            }
+            case PROPERTY_OWNER -> {
+                bankAccountNumber = "200000000002";
+                bankAccountName = "Customer B";
+            }
+            case CUSTOMER -> {
+                bankAccountNumber = "200000000001";
+                bankAccountName = "Customer A";
+            }
+        }
+
         User user = User.builder()
+                .bankBin(swiftCode)
+                .bankAccountName(bankAccountName)
+                .bankAccountNumber(bankAccountNumber)
                 .email(email)
                 .phoneNumber(phoneNumber)
                 .zaloContact(phoneNumber)
