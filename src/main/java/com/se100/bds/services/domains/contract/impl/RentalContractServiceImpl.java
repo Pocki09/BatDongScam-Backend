@@ -29,7 +29,7 @@ import com.se100.bds.repositories.domains.user.SaleAgentRepository;
 import com.se100.bds.services.domains.contract.DepositContractService;
 import com.se100.bds.services.domains.contract.RentalContractService;
 import com.se100.bds.services.domains.notification.NotificationService;
-import com.se100.bds.services.domains.payment.PaymentService;
+import com.se100.bds.services.domains.report.FinancialUpdateService;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.services.payment.PaymentGatewayService;
 import com.se100.bds.services.payment.dto.CreatePaymentSessionRequest;
@@ -82,6 +82,7 @@ public class RentalContractServiceImpl implements RentalContractService {
     private static final int DEFAULT_PAYMENT_DUE_DAYS = 7;
     private static final String CURRENCY_VND = "VND";
     private static final String PAYOS_METHOD = "PAYOS";
+    private final FinancialUpdateService financialUpdateService;
 
     // ========================
     // RENTAL CONTRACT CRUD
@@ -557,6 +558,13 @@ public class RentalContractServiceImpl implements RentalContractService {
 
         // Payout first month rent to owner (minus commission)
         BigDecimal payoutAmount = contract.getMonthlyRentAmount().subtract(contract.getCommissionAmount());
+        var currentTime = LocalDate.now();
+        financialUpdateService.transaction(
+                contract.getProperty().getId(),
+                contract.getCommissionAmount(),
+                currentTime.getMonthValue(),
+                currentTime.getYear()
+        );
         triggerPayoutToOwner(contract, payoutAmount, "First month rent payment");
 
         rentalContractRepository.save(contract);
@@ -571,6 +579,13 @@ public class RentalContractServiceImpl implements RentalContractService {
 
         // Payout to owner (monthly rent - commission)
         BigDecimal payoutAmount = contract.getMonthlyRentAmount().subtract(contract.getCommissionAmount());
+        var currentTime = LocalDate.now();
+        financialUpdateService.transaction(
+                contract.getProperty().getId(),
+                contract.getCommissionAmount(),
+                currentTime.getMonthValue(),
+                currentTime.getYear()
+        );
         triggerPayoutToOwner(contract, payoutAmount, "Monthly rent payment");
 
         log.info("Monthly rent payment {} completed for rental contract {}, triggered payout to owner", paymentId, contractId);
