@@ -130,6 +130,23 @@ public final class Constants {
     @Getter
     @AllArgsConstructor
     public enum ContractTypeEnum {
+        DEPOSIT("DEPOSIT"),
+        PURCHASE("PURCHASE"),
+        RENTAL("RENTAL");
+
+        private final String value;
+
+        public static ContractTypeEnum get(final String name) {
+            return Stream.of(ContractTypeEnum.values())
+                    .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid contract type name: %s", name)));
+        }
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public enum MainContractTypeEnum {
         PURCHASE("PURCHASE"),
         RENTAL("RENTAL");
 
@@ -146,10 +163,17 @@ public final class Constants {
     @Getter
     @AllArgsConstructor
     public enum ContractStatusEnum {
+        /// draft state
         DRAFT("DRAFT"),
-        PENDING_SIGNING("PENDING_SIGNING"),
+        /// waiting for remaining payments to be made
+        PENDING_PAYMENT("PENDING_PAYMENT"),
+        /// all remaining balance paid, waiting for official documentations to be made and legalised
+        WAITING_OFFICIAL("WAITING_OFFICIAL"),
+        /// in effect with legal bindings (exists a signed contract document)
         ACTIVE("ACTIVE"),
+        /// completed contract in case of rental
         COMPLETED("COMPLETED"),
+        /// contract terminated before end date
         CANCELLED("CANCELLED");
 
         private final String value;
@@ -164,18 +188,19 @@ public final class Constants {
 
     @Getter
     @AllArgsConstructor
-    public enum ContractPaymentTypeEnum {
-        MORTGAGE("MORTGAGE"),
-        MONTHLY_RENT("MONTHLY_RENT"),
-        PAID_IN_FULL("PAID_IN_FULL");
+    public enum SecurityDepositStatusEnum {
+        NOT_PAID("NOT_PAID"),
+        HELD("HELD"),
+        RETURNED_TO_CUSTOMER("RETURNED_TO_CUSTOMER"),
+        TRANSFERRED_TO_OWNER("TRANSFERRED_TO_OWNER");
 
         private final String value;
 
-        public static ContractPaymentTypeEnum get(final String name) {
-            return Stream.of(ContractPaymentTypeEnum.values())
+        public static SecurityDepositStatusEnum get(final String name) {
+            return Stream.of(SecurityDepositStatusEnum.values())
                     .filter(p -> p.name().equals(name.toUpperCase()) || p.getValue().equals(name.toUpperCase()))
                     .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid contract payment type name: %s", name)));
+                    .orElseThrow(() -> new IllegalArgumentException(String.format("Invalid security deposit status: %s", name)));
         }
     }
 

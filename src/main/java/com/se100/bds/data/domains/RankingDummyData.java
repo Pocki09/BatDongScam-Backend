@@ -1,6 +1,9 @@
 package com.se100.bds.data.domains;
 
 import com.se100.bds.models.entities.contract.Contract;
+import com.se100.bds.models.entities.contract.DepositContract;
+import com.se100.bds.models.entities.contract.PurchaseContract;
+import com.se100.bds.models.entities.contract.RentalContract;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.user.Customer;
 import com.se100.bds.models.entities.user.PropertyOwner;
@@ -17,6 +20,7 @@ import com.se100.bds.services.domains.report.scheduler.UserReportScheduler;
 import com.se100.bds.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -119,7 +123,7 @@ public class RankingDummyData {
 
         for (PropertyOwner owner : owners) {
             // Calculate contribution metrics
-            List<Property> properties = propertyRepository.findAllByOwner_Id(owner.getId());
+            List<Property> properties = propertyRepository.findAllByOwner_Id(Pageable.unpaged(), owner.getId()).stream().toList();
 
             int totalForSales = (int) properties.stream()
                     .filter(p -> p.getTransactionType() == Constants.TransactionTypeEnum.SALE)
@@ -181,7 +185,7 @@ public class RankingDummyData {
         List<IndividualPropertyOwnerContributionAll> rankings = new ArrayList<>();
 
         for (PropertyOwner owner : owners) {
-            List<Property> properties = propertyRepository.findAllByOwner_Id(owner.getId());
+            List<Property> properties = propertyRepository.findAllByOwner_Id(Pageable.unpaged(), owner.getId()).stream().toList();
 
             int totalForSales = (int) properties.stream()
                     .filter(p -> p.getTransactionType() == Constants.TransactionTypeEnum.SALE)
@@ -236,7 +240,7 @@ public class RankingDummyData {
 
         for (SaleAgent agent : agents) {
             // Get agent's properties and contracts
-            List<Property> properties = propertyRepository.findAllByAssignedAgent_Id(agent.getId());
+            List<Property> properties = propertyRepository.findAllByAssignedAgent_Id(Pageable.unpaged(), agent.getId()).stream().toList();
             List<Contract> contracts = contractRepository.findAllByAgent_Id(agent.getId());
 
             int handlingProperties = (int) properties.stream()
@@ -296,7 +300,7 @@ public class RankingDummyData {
         List<IndividualSalesAgentPerformanceCareer> rankings = new ArrayList<>();
 
         for (SaleAgent agent : agents) {
-            List<Property> properties = propertyRepository.findAllByAssignedAgent_Id(agent.getId());
+            List<Property> properties = propertyRepository.findAllByAssignedAgent_Id(Pageable.unpaged(), agent.getId()).stream().toList();
             List<Contract> contracts = contractRepository.findAllByAgent_Id(agent.getId());
 
             int currentHandlingProperties = (int) properties.stream()
@@ -362,7 +366,7 @@ public class RankingDummyData {
             int monthViewingsAttended = monthViewingsRequested - new Random().nextInt(3);
 
             BigDecimal monthSpending = contracts.stream()
-                    .map(Contract::getTotalContractAmount)
+                    .map(this::getContractValue)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             int monthPurchases = (int) contracts.stream()
@@ -416,7 +420,7 @@ public class RankingDummyData {
             int totalViewingsAttended = totalViewingsRequested - new Random().nextInt(10);
 
             BigDecimal totalSpending = contracts.stream()
-                    .map(Contract::getTotalContractAmount)
+                    .map(this::getContractValue)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             int totalPurchases = (int) contracts.stream()
@@ -473,6 +477,24 @@ public class RankingDummyData {
         if (score >= 75) return Constants.CustomerTierEnum.GOLD;
         if (score >= 60) return Constants.CustomerTierEnum.SILVER;
         return Constants.CustomerTierEnum.BRONZE;
+    }
+
+    /**
+     * Calculate the total value of a contract based on its type.
+     * For DepositContract: returns the deposit amount
+     * For RentalContract: returns monthlyRent * monthCount
+     * For PurchaseContract: returns the property value
+     */
+    private BigDecimal getContractValue(Contract contract) {
+        if (contract instanceof DepositContract depositContract) {
+            return depositContract.getDepositAmount();
+        } else if (contract instanceof RentalContract rentalContract) {
+            return rentalContract.getMonthlyRentAmount()
+                    .multiply(BigDecimal.valueOf(rentalContract.getMonthCount()));
+        } else if (contract instanceof PurchaseContract purchaseContract) {
+            return purchaseContract.getPropertyValue();
+        }
+        return BigDecimal.ZERO;
     }
 }
 

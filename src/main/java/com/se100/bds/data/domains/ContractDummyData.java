@@ -1,11 +1,15 @@
 package com.se100.bds.data.domains;
 
 import com.se100.bds.data.util.TimeGenerator;
-import com.se100.bds.models.entities.contract.Contract;
+import com.se100.bds.models.entities.contract.DepositContract;
+import com.se100.bds.models.entities.contract.PurchaseContract;
+import com.se100.bds.models.entities.contract.RentalContract;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.models.entities.user.Customer;
 import com.se100.bds.models.entities.user.SaleAgent;
-import com.se100.bds.repositories.domains.contract.ContractRepository;
+import com.se100.bds.repositories.domains.contract.DepositContractRepository;
+import com.se100.bds.repositories.domains.contract.PurchaseContractRepository;
+import com.se100.bds.repositories.domains.contract.RentalContractRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
 import com.se100.bds.repositories.domains.user.CustomerRepository;
 import com.se100.bds.repositories.domains.user.SaleAgentRepository;
@@ -26,7 +30,9 @@ import java.util.Random;
 @Service
 public class ContractDummyData {
 
-    private final ContractRepository contractRepository;
+    private final DepositContractRepository depositContractRepository;
+    private final RentalContractRepository rentalContractRepository;
+    private final PurchaseContractRepository purchaseContractRepository;
     private final PropertyRepository propertyRepository;
     private final CustomerRepository customerRepository;
     private final SaleAgentRepository saleAgentRepository;
@@ -38,10 +44,13 @@ public class ContractDummyData {
         createDummyContracts();
     }
 
+    @SuppressWarnings("D")
     private void createDummyContracts() {
         log.info("Creating dummy contracts");
 
-        List<Contract> contracts = new ArrayList<>();
+        List<DepositContract> depositContracts = new ArrayList<>();
+        List<RentalContract> rentalContracts = new ArrayList<>();
+        List<PurchaseContract> purchaseContracts = new ArrayList<>();
 
         // Create 50 contracts
         for (int i = 1; i <= 50; i++) {
@@ -50,7 +59,6 @@ public class ContractDummyData {
             // Get list of properties with valid date
             List<Property> properties = propertyRepository.findAllByCreatedAtBefore(createdAt);
             if (properties.isEmpty()) {
-                // Fallback to all properties if no properties found before createdAt
                 properties = propertyRepository.findAll();
             }
             if (properties.isEmpty()) {
@@ -61,7 +69,6 @@ public class ContractDummyData {
             // Get list of customers with valid date
             List<Customer> customers = customerRepository.findAllByCreatedAtBefore(createdAt);
             if (customers.isEmpty()) {
-                // Fallback to all customers if no customers found before createdAt
                 customers = customerRepository.findAll();
             }
             if (customers.isEmpty()) {
@@ -72,7 +79,6 @@ public class ContractDummyData {
             // Get list of agents with valid date
             List<SaleAgent> agents = saleAgentRepository.findAllByCreatedAtBefore(createdAt);
             if (agents.isEmpty()) {
-                // Fallback to all agents if no agents found before createdAt
                 agents = saleAgentRepository.findAll();
             }
             if (agents.isEmpty()) {
@@ -84,9 +90,7 @@ public class ContractDummyData {
             Customer customer = customers.get(random.nextInt(customers.size()));
             SaleAgent agent = agents.get(random.nextInt(agents.size()));
 
-            Constants.ContractTypeEnum contractType = property.getTransactionType() == Constants.TransactionTypeEnum.SALE
-                    ? Constants.ContractTypeEnum.PURCHASE
-                    : Constants.ContractTypeEnum.RENTAL;
+            boolean isRental = property.getTransactionType() == Constants.TransactionTypeEnum.RENTAL;
 
             BigDecimal totalAmount = property.getPriceAmount();
             BigDecimal depositAmount = totalAmount.multiply(new BigDecimal("0.1")); // 10% deposit
@@ -94,56 +98,101 @@ public class ContractDummyData {
 
             LocalDateTime updatedAt = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
 
-            LocalDate startDate = createdAt.toLocalDate().plusDays(random.nextInt(30));
-            LocalDate endDate = contractType == Constants.ContractTypeEnum.RENTAL
-                    ? startDate.plusYears(1)
-                    : startDate.plusDays(90);
-
             Constants.ContractStatusEnum[] statuses = Constants.ContractStatusEnum.values();
             Constants.ContractStatusEnum status = statuses[random.nextInt(statuses.length)];
 
             LocalDateTime signedAt = timeGenerator.getRandomTimeAfter(updatedAt, LocalDateTime.now());
-            LocalDateTime completedAt = status == Constants.ContractStatusEnum.COMPLETED
-                    ? timeGenerator.getRandomTimeAfter(signedAt, LocalDateTime.now())
-                    : null;
 
-            Contract contract = Contract.builder()
-                    .property(property)
-                    .customer(customer)
-                    .agent(agent)
-                    .contractType(contractType)
-                    .contractNumber(String.format("CT%06d%04d", LocalDate.now().getYear(), i))
-                    .commissionAmount(commissionAmount)
-                    .startDate(startDate)
-                    .endDate(endDate)
-                    .specialTerms("Standard terms and conditions apply")
-                    .status(status)
-                    .cancellationReason("")
-                    .cancellationPenalty(BigDecimal.ZERO)
-                    .contractPaymentType(contractType == Constants.ContractTypeEnum.RENTAL
-                            ? Constants.ContractPaymentTypeEnum.MONTHLY_RENT
-                            : Constants.ContractPaymentTypeEnum.PAID_IN_FULL)
-                    .totalContractAmount(totalAmount)
-                    .depositAmount(depositAmount)
-                    .remainingAmount(totalAmount.subtract(depositAmount))
-                    .advancePaymentAmount(BigDecimal.ZERO)
-                    .installmentAmount(contractType == Constants.ContractTypeEnum.RENTAL ? 12 : 1)
-                    .progressMilestone(BigDecimal.ZERO)
-                    .finalPaymentAmount(totalAmount.subtract(depositAmount))
-                    .latePaymentPenaltyRate(new BigDecimal("0.05"))
-                    .specialConditions("No special conditions")
-                    .signedAt(signedAt)
-                    .completedAt(completedAt)
-                    .payments(new ArrayList<>())
-                    .build();
+            // Create deposit contract first
+            LocalDate depositStartDate = createdAt.toLocalDate().plusDays(random.nextInt(15));
+            LocalDate depositEndDate = depositStartDate.plusDays(30); // Deposit valid for 30 days
 
-            contract.setCreatedAt(createdAt);
-            contract.setUpdatedAt(updatedAt);
+            DepositContract depositContract = new DepositContract();
+            var mainContractType = isRental
+                    ? Constants.MainContractTypeEnum.RENTAL
+                    : Constants.MainContractTypeEnum.PURCHASE;
+            depositContract.setMainContractType(mainContractType);
+            depositContract.setProperty(property);
+            depositContract.setCustomer(customer);
+            depositContract.setAgent(agent);
+            depositContract.setStatus(status);
+            depositContract.setContractNumber(String.format("DEP%06d%04d", LocalDate.now().getYear(), i));
+            depositContract.setStartDate(depositStartDate);
+            depositContract.setEndDate(depositEndDate);
+            depositContract.setSpecialTerms("Standard deposit terms and conditions apply");
+            depositContract.setSignedAt(signedAt);
+            depositContract.setDepositAmount(depositAmount);
+            depositContract.setAgreedPrice(totalAmount);
+            depositContract.setCreatedAt(createdAt);
+            depositContract.setUpdatedAt(updatedAt);
+            depositContract.setPayments(new ArrayList<>());
 
-            contracts.add(contract);
+            depositContracts.add(depositContract);
+
+            // Create main contract (rental or purchase)
+            LocalDate mainStartDate = depositEndDate.plusDays(random.nextInt(7));
+
+            if (isRental) {
+                int monthCount = 12; // 1 year rental
+                LocalDate mainEndDate = mainStartDate.plusMonths(monthCount);
+
+                RentalContract rentalContract = new RentalContract();
+                rentalContract.setProperty(property);
+                rentalContract.setCustomer(customer);
+                rentalContract.setAgent(agent);
+                rentalContract.setStatus(status);
+                rentalContract.setContractNumber(String.format("RNT%06d%04d", LocalDate.now().getYear(), i));
+                rentalContract.setStartDate(mainStartDate);
+                rentalContract.setEndDate(mainEndDate);
+                rentalContract.setSpecialTerms("Standard rental terms and conditions apply");
+                rentalContract.setSignedAt(signedAt);
+                rentalContract.setDepositContract(depositContract);
+                rentalContract.setMonthCount(monthCount);
+                rentalContract.setMonthlyRentAmount(totalAmount); // For rental, price is monthly
+                rentalContract.setCommissionAmount(commissionAmount);
+                rentalContract.setLatePaymentPenaltyRate(new BigDecimal("0.05"));
+                rentalContract.setAccumulatedUnpaidPenalty(BigDecimal.ZERO);
+                rentalContract.setUnpaidMonthsCount(0);
+                rentalContract.setCreatedAt(createdAt);
+                rentalContract.setUpdatedAt(updatedAt);
+                rentalContract.setPayments(new ArrayList<>());
+
+                rentalContracts.add(rentalContract);
+            } else {
+                LocalDate mainEndDate = mainStartDate.plusDays(90); // 90 days to complete purchase
+
+                BigDecimal advancePayment = totalAmount.multiply(new BigDecimal("0.3")); // 30% advance
+
+                PurchaseContract purchaseContract = new PurchaseContract();
+                purchaseContract.setProperty(property);
+                purchaseContract.setCustomer(customer);
+                purchaseContract.setAgent(agent);
+                purchaseContract.setStatus(status);
+                purchaseContract.setContractNumber(String.format("PUR%06d%04d", LocalDate.now().getYear(), i));
+                purchaseContract.setStartDate(mainStartDate);
+                purchaseContract.setEndDate(mainEndDate);
+                purchaseContract.setSpecialTerms("Standard purchase terms and conditions apply");
+                purchaseContract.setSignedAt(signedAt);
+                purchaseContract.setDepositContract(depositContract);
+                purchaseContract.setPropertyValue(totalAmount);
+                purchaseContract.setAdvancePaymentAmount(advancePayment);
+                purchaseContract.setCommissionAmount(commissionAmount);
+                purchaseContract.setCreatedAt(createdAt);
+                purchaseContract.setUpdatedAt(updatedAt);
+                purchaseContract.setPayments(new ArrayList<>());
+
+                purchaseContracts.add(purchaseContract);
+            }
         }
 
-        contractRepository.saveAll(contracts);
-        log.info("Saved {} contracts to database", contracts.size());
+        // Save deposit contracts first (they are referenced by main contracts)
+        depositContractRepository.saveAll(depositContracts);
+        log.info("Saved {} deposit contracts to database", depositContracts.size());
+
+        rentalContractRepository.saveAll(rentalContracts);
+        log.info("Saved {} rental contracts to database", rentalContracts.size());
+
+        purchaseContractRepository.saveAll(purchaseContracts);
+        log.info("Saved {} purchase contracts to database", purchaseContracts.size());
     }
 }

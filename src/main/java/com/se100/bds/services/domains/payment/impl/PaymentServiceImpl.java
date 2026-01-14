@@ -5,11 +5,13 @@ import com.se100.bds.dtos.requests.payment.UpdatePaymentStatusRequest;
 import com.se100.bds.dtos.responses.payment.PaymentDetailResponse;
 import com.se100.bds.dtos.responses.payment.PaymentListItem;
 import com.se100.bds.exceptions.NotFoundException;
+import com.se100.bds.models.entities.contract.Contract;
 import com.se100.bds.models.entities.contract.Payment;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.repositories.domains.contract.PaymentRepository;
 import com.se100.bds.services.payment.PaymentGatewayService;
 import com.se100.bds.services.payment.dto.CreatePaymentSessionRequest;
+import com.se100.bds.services.payment.dto.CreatePaymentSessionResponse;
 import com.se100.bds.services.payment.payway.PaywayWebhookHandler;
 import com.se100.bds.services.payment.payway.dto.PaywayWebhookEvent;
 import com.se100.bds.services.domains.payment.PaymentService;
@@ -26,6 +28,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -42,6 +45,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static final String PAYOS_METHOD = "PAYOS";
     private final PaymentGatewayService paymentGatewayService;
+    private static final String CURRENCY_VND = "VND";
 
     @Override
     @Transactional(readOnly = true)
@@ -124,6 +128,44 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("Created service fee payment {} for property {}", finalPayment.getId(), property.getId());
 
         return mapToDetailResponse(finalPayment);
+    }
+
+    @Override
+    @Transactional
+    public Payment createContractPayment(
+            Contract contract, PaymentTypeEnum type, BigDecimal amount, String description,  int paymentDueDays
+    ) {
+        Payment payment = Payment.builder()
+                .contract(contract)
+                .property(contract.getProperty())
+                .payer(contract.getCustomer().getUser())
+                .paymentType(type)
+                .amount(amount)
+                .dueDate(LocalDate.now().plusDays(paymentDueDays))
+                .status(Constants.PaymentStatusEnum.PENDING)
+                .paymentMethod(PAYOS_METHOD)
+                .build();
+
+        Payment savedPayment = paymentRepository.save(payment);
+
+        CreatePaymentSessionRequest gatewayRequest = CreatePaymentSessionRequest.builder()
+                .amount(amount)
+                .currency(CURRENCY_VND)
+                .description(description)
+                .metadata(Map.of(
+                        "paymentType", type.getValue(),
+                        "contractId", contract.getId().toString(),
+                        "paymentId", savedPayment.getId().toString()
+                ))
+                .build();
+
+        CreatePaymentSessionResponse gatewayResponse = paymentGatewayService.createPaymentSession(
+                gatewayRequest,
+                savedPayment.getId().toString()
+        );
+
+        savedPayment.setPaywayPaymentId(gatewayResponse.getId());
+        return paymentRepository.save(savedPayment);
     }
 
     @Override

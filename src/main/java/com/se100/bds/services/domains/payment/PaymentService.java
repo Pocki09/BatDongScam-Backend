@@ -3,6 +3,8 @@ package com.se100.bds.services.domains.payment;
 import com.se100.bds.dtos.requests.payment.UpdatePaymentStatusRequest;
 import com.se100.bds.dtos.responses.payment.PaymentDetailResponse;
 import com.se100.bds.dtos.responses.payment.PaymentListItem;
+import com.se100.bds.models.entities.contract.Contract;
+import com.se100.bds.models.entities.contract.Payment;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.utils.Constants;
 import org.jetbrains.annotations.NotNull;
@@ -10,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -55,6 +58,9 @@ public interface PaymentService {
      * Create service fee payment (for property listing)
      */
     PaymentDetailResponse createServiceFeePayment(Property property);
+
+    Payment createContractPayment(Contract contract, Constants.PaymentTypeEnum type,
+                                  BigDecimal amount, String description,  int paymentDueDays);
 
     /**
      * Process a Payway webhook event (raw request body JSON string).

@@ -16,7 +16,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "contract")
-@Builder
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "contract_type", discriminatorType = DiscriminatorType.STRING)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,7 +25,9 @@ import java.util.List;
 @AttributeOverrides({
         @AttributeOverride(name = "id", column = @Column(name = "contract_id", nullable = false)),
 })
-public class Contract extends AbstractBaseEntity {
+public abstract class Contract extends AbstractBaseEntity {
+    // main contract parties
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "property_id", nullable = false)
     private Property property;
@@ -34,81 +37,57 @@ public class Contract extends AbstractBaseEntity {
     private Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agent_id", nullable = false)
+    @JoinColumn(name = "agent_id")
     private SaleAgent agent;
 
+    // contract details
+
+    @Column(name = "contract_type", insertable = false, updatable = false)
     @Enumerated(EnumType.STRING)
-    @Column(name = "contract_type", nullable = false)
     private Constants.ContractTypeEnum contractType;
-
-    @Column(name = "contract_number", nullable = false, unique = true, length = 50)
-    private String contractNumber;
-
-    @Column(name = "start_date", nullable = false)
-    private LocalDate startDate;
-
-    @Column(name = "end_date")
-    private LocalDate endDate;
-
-    @Column(name = "special_terms", nullable = false, columnDefinition = "TEXT")
-    private String specialTerms;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private Constants.ContractStatusEnum status;
 
+    /// Contract number (or ID) of the actual, physical contract document
+    @Column(name = "contract_number", unique = true, length = 50)
+    private String contractNumber;
+
+    /// Date when the contract terms becomes effective
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
+
+    /// Date when the contract terms ends
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    /// Date that the PHYSICAL contract is legalized and signed by all parties
+    @Column(name = "signed_at")
+    private LocalDateTime signedAt;
+
+    @Column(name = "special_terms", columnDefinition = "TEXT")
+    private String specialTerms;
+
+    // Cancellation specific fields
+
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")
     private String cancellationReason;
 
+    /// For deposit contracts, if null, this will use the deposit amount
     @Column(name = "cancellation_penalty", precision = 15, scale = 2)
     private BigDecimal cancellationPenalty;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "cancelled_by")
     private Constants.RoleEnum cancelledBy;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "contract_payment_type", nullable = false)
-    private Constants.ContractPaymentTypeEnum contractPaymentType;
-
-    @Column(name = "total_contract_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal totalContractAmount;
-
-    @Column(name = "commission_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal commissionAmount;
-
-    @Column(name = "deposit_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal depositAmount;
-
-    @Column(name = "remaining_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal remainingAmount;
-
-    @Column(name = "advance_payment_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal advancePaymentAmount;
-
-    @Column(name = "installment_amount", nullable = false)
-    private Integer installmentAmount;
-
-    @Column(name = "progress_milestone", nullable = false, precision = 15, scale = 2)
-    private BigDecimal progressMilestone;
-
-    @Column(name = "final_payment_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal finalPaymentAmount;
-
-    @Column(name = "late_payment_penalty_rate", nullable = false, precision = 5, scale = 4)
-    private BigDecimal latePaymentPenaltyRate;
-
-    @Column(name = "special_conditions", nullable = false, columnDefinition = "TEXT")
-    private String specialConditions;
-
-    @Column(name = "signed_at", nullable = false)
-    private LocalDateTime signedAt;
-
-    @Column(name = "completed_at")
-    private LocalDateTime completedAt;
+    // Payments relationship
 
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<Payment> payments = new ArrayList<>();
+
+    // Rating and review
 
     @Column(name = "rating")
     private Short rating;

@@ -23,12 +23,9 @@ public class CreateContractRequest {
     @Schema(description = "The property ID for this contract")
     private UUID propertyId;
 
-    @NotNull(message = "Customer ID is required")
-    @Schema(description = "The customer ID for this contract")
-    private UUID customerId;
-
     @NotNull(message = "Agent ID is required")
-    @Schema(description = "The agent ID handling this contract")
+    @Schema(description = "The agent ID handling this contract. Only takes effect when user is NOT a Sale Agent, " +
+            "otherwise, the agent ID will be set to the current user's ID.")
     private UUID agentId;
 
     @NotNull(message = "Contract type is required")
@@ -45,10 +42,6 @@ public class CreateContractRequest {
 
     @Schema(description = "Special terms for the contract")
     private String specialTerms;
-
-    @NotNull(message = "Contract payment type is required")
-    @Schema(description = "Payment type: MORTGAGE, MONTHLY_RENT, or PAID_IN_FULL")
-    private Constants.ContractPaymentTypeEnum contractPaymentType;
 
     @NotNull(message = "Total contract amount is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Total amount must be positive")

@@ -47,7 +47,7 @@ public class Notification extends AbstractBaseEntity {
     @Column(name = "is_read")
     private Boolean isRead;
 
-    @Column(name = "img_url", nullable = false)
+    @Column(name = "img_url")
     private String imgUrl;
 
     @Column(name = "read_at")
