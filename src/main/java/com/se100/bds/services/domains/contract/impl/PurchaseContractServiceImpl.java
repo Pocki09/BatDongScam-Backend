@@ -212,9 +212,24 @@ public class PurchaseContractServiceImpl implements PurchaseContractService {
     ) {
         boolean isAdmin = hasRole(RoleEnum.ADMIN);
         boolean isAgent = hasRole(RoleEnum.SALESAGENT);
+        boolean isCustomer = hasRole(RoleEnum.CUSTOMER);
+        boolean isOwner = hasRole(RoleEnum.PROPERTY_OWNER);
+        UUID currentUserId = userService.getUserId();
 
+        // Authorization logic:
+        // - Admin can query all
+        // - Agent can query their assigned contracts (will be filtered by agentId in spec)
+        // - Customer can query only their own contracts (customerId must match current user)
+        // - Owner can query only contracts for their properties (ownerId must match current user)
+        
         if (!isAdmin && !isAgent) {
-            throw new ForbiddenException("Only admins and sales agents can query purchase contracts");
+            if (isCustomer && customerId != null && customerId.equals(currentUserId)) {
+                // Customer querying their own contracts - allowed
+            } else if (isOwner && ownerId != null && ownerId.equals(currentUserId)) {
+                // Owner querying their property contracts - allowed
+            } else {
+                throw new ForbiddenException("You don't have permission to query these contracts");
+            }
         }
 
         Specification<PurchaseContract> spec = buildPurchaseContractSpecification(

@@ -8,6 +8,7 @@ import com.se100.bds.dtos.responses.contract.*;
 import com.se100.bds.services.domains.contract.DepositContractService;
 import com.se100.bds.services.domains.contract.PurchaseContractService;
 import com.se100.bds.services.domains.contract.RentalContractService;
+import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.utils.Constants.ContractStatusEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,6 +46,7 @@ public class ContractController extends AbstractBaseController {
     private final DepositContractService depositContractService;
     private final PurchaseContractService purchaseContractService;
     private final RentalContractService rentalContractService;
+    private final UserService userService;
 
     // =============================
     // DEPOSIT CONTRACT ENDPOINTS
@@ -964,5 +966,398 @@ public class ContractController extends AbstractBaseController {
     ) {
         var response = rentalContractService.completeRentalContract(contractId);
         return responseFactory.successSingle(response, "Rental contract completed successfully");
+    }
+
+    // =============================
+    // CUSTOMER - MY CONTRACTS
+    // =============================
+
+    @GetMapping("/my/deposit")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @Operation(
+            summary = "Get customer's deposit contracts",
+            description = "Returns paginated list of deposit contracts where the current user is the customer.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Deposit contracts retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<PageResponse<DepositContractListItem>> getMyDepositContracts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Sort by field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction")
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection,
+
+            @Parameter(description = "Filter by statuses")
+            @RequestParam(required = false) List<ContractStatusEnum> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        UUID currentUserId = userService.getUserId();
+
+        Page<DepositContractListItem> contracts = depositContractService.getDepositContracts(
+                pageable, statuses, currentUserId, null, null, null,
+                null, null, null, null, null
+        );
+
+        return responseFactory.successPage(contracts, "Your deposit contracts retrieved successfully");
+    }
+
+    @GetMapping("/my/purchase")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @Operation(
+            summary = "Get customer's purchase contracts",
+            description = "Returns paginated list of purchase contracts where the current user is the customer.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Purchase contracts retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<PageResponse<PurchaseContractListItem>> getMyPurchaseContracts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Sort by field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction")
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection,
+
+            @Parameter(description = "Filter by statuses")
+            @RequestParam(required = false) List<ContractStatusEnum> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        UUID currentUserId = userService.getUserId();
+
+        Page<PurchaseContractListItem> contracts = purchaseContractService.getPurchaseContracts(
+                pageable, statuses, currentUserId, null, null, null,
+                null, null, null
+        );
+
+        return responseFactory.successPage(contracts, "Your purchase contracts retrieved successfully");
+    }
+
+    @GetMapping("/my/rental")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @Operation(
+            summary = "Get customer's rental contracts",
+            description = "Returns paginated list of rental contracts where the current user is the customer.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Deposit contracts retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<PageResponse<RentalContractListItem>> getMyRentalContracts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Sort by field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction")
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection,
+
+            @Parameter(description = "Filter by statuses")
+            @RequestParam(required = false) List<ContractStatusEnum> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        UUID currentUserId = userService.getUserId();
+
+        Page<RentalContractListItem> contracts = rentalContractService.getRentalContracts(
+                pageable, statuses, currentUserId, null, null, null,
+                null, null, null, null, null
+        );
+
+        return responseFactory.successPage(contracts, "Your deposit contracts retrieved successfully");
+    }
+
+    // =============================
+    // PROPERTY OWNER - MY PROPERTIES CONTRACTS
+    // =============================
+
+    @GetMapping("/my-properties/deposit")
+    @PreAuthorize("hasRole('PROPERTY_OWNER')")
+    @Operation(
+            summary = "Get owner's property deposit contracts",
+            description = "Returns paginated list of deposit contracts for properties owned by the current user.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Deposit contracts retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<PageResponse<DepositContractListItem>> getMyPropertiesDepositContracts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Sort by field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction")
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection,
+
+            @Parameter(description = "Filter by statuses")
+            @RequestParam(required = false) List<ContractStatusEnum> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        UUID currentUserId = userService.getUserId();
+
+        // Filter by ownerId - the owner of the property
+        Page<DepositContractListItem> contracts = depositContractService.getDepositContracts(
+                pageable, statuses, null, null, null, currentUserId,
+                null, null, null, null, null
+        );
+
+        return responseFactory.successPage(contracts, "Your property deposit contracts retrieved successfully");
+    }
+
+    @GetMapping("/my-properties/purchase")
+    @PreAuthorize("hasRole('PROPERTY_OWNER')")
+    @Operation(
+            summary = "Get owner's property purchase contracts",
+            description = "Returns paginated list of purchase contracts for properties owned by the current user.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Purchase contracts retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<PageResponse<PurchaseContractListItem>> getMyPropertiesPurchaseContracts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Sort by field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction")
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection,
+
+            @Parameter(description = "Filter by statuses")
+            @RequestParam(required = false) List<ContractStatusEnum> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        UUID currentUserId = userService.getUserId();
+
+        // Filter by ownerId - the owner of the property
+        Page<PurchaseContractListItem> contracts = purchaseContractService.getPurchaseContracts(
+                pageable, statuses, null, null, null, currentUserId,
+                null, null, null
+        );
+
+        return responseFactory.successPage(contracts, "Your property purchase contracts retrieved successfully");
+    }
+
+    @GetMapping("/my-properties/rental")
+    @PreAuthorize("hasRole('PROPERTY_OWNER')")
+    @Operation(
+            summary = "Get owner's property rental contracts",
+            description = "Returns paginated list of rental contracts for properties owned by the current user.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Purchase contracts retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<PageResponse<RentalContractListItem>> getMyPropertiesRentalContracts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Sort by field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction")
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection,
+
+            @Parameter(description = "Filter by statuses")
+            @RequestParam(required = false) List<ContractStatusEnum> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        UUID currentUserId = userService.getUserId();
+
+        // Filter by ownerId - the owner of the property
+        Page<RentalContractListItem> contracts = rentalContractService.getRentalContracts(
+                pageable, statuses, null, null, null, currentUserId,
+                null, null, null, null, null
+        );
+
+        return responseFactory.successPage(contracts, "Your property purchase contracts retrieved successfully");
+    }
+
+    // =============================
+    // SALES AGENT - MY ASSIGNED CONTRACTS
+    // =============================
+
+    @GetMapping("/my-assigned/deposit")
+    @PreAuthorize("hasRole('SALESAGENT')")
+    @Operation(
+            summary = "Get agent's assigned deposit contracts",
+            description = "Returns paginated list of deposit contracts where the current user is the assigned agent.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Deposit contracts retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<PageResponse<DepositContractListItem>> getMyAssignedDepositContracts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Sort by field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction")
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection,
+
+            @Parameter(description = "Filter by statuses")
+            @RequestParam(required = false) List<ContractStatusEnum> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        UUID currentUserId = userService.getUserId();
+
+        Page<DepositContractListItem> contracts = depositContractService.getDepositContracts(
+                pageable, statuses, null, currentUserId, null, null,
+                null, null, null, null, null
+        );
+
+        return responseFactory.successPage(contracts, "Your assigned deposit contracts retrieved successfully");
+    }
+
+    @GetMapping("/my-assigned/purchase")
+    @PreAuthorize("hasRole('SALESAGENT')")
+    @Operation(
+            summary = "Get agent's assigned purchase contracts",
+            description = "Returns paginated list of purchase contracts where the current user is the assigned agent.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Purchase contracts retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<PageResponse<PurchaseContractListItem>> getMyAssignedPurchaseContracts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Sort by field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction")
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection,
+
+            @Parameter(description = "Filter by statuses")
+            @RequestParam(required = false) List<ContractStatusEnum> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        UUID currentUserId = userService.getUserId();
+
+        Page<PurchaseContractListItem> contracts = purchaseContractService.getPurchaseContracts(
+                pageable, statuses, null, currentUserId, null,
+                null, null, null, null
+        );
+
+        return responseFactory.successPage(contracts, "Your assigned purchase contracts retrieved successfully");
+    }
+
+    @GetMapping("/my-assigned/rental")
+    @PreAuthorize("hasRole('SALESAGENT')")
+    @Operation(
+            summary = "Get agent's assigned rental contracts",
+            description = "Returns paginated list of rental contracts where the current user is the assigned agent.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Deposit contracts retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<PageResponse<RentalContractListItem>> getMyAssignedRentalContracts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "Sort by field")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction")
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDirection,
+
+            @Parameter(description = "Filter by statuses")
+            @RequestParam(required = false) List<ContractStatusEnum> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        UUID currentUserId = userService.getUserId();
+
+        Page<RentalContractListItem> contracts = rentalContractService.getRentalContracts(
+                pageable, statuses, null, currentUserId, null, null,
+                null, null, null, null, null
+        );
+
+        return responseFactory.successPage(contracts, "Your assigned deposit contracts retrieved successfully");
     }
 }

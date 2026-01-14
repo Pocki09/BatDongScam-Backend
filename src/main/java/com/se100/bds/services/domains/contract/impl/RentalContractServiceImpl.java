@@ -220,9 +220,18 @@ public class RentalContractServiceImpl implements RentalContractService {
     ) {
         boolean isAdmin = hasRole(RoleEnum.ADMIN);
         boolean isAgent = hasRole(RoleEnum.SALESAGENT);
+        boolean isCustomer = hasRole(RoleEnum.CUSTOMER);
+        boolean isOwner = hasRole(RoleEnum.PROPERTY_OWNER);
+        UUID currentUserId = userService.getUserId();
 
         if (!isAdmin && !isAgent) {
-            throw new ForbiddenException("Only admins and sales agents can query rental contracts");
+            if (isCustomer && customerId != null && customerId.equals(currentUserId)) {
+                // Customer querying their own contracts - allowed
+            } else if (isOwner && ownerId != null && ownerId.equals(currentUserId)) {
+                // Owner querying their property contracts - allowed
+            } else {
+                throw new ForbiddenException("Only admins and sales agents can query rental contracts");
+            }
         }
 
         Specification<RentalContract> spec = buildRentalContractSpecification(

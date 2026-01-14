@@ -55,9 +55,11 @@ public class PropertyController extends AbstractBaseController {
             @Parameter(description = "Property payload in JSON format", required = true)
             @Valid @RequestPart("payload") CreatePropertyRequest request,
             @Parameter(description = "Optional property images")
-            @RequestPart(value = "images", required = false) MultipartFile[] images
+            @RequestPart(value = "images", required = false) MultipartFile[] images,
+            @Parameter(description = "Optional property documents")
+            @RequestPart(value = "documents", required = false) MultipartFile[] documents
     ) {
-        PropertyDetails propertyDetails = propertyService.createProperty(request, images);
+        PropertyDetails propertyDetails = propertyService.createProperty(request, images, documents);
         return responseFactory.successSingle(propertyDetails, "Property created successfully");
     }
 
@@ -74,9 +76,10 @@ public class PropertyController extends AbstractBaseController {
             @Parameter(description = "Updated property payload in JSON format", required = true)
             @Valid @RequestPart("payload") UpdatePropertyRequest request,
             @Parameter(description = "Optional new property images")
-            @RequestPart(value = "images", required = false) MultipartFile[] images
-    ) {
-        PropertyDetails propertyDetails = propertyService.updateProperty(propertyId, request, images);
+            @RequestPart(value = "images", required = false) MultipartFile[] images,
+            @Parameter(description = "Optional new property documents")
+            @RequestPart(value = "documents", required = false) MultipartFile[] documents) {
+        PropertyDetails propertyDetails = propertyService.updateProperty(propertyId, request, images, documents);
         return responseFactory.successSingle(propertyDetails, "Property updated successfully");
     }
 
@@ -329,5 +332,5 @@ public class PropertyController extends AbstractBaseController {
         log.info("Deleting property type - id: {}", id);
         propertyService.deletePropertyType(id);
         return responseFactory.successSingle(null, "Property type deleted successfully");
-    }
+}
 }
