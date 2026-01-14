@@ -629,6 +629,28 @@ public class DepositContractServiceImpl implements DepositContractService {
         PropertyOwner owner = contract.getProperty().getOwner();
         User ownerUser = owner.getUser();
 
+        // ensure owner has bank details
+        if (ownerUser.getBankAccountNumber() == null || ownerUser.getBankAccountName() == null || ownerUser.getBankBin() == null) {
+            log.error("Cannot trigger payout to owner {} for contract {}: missing bank details",
+                    owner.getId(), contract.getId());
+            // send notification to admin to manually transfer
+            notificationService.createNotification(
+                    // TODO: put the admin getter somewhere portable and reusable
+                    userService.findByEmail("admin@example.com"),
+                    NotificationTypeEnum.SYSTEM_ALERT,
+                    "Payout Failed - Missing Bank Details",
+                    String.format("Cannot process payout of %s VND to property owner '%s' (ID: %s) for deposit contract %s due to missing bank details. Please process manually.",
+                            amount.toPlainString(),
+                            ownerUser.getFullName(),
+                            ownerUser.getId(),
+                            contract.getId()),
+                    RelatedEntityTypeEnum.CONTRACT,
+                    contract.getId().toString(),
+                    null
+            );
+            return;
+        }
+
         // TODO: Add payout entity tracking when entity is added
         CreatePayoutSessionRequest payoutRequest = CreatePayoutSessionRequest.builder()
                 .amount(amount)
@@ -652,6 +674,28 @@ public class DepositContractServiceImpl implements DepositContractService {
 
     private void triggerPayoutToCustomer(DepositContract contract, BigDecimal amount, String description) {
         User customerUser = contract.getCustomer().getUser();
+
+        // ensure owner has bank details
+        if (customerUser.getBankAccountNumber() == null || customerUser.getBankAccountName() == null || customerUser.getBankBin() == null) {
+            log.error("Cannot trigger payout to owner {} for contract {}: missing bank details",
+                    customerUser.getId(), contract.getId());
+            // send notification to admin to manually transfer
+            notificationService.createNotification(
+                    // TODO: put the admin getter somewhere portable and reusable
+                    userService.findByEmail("admin@example.com"),
+                    NotificationTypeEnum.SYSTEM_ALERT,
+                    "Payout Failed - Missing Bank Details",
+                    String.format("Cannot process payout of %s VND to customer '%s' (ID: %s) for deposit contract %s due to missing bank details. Please process manually.",
+                            amount.toPlainString(),
+                            customerUser.getFullName(),
+                            customerUser.getId(),
+                            contract.getId()),
+                    RelatedEntityTypeEnum.CONTRACT,
+                    contract.getId().toString(),
+                    null
+            );
+            return;
+        }
 
         // TODO: Add payout entity tracking when entity is added
         CreatePayoutSessionRequest payoutRequest = CreatePayoutSessionRequest.builder()

@@ -1,10 +1,11 @@
 package com.se100.bds.services.domains.payment.webhook.impl;
 
 import com.se100.bds.models.entities.contract.Payment;
-import com.se100.bds.models.entities.contract.PurchaseContract;
+
 import com.se100.bds.services.domains.contract.PurchaseContractService;
 import com.se100.bds.services.domains.payment.webhook.PaymentGatewayWebhookEvent;
 import com.se100.bds.services.domains.payment.webhook.PaymentSucceededSideEffectHandler;
+import com.se100.bds.utils.Constants;
 import com.se100.bds.utils.Constants.PaymentTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ public class PurchasePaymentSucceededHandler implements PaymentSucceededSideEffe
 
     @Override
     public boolean supports(Payment payment) {
-        if (payment == null || !(payment.getContract() instanceof PurchaseContract)) {
+        if (payment == null || !(payment.getContract().getContractType() == Constants.ContractTypeEnum.PURCHASE)) {
             return false;
         }
         PaymentTypeEnum type = payment.getPaymentType();
@@ -36,7 +37,7 @@ public class PurchasePaymentSucceededHandler implements PaymentSucceededSideEffe
             return;
         }
 
-        PurchaseContract purchaseContract = (PurchaseContract) payment.getContract();
+        var purchaseContract = payment.getContract();
 
         log.info("Purchase payment succeeded: type={}, paymentId={}, contractId={}, gatewayEventId={}",
                 payment.getPaymentType(),
