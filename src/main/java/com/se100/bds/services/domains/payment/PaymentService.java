@@ -45,6 +45,26 @@ public interface PaymentService {
     );
 
     /**
+     * Get payments where the user is the payer (for customers and property owners)
+     */
+    @Transactional(readOnly = true)
+    Page<PaymentListItem> getPaymentsByPayer(
+            Pageable pageable,
+            @NotNull UUID payerId,
+            List<Constants.PaymentStatusEnum> statuses
+    );
+
+    /**
+     * Get payments where the user is the payee (for agents - salary, bonus, commission)
+     */
+    @Transactional(readOnly = true)
+    Page<PaymentListItem> getPaymentsByPayee(
+            Pageable pageable,
+            @NotNull UUID payeeId,
+            List<Constants.PaymentStatusEnum> statuses
+    );
+
+    /**
      * Get payment detail by ID
      */
     PaymentDetailResponse getPaymentById(UUID paymentId);
@@ -64,4 +84,11 @@ public interface PaymentService {
      * Signature verification is handled at the controller layer.
      */
     void handlePaywayWebhook(String rawBody);
+
+    /**
+     * Check if a payment is accessible by a property owner
+     * (i.e., the payment is for one of their properties)
+     */
+    @Transactional(readOnly = true)
+    boolean isPaymentAccessibleByPropertyOwner(UUID paymentId, UUID ownerUserId);
 }

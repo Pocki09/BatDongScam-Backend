@@ -398,7 +398,7 @@ public class AccountController extends AbstractBaseController {
         return responseFactory.successPage(agentPage, "Sale agents retrieved successfully");
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALESAGENT')")
     @GetMapping("/customers")
     @Operation(
             summary = "Get all customers with filters",

@@ -5,13 +5,11 @@ import com.se100.bds.dtos.requests.payment.UpdatePaymentStatusRequest;
 import com.se100.bds.dtos.responses.payment.PaymentDetailResponse;
 import com.se100.bds.dtos.responses.payment.PaymentListItem;
 import com.se100.bds.exceptions.NotFoundException;
-import com.se100.bds.models.entities.contract.Contract;
 import com.se100.bds.models.entities.contract.Payment;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.repositories.domains.contract.PaymentRepository;
 import com.se100.bds.services.payment.PaymentGatewayService;
 import com.se100.bds.services.payment.dto.CreatePaymentSessionRequest;
-import com.se100.bds.services.payment.dto.CreatePaymentSessionResponse;
 import com.se100.bds.services.payment.payway.PaywayWebhookHandler;
 import com.se100.bds.services.payment.payway.dto.PaywayWebhookEvent;
 import com.se100.bds.services.domains.payment.PaymentService;
@@ -82,6 +80,69 @@ public class PaymentServiceImpl implements PaymentService {
     ) {
         Page<Payment> payments = paymentRepository.findAllByProperty_Id(propertyId, pageable);
         return payments.map(this::mapToListItem);
+    }
+
+    // get payments where user is the payer
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PaymentListItem> getPaymentsByPayer(
+            Pageable pageable,
+            @NotNull UUID payerId,
+            List<PaymentStatusEnum> statuses) {
+        Specification<Payment> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // Filter by payer - check multiple paths:
+            // 1. Direct payer field
+            // 2. Contract customer's user
+            // 3. Property owner's user (for service fees)
+            Predicate directPayer = cb.equal(root.get("payer").get("id"), payerId);
+            Predicate contractCustomer = cb.equal(root.get("contract").get("customer").get("user").get("id"), payerId);
+            Predicate propertyOwner = cb.equal(root.get("property").get("owner").get("user").get("id"), payerId);
+
+            predicates.add(cb.or(directPayer, contractCustomer, propertyOwner));
+
+            // Filter by status if provided
+            if (statuses != null && !statuses.isEmpty()) {
+                predicates.add(root.get("status").in(statuses));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<Payment> payments = paymentRepository.findAll(spec, pageable);
+        return payments.map(this::mapToListItem);
+    }
+
+    // get payments where user is the payee (agent payouts)
+    // NOTE: Agent payouts (salary, bonus) not yet implemented in database schema
+    // The Payment entity doesn't have a payee/saleAgent field for this purpose
+    // TODO: Add payee_user_id field to Payment entity for agent payouts
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PaymentListItem> getPaymentsByPayee(
+            Pageable pageable,
+            @NotNull UUID payeeId,
+            List<PaymentStatusEnum> statuses) {
+        // Return empty page until database schema is extended to support agent payouts
+        log.warn("Agent payouts feature not yet implemented - returning empty result");
+        return Page.empty(pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isPaymentAccessibleByPropertyOwner(UUID paymentId, UUID ownerUserId) {
+        return paymentRepository.findById(paymentId)
+                .map(payment -> {
+                    // Check if payment's property belongs to the owner
+                    if (payment.getProperty() != null
+                            && payment.getProperty().getOwner() != null
+                            && payment.getProperty().getOwner().getUser() != null) {
+                        return payment.getProperty().getOwner().getUser().getId().equals(ownerUserId);
+                    }
+                    return false;
+                })
+                .orElse(false);
     }
 
     @Override

@@ -3,6 +3,8 @@ package com.se100.bds.controllers.external;
 import com.se100.bds.dtos.requests.payment.UpdatePaymentStatusRequest;
 import com.se100.bds.dtos.responses.payment.PaymentDetailResponse;
 import com.se100.bds.dtos.responses.payment.PaymentListItem;
+import com.se100.bds.models.entities.contract.Contract;
+import com.se100.bds.models.entities.contract.Payment;
 import com.se100.bds.models.entities.property.Property;
 import com.se100.bds.services.domains.payment.PaymentService;
 import com.se100.bds.services.payment.payway.PaywayWebhookSignatureVerifier;
@@ -19,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
@@ -66,6 +69,18 @@ class PaywayWebhookControllerTest {
                 }
 
                 @Override
+                public Page<PaymentListItem> getPaymentsByPayer(Pageable pageable, @NotNull UUID payerId,
+                        List<PaymentStatusEnum> statuses) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public Page<PaymentListItem> getPaymentsByPayee(Pageable pageable, @NotNull UUID payeeId,
+                        List<PaymentStatusEnum> statuses) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
                 public PaymentDetailResponse getPaymentById(UUID paymentId) {
                     throw new UnsupportedOperationException();
                 }
@@ -83,6 +98,11 @@ class PaywayWebhookControllerTest {
                 @Override
                 public void handlePaywayWebhook(String rawBody) {
                     // no-op for slice test
+                }
+
+                @Override
+                public boolean isPaymentAccessibleByPropertyOwner(UUID paymentId, UUID ownerUserId) {
+                    return false;
                 }
             };
         }

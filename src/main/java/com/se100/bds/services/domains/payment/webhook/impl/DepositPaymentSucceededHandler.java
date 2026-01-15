@@ -1,6 +1,5 @@
 package com.se100.bds.services.domains.payment.webhook.impl;
 
-import com.se100.bds.models.entities.contract.DepositContract;
 import com.se100.bds.models.entities.contract.Payment;
 import com.se100.bds.services.domains.contract.DepositContractService;
 import com.se100.bds.services.domains.payment.webhook.PaymentGatewayWebhookEvent;
@@ -23,9 +22,7 @@ public class DepositPaymentSucceededHandler implements PaymentSucceededSideEffec
 
     @Override
     public boolean supports(Payment payment) {
-        return payment != null &&
-               payment.getPaymentType() == PaymentTypeEnum.DEPOSIT &&
-               payment.getContract() instanceof DepositContract;
+        return payment != null && payment.getPaymentType() == PaymentTypeEnum.DEPOSIT;
     }
 
     @Override
@@ -35,15 +32,15 @@ public class DepositPaymentSucceededHandler implements PaymentSucceededSideEffec
             return;
         }
 
-        DepositContract depositContract = (DepositContract) payment.getContract();
+        var contractId = payment.getContract().getId();
 
         log.info("DEPOSIT payment succeeded for paymentId={}, contractId={}, gatewayEventId={}",
                 payment.getId(),
-                depositContract.getId(),
+                contractId,
                 event != null ? event.getExternalEventId() : null);
 
         // Trigger contract service to check if contract should transition to ACTIVE
-        depositContractService.onDepositPaymentCompleted(depositContract.getId());
+        depositContractService.onDepositPaymentCompleted(contractId);
     }
 }
 

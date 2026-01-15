@@ -37,20 +37,20 @@ public class PurchasePaymentSucceededHandler implements PaymentSucceededSideEffe
             return;
         }
 
-        var purchaseContract = payment.getContract();
+        var contractId = payment.getContract().getId();
 
         log.info("Purchase payment succeeded: type={}, paymentId={}, contractId={}, gatewayEventId={}",
                 payment.getPaymentType(),
                 payment.getId(),
-                purchaseContract.getId(),
+                contractId,
                 event != null ? event.getExternalEventId() : null);
 
         if (payment.getPaymentType() == PaymentTypeEnum.ADVANCE) {
             // Advance payment completed - notify agent
-            purchaseContractService.onAdvancePaymentCompleted(purchaseContract.getId());
+            purchaseContractService.onAdvancePaymentCompleted(contractId);
         } else if (payment.getPaymentType() == PaymentTypeEnum.FULL_PAY) {
             // Final payment completed - complete the contract
-            purchaseContractService.onFinalPaymentCompleted(purchaseContract.getId());
+            purchaseContractService.onFinalPaymentCompleted(contractId);
         }
     }
 }

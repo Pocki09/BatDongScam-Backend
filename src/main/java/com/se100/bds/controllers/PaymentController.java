@@ -151,6 +151,46 @@ public class PaymentController extends AbstractBaseController {
         return responseFactory.successPage(payments, "Property payments retrieved successfully");
     }
 
+    // Get my payments (payments where I am the payer)
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'PROPERTY_OWNER')")
+    @Operation(summary = "Get my payments", description = "Retrieve paginated payments where the authenticated user is the payer", security = @SecurityRequirement(name = SECURITY_SCHEME_NAME))
+    public ResponseEntity<PageResponse<PaymentListItem>> getMyPayments(
+            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Filter by payment statuses") @RequestParam(required = false) List<PaymentStatusEnum> statuses) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        UUID currentUserId = userService.getUserId();
+
+        Page<PaymentListItem> payments = paymentService.getPaymentsByPayer(pageable, currentUserId, statuses);
+
+        return responseFactory.successPage(payments, "My payments retrieved successfully");
+    }
+
+    // Get my payouts (payments where I am the payee - for agents)
+    @GetMapping("/my-payouts")
+    @PreAuthorize("hasRole('SALESAGENT')")
+    @Operation(
+            summary = "Get my payouts",
+            description = "Retrieve paginated payouts where the authenticated agent is the payee (salary, bonus, commission)",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<PageResponse<PaymentListItem>> getMyPayouts(
+            @Parameter(description = "Page number (0-based)")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Filter by payment statuses")
+            @RequestParam(required = false) List<PaymentStatusEnum> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        UUID currentUserId = userService.getUserId();
+
+        Page<PaymentListItem> payments = paymentService.getPaymentsByPayee(pageable, currentUserId, statuses);
+
+        return responseFactory.successPage(payments, "My payouts retrieved successfully");
+    }
+
     @GetMapping("/admin/{paymentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
     @Operation(
@@ -166,12 +206,14 @@ public class PaymentController extends AbstractBaseController {
         return responseFactory.successSingle(payment, "Payment retrieved successfully");
     }
 
-    // Get payment detail by ID for non-admins (only if they are the payer)
+    // Get payment detail by ID for non-admins
+    // Customers: can view if they are the payer
+    // Owners: can view if they are the payer (SERVICE_FEE) OR if payment is for their property
     @GetMapping("/{paymentId}")
     @PreAuthorize("hasAnyRole('PROPERTY_OWNER', 'CUSTOMER', 'ADMIN')")
     @Operation(
-            summary = "Get payment details (Owner)",
-            description = "Retrieve a payment resource by ID if the authenticated owner is the payer",
+            summary = "Get payment details",
+            description = "Retrieve a payment resource by ID if the authenticated user has access",
             security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
     )
     public ResponseEntity<SingleResponse<PaymentDetailResponse>> getPaymentByIdForOwner(
@@ -180,13 +222,28 @@ public class PaymentController extends AbstractBaseController {
     ) {
         PaymentDetailResponse payment = paymentService.getPaymentById(paymentId);
         var currentUser = userService.getUser();
-        if (currentUser.getRole() != Constants.RoleEnum.ADMIN) {
-            if (payment.getPayer() == null || !payment.getPayer().getId().equals(userService.getUserId())) {
-                return responseFactory.sendSingle(null,
-                        "Access denied to the requested payment", HttpStatus.FORBIDDEN);
+        if (currentUser.getRole() == Constants.RoleEnum.ADMIN) {
+            return responseFactory.successSingle(payment, "Payment retrieved successfully");
+        }
+
+        // Check if current user is the payer
+        UUID payerIdFromPayment = payment.getPayer() != null ? payment.getPayer().getId() : null;
+        boolean isPayerMatch = payerIdFromPayment != null && payerIdFromPayment.equals(currentUser.getId());
+
+        if (isPayerMatch) {
+            return responseFactory.successSingle(payment, "Payment retrieved successfully");
+        }
+
+        // For property owners, also allow viewing payments for their properties
+        // This is checked by the service layer when fetching the payment
+        if (currentUser.getRole() == Constants.RoleEnum.PROPERTY_OWNER) {
+            // Check if payment belongs to one of owner's properties
+            boolean hasAccess = paymentService.isPaymentAccessibleByPropertyOwner(paymentId, currentUser.getId());
+            if (hasAccess) {
+                return responseFactory.successSingle(payment, "Payment retrieved successfully");
             }
         }
-        return responseFactory.successSingle(payment, "Payment retrieved successfully");
+        return responseFactory.sendSingle(null, "Access denied to the requested payment", HttpStatus.FORBIDDEN);
     }
 
     // get payment link for payment id for authenticated users
