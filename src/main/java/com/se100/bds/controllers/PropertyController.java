@@ -47,7 +47,7 @@ public class PropertyController extends AbstractBaseController {
     private final PropertyService propertyService;
 
     /// Get assigned property's contract history (both 5 years in the future and 2.5 future, 2.5 past)
-    @PreAuthorize("hasAnyRole('ADMIN','SALES_AGENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','SALESAGENT')")
     @GetMapping("/{propertyId}/contract-history")
     @Operation(
             summary = "Get property contract history",

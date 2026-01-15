@@ -100,6 +100,10 @@ public class ContractDummyData {
 
             Constants.ContractStatusEnum[] statuses = Constants.ContractStatusEnum.values();
             Constants.ContractStatusEnum status = statuses[random.nextInt(statuses.length)];
+            var cancelledDate = timeGenerator.getRandomTimeAfter(createdAt, LocalDateTime.now());
+            if (status == Constants.ContractStatusEnum.CANCELLED) {
+                updatedAt = cancelledDate;
+            }
 
             LocalDateTime signedAt = timeGenerator.getRandomTimeAfter(updatedAt, LocalDateTime.now());
 
@@ -126,6 +130,12 @@ public class ContractDummyData {
             depositContract.setCreatedAt(createdAt);
             depositContract.setUpdatedAt(updatedAt);
             depositContract.setPayments(new ArrayList<>());
+
+            if (status == Constants.ContractStatusEnum.CANCELLED) {
+                depositContract.setCancellationReason("Dummy data cancellation reason");
+                depositContract.setCancelledBy(Constants.RoleEnum.CUSTOMER);
+                depositContract.setCancelledAt(cancelledDate);
+            }
 
             depositContracts.add(depositContract);
 
@@ -157,6 +167,12 @@ public class ContractDummyData {
                 rentalContract.setUpdatedAt(updatedAt);
                 rentalContract.setPayments(new ArrayList<>());
 
+                if (status == Constants.ContractStatusEnum.CANCELLED) {
+                    rentalContract.setCancellationReason("Dummy data cancellation reason");
+                    rentalContract.setCancelledBy(Constants.RoleEnum.CUSTOMER);
+                    rentalContract.setCancelledAt(cancelledDate);
+                }
+
                 rentalContracts.add(rentalContract);
             } else {
                 LocalDate mainEndDate = mainStartDate.plusDays(90); // 90 days to complete purchase
@@ -180,6 +196,12 @@ public class ContractDummyData {
                 purchaseContract.setCreatedAt(createdAt);
                 purchaseContract.setUpdatedAt(updatedAt);
                 purchaseContract.setPayments(new ArrayList<>());
+
+                if (status == Constants.ContractStatusEnum.CANCELLED) {
+                    purchaseContract.setCancellationReason("Dummy data cancellation reason");
+                    purchaseContract.setCancelledBy(Constants.RoleEnum.CUSTOMER);
+                    purchaseContract.setCancelledAt(cancelledDate);
+                }
 
                 purchaseContracts.add(purchaseContract);
             }

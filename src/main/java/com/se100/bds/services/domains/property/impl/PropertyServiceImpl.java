@@ -1137,11 +1137,14 @@ public class PropertyServiceImpl implements PropertyService {
         return datapoints
             .map(c -> {
                 if (c.getStatus() == Constants.ContractStatusEnum.CANCELLED) {
-                    return PropertyContractHistoryDatapoint.builder()
+                    var a = PropertyContractHistoryDatapoint.builder()
                         .startDate(c.getStartDate())
-                        .endDate(c.getCancelledAt().toLocalDate())
-                        .status(c.getStatus())
-                        .build();
+                        .endDate(c.getEndDate())
+                        .status(c.getStatus());
+                    if (c.getCancelledAt() != null) {
+                        a.endDate(c.getCancelledAt().toLocalDate());
+                    }
+                    return a.build();
                 }
                 return PropertyContractHistoryDatapoint.builder()
                         .startDate(c.getStartDate())
