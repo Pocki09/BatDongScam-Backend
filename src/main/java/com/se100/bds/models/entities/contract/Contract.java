@@ -82,6 +82,9 @@ public abstract class Contract extends AbstractBaseEntity {
     @Column(name = "cancelled_by")
     private Constants.RoleEnum cancelledBy;
 
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
     // Payments relationship
 
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)

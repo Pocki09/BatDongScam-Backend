@@ -480,6 +480,7 @@ public class RentalContractServiceImpl implements RentalContractService {
         contract.setStatus(ContractStatusEnum.CANCELLED);
         contract.setCancellationReason("Voided by admin");
         contract.setCancelledBy(RoleEnum.ADMIN);
+        contract.setCancelledAt(LocalDateTime.now());
 
         RentalContract saved = rentalContractRepository.save(contract);
         log.info("Voided rental contract {} by admin", contractId);
@@ -925,6 +926,7 @@ public class RentalContractServiceImpl implements RentalContractService {
                 .specialTerms(contract.getSpecialTerms())
                 .cancellationReason(contract.getCancellationReason())
                 .cancelledBy(contract.getCancelledBy())
+                .cancelledAt(contract.getCancelledAt())
                 .property(PropertySummary.builder()
                         .id(property.getId())
                         .title(property.getTitle())

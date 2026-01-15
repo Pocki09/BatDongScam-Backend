@@ -1,5 +1,6 @@
 package com.se100.bds.services.domains.property.impl;
 
+import com.se100.bds.dtos.responses.property.PropertyContractHistoryDatapoint;
 import com.se100.bds.dtos.responses.property.SimplePropertyCard;
 import com.se100.bds.dtos.requests.property.CreatePropertyRequest;
 import com.se100.bds.dtos.requests.property.CreatePropertyTypeRequest;
@@ -21,6 +22,7 @@ import com.se100.bds.models.entities.property.PropertyType;
 import com.se100.bds.models.entities.user.PropertyOwner;
 import com.se100.bds.models.entities.user.SaleAgent;
 import com.se100.bds.models.entities.user.User;
+import com.se100.bds.repositories.domains.contract.ContractRepository;
 import com.se100.bds.repositories.domains.document.DocumentTypeRepository;
 import com.se100.bds.repositories.domains.location.WardRepository;
 import com.se100.bds.repositories.domains.property.PropertyRepository;
@@ -53,6 +55,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -99,6 +102,7 @@ public class PropertyServiceImpl implements PropertyService {
     private final PaymentService paymentService;
     private final NotificationService notificationService;
     private final CustomerFavoriteService customerFavoriteService;
+    private final ContractRepository contractRepository;
 
     @Override
     public Page<Property> getAll(Pageable pageable) {
@@ -1097,6 +1101,55 @@ public class PropertyServiceImpl implements PropertyService {
         });
 
         return cards;
+    }
+
+    @Override
+    public List<PropertyContractHistoryDatapoint> getPropertyContractHistory(UUID propertyId, boolean includePastContracts) {
+        LocalDate startDate, endDate;
+        if (includePastContracts) {
+            startDate = LocalDate.now().minusYears(2).minusMonths(6);
+            endDate = LocalDate.now().plusYears(2).plusMonths(6);
+        } else {
+            startDate = LocalDate.now();
+            endDate = LocalDate.now().plusYears(5);
+        }
+
+        // check if property exists
+        propertyRepository.findById(propertyId)
+            .orElseThrow(() -> new NotFoundException("Property not found with id: " + propertyId));
+
+        List<Constants.ContractStatusEnum> allowedStatuses = List.of(
+            Constants.ContractStatusEnum.ACTIVE,
+            Constants.ContractStatusEnum.COMPLETED,
+            Constants.ContractStatusEnum.CANCELLED
+        );
+
+        // This abomination of code should not exist.
+        var datapoints = contractRepository
+            .findAllByProperty_IdAndStartDateAfterAndEndDateBeforeAndContractTypeNot(
+                propertyId,
+                startDate,
+                endDate,
+                Constants.ContractTypeEnum.DEPOSIT
+            ).stream()
+            .filter(x -> allowedStatuses.contains(x.getStatus()));
+
+        return datapoints
+            .map(c -> {
+                if (c.getStatus() == Constants.ContractStatusEnum.CANCELLED) {
+                    return PropertyContractHistoryDatapoint.builder()
+                        .startDate(c.getStartDate())
+                        .endDate(c.getCancelledAt().toLocalDate())
+                        .status(c.getStatus())
+                        .build();
+                }
+                return PropertyContractHistoryDatapoint.builder()
+                        .startDate(c.getStartDate())
+                        .endDate(c.getEndDate())
+                        .status(c.getStatus())
+                        .build();
+            })
+            .toList();
     }
 
     /**

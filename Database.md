@@ -1,912 +1,427 @@
-# Database Schema Documentation
+# Database Tables Documentation
 
-## Overview
-This document describes the database schema for the Real Estate System (RES-Backend). The system uses:
-- **PostgreSQL** for relational data (entities)
-- **MongoDB** for analytics, reports, and customer preferences
+This document provides detailed information about all tables in the BatDongScam database system.
 
 ---
 
-## PostgreSQL Tables (Relational Database)
+## Table: appointment
 
-### 1. Users and Authentication
-
-#### Table: `users`
-Base user table with authentication information.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| user_id | UUID | PK, NOT NULL | Primary key |
-| username | VARCHAR(50) | UNIQUE, NOT NULL | Login username |
-| password | VARCHAR(255) | NOT NULL | Encrypted password |
-| email | VARCHAR(100) | UNIQUE, NOT NULL | User email |
-| phone_number | VARCHAR(20) | NOT NULL | Contact phone |
-| full_name | VARCHAR(100) | NOT NULL | Full name |
-| avatar_url | TEXT | NOT NULL | Profile picture URL |
-| role | ENUM | NOT NULL | USER, CUSTOMER, PROPERTY_OWNER, SALE_AGENT, ADMIN |
-| status | ENUM | NOT NULL | ACTIVE, INACTIVE, BANNED |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
-
-#### Table: `customers`
-Customer-specific information (inherits from users).
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| customer_id | UUID | PK, FK(users) | References user_id |
-| tier | ENUM | NOT NULL | BRONZE, SILVER, GOLD, PLATINUM |
-
-#### Table: `sale_agents`
-Sale agent-specific information (inherits from users).
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| agent_id | UUID | PK, FK(users) | References user_id |
-| performance_tier | ENUM | NOT NULL | BRONZE, SILVER, GOLD, PLATINUM, DIAMOND |
-| commission_rate | DECIMAL(5,4) | NOT NULL | Commission percentage |
-
-#### Table: `property_owners`
-Property owner-specific information (inherits from users).
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| owner_id | UUID | PK, FK(users) | References user_id |
-| contribution_tier | ENUM | NOT NULL | BRONZE, SILVER, GOLD, PLATINUM, DIAMOND |
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | appointment_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each appointment |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | agent_notes | text | | Notes written by the agent about the appointment |
+| 5 | cancelled_at | timestamp(6) without time zone | | Timestamp when appointment was cancelled |
+| 6 | cancelled_by | smallint | | Enum indicating role of who cancelled (customer/agent) |
+| 7 | cancelled_reason | varchar(255) | | Reason provided for cancellation |
+| 8 | comment | text | | Customer's comment/feedback about the appointment |
+| 9 | confirmed_date | timestamp(6) without time zone | | When the appointment was confirmed |
+| 10 | customer_interest_level | varchar(255) | | Level of customer interest after viewing |
+| 11 | customer_requirements | text | | Customer's specific requirements or preferences |
+| 12 | rating | smallint | | Rating given by customer for the appointment |
+| 13 | requested_date | timestamp(6) without time zone | NOT NULL | When the appointment is requested to take place |
+| 14 | status | smallint | | Current status of appointment (pending/confirmed/completed/cancelled) |
+| 15 | viewing_outcome | text | | Notes about the outcome after property viewing |
+| 16 | agent_id | uuid | FOREIGN KEY → sale_agents | Agent assigned to handle this appointment |
+| 17 | customer_id | uuid | FOREIGN KEY → customers, NOT NULL | Customer who booked the appointment |
+| 18 | property_id | uuid | FOREIGN KEY → properties, NOT NULL | Property to be viewed |
 
 ---
 
-### 2. Location Management
+## Table: cities
 
-#### Table: `cities`
-City/Province information.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| city_id | UUID | PK, NOT NULL | Primary key |
-| name | VARCHAR(100) | NOT NULL | City name |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
-
-#### Table: `districts`
-District information within cities.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| district_id | UUID | PK, NOT NULL | Primary key |
-| city_id | UUID | FK(cities), NOT NULL | Parent city |
-| name | VARCHAR(100) | NOT NULL | District name |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
-
-#### Table: `wards`
-Ward/Commune information within districts.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| ward_id | UUID | PK, NOT NULL | Primary key |
-| district_id | UUID | FK(districts), NOT NULL | Parent district |
-| name | VARCHAR(100) | NOT NULL | Ward name |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | city_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each city |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | avg_land_price | numeric(15, 2) | | Average land price in the city |
+| 5 | city_name | varchar(255) | | Name of the city |
+| 6 | description | varchar(255) | | Description of the city |
+| 7 | img_url | varchar(255) | | URL to city's representative image |
+| 8 | is_active | boolean | | Whether this city is currently active in the system |
+| 9 | population | integer | | Population count of the city |
+| 10 | total_area | numeric(15, 2) | | Total area of the city (in square meters/kilometers) |
 
 ---
 
-### 3. Property Management
+## Table: contract
 
-#### Table: `property_types`
-Types of properties (House, Apartment, Land, etc.).
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| property_type_id | UUID | PK, NOT NULL | Primary key |
-| name | VARCHAR(100) | NOT NULL | Type name |
-| description | TEXT | NOT NULL | Type description |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
-
-#### Table: `properties`
-Main property listing information.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| property_id | UUID | PK, NOT NULL | Primary key |
-| owner_id | UUID | FK(property_owners), NOT NULL | Property owner |
-| property_type_id | UUID | FK(property_types), NOT NULL | Type of property |
-| ward_id | UUID | FK(wards), NOT NULL | Location ward |
-| title | VARCHAR(200) | NOT NULL | Property title |
-| description | TEXT | NOT NULL | Full description |
-| address | VARCHAR(255) | NOT NULL | Street address |
-| latitude | DECIMAL(10,8) | NOT NULL | GPS latitude |
-| longitude | DECIMAL(11,8) | NOT NULL | GPS longitude |
-| min_area | DECIMAL(10,2) | NOT NULL | Minimum area in m² |
-| max_area | DECIMAL(10,2) | NOT NULL | Maximum area in m² |
-| num_bedrooms | INTEGER | NOT NULL | Number of bedrooms |
-| num_bathrooms | INTEGER | NOT NULL | Number of bathrooms |
-| num_floors | INTEGER | NOT NULL | Number of floors |
-| orientation | ENUM | NOT NULL | NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST |
-| transaction_type | ENUM | NOT NULL | SALE, RENT, BOTH |
-| sale_price | DECIMAL(15,2) | NOT NULL | Sale price |
-| rent_price | DECIMAL(15,2) | NOT NULL | Monthly rent price |
-| status | ENUM | NOT NULL | AVAILABLE, PENDING, SOLD, RENTED, UNAVAILABLE |
-| verified | BOOLEAN | NOT NULL | Verification status |
-| view_count | INTEGER | NOT NULL, DEFAULT 0 | Number of views |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
-
-#### Table: `media`
-Media files (images, videos) for properties.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| media_id | UUID | PK, NOT NULL | Primary key |
-| property_id | UUID | FK(properties), NOT NULL | Associated property |
-| url | TEXT | NOT NULL | Media file URL |
-| media_type | ENUM | NOT NULL | IMAGE, VIDEO |
-| display_order | INTEGER | NOT NULL | Display order |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | contract_type | varchar(31) | NOT NULL | Discriminator for contract inheritance (rental/purchase/deposit) |
+| 2 | contract_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each contract |
+| 3 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 4 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 5 | cancellation_penalty | numeric(15, 2) | | Penalty amount if contract is cancelled |
+| 6 | cancellation_reason | text | | Reason for contract cancellation |
+| 7 | cancelled_by | varchar(255) | | Role of party who cancelled the contract |
+| 8 | comment | text | | Customer's comment/review of the contract |
+| 9 | contract_number | varchar(50) | UNIQUE | Physical contract document number/ID |
+| 10 | end_date | date | | When the contract terms end |
+| 11 | rating | smallint | | Rating given for the contract experience |
+| 12 | signed_at | timestamp(6) without time zone | | When physical contract was signed |
+| 13 | special_terms | text | | Any special terms or conditions |
+| 14 | start_date | date | NOT NULL | When the contract terms become effective |
+| 15 | status | varchar(255) | NOT NULL | Current status of contract (draft/active/completed/cancelled) |
+| 16 | agent_id | uuid | FOREIGN KEY → sale_agents | Agent handling this contract |
+| 17 | customer_id | uuid | FOREIGN KEY → customers, NOT NULL | Customer in the contract |
+| 18 | property_id | uuid | FOREIGN KEY → properties, NOT NULL | Property subject of the contract |
 
 ---
 
-### 4. Appointments
+## Table: customers
 
-#### Table: `appointment`
-Property viewing appointments.
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | customer_id | uuid | PRIMARY KEY, FOREIGN KEY → users, NOT NULL | References user_id, extends user entity |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| appointment_id | UUID | PK, NOT NULL | Primary key |
-| property_id | UUID | FK(properties), NOT NULL | Property to view |
-| customer_id | UUID | FK(customers), NOT NULL | Customer |
-| agent_id | UUID | FK(sale_agents), NOT NULL | Assigned agent |
-| appointment_date | TIMESTAMP | NOT NULL | Scheduled date/time |
-| status | ENUM | NOT NULL | PENDING, CONFIRMED, COMPLETED, CANCELLED |
-| notes | TEXT | NOT NULL | Additional notes |
-| cancellation_reason | TEXT | NOT NULL | Reason if cancelled |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
+**Note**: This is an extension table that inherits from `users` table. All customer data is stored in users table with role=CUSTOMER.
 
 ---
 
-### 5. Contracts and Payments
+## Table: deposit_contract
 
-#### Table: `contract`
-Property transaction contracts.
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | agreed_price | numeric(15, 2) | NOT NULL | The agreed upon price for the property |
+| 2 | deposit_amount | numeric(15, 2) | NOT NULL | Amount of deposit paid |
+| 3 | main_contract_type | varchar(255) | NOT NULL | Type of main contract this deposit is for (rental/purchase) |
+| 4 | contract_id | uuid | PRIMARY KEY, FOREIGN KEY → contract, NOT NULL | References parent contract |
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| contract_id | UUID | PK, NOT NULL | Primary key |
-| property_id | UUID | FK(properties), NOT NULL | Associated property |
-| customer_id | UUID | FK(customers), NOT NULL | Buyer/Renter |
-| agent_id | UUID | FK(sale_agents), NOT NULL | Handling agent |
-| contract_type | ENUM | NOT NULL | SALE, RENT |
-| contract_number | VARCHAR(50) | UNIQUE, NOT NULL | Contract number |
-| start_date | DATE | NOT NULL | Contract start date |
-| end_date | DATE | NOT NULL | Contract end date |
-| special_terms | TEXT | NOT NULL | Special terms |
-| status | ENUM | NOT NULL | DRAFT, ACTIVE, COMPLETED, CANCELLED |
-| cancellation_reason | TEXT | NOT NULL | Reason if cancelled |
-| cancellation_penalty | DECIMAL(15,2) | NOT NULL | Cancellation penalty |
-| cancelled_by | ENUM | NOT NULL | Role who cancelled |
-| contract_payment_type | ENUM | NOT NULL | FULL_PAYMENT, INSTALLMENT, PROGRESS_BASED |
-| total_contract_amount | DECIMAL(15,2) | NOT NULL | Total amount |
-| deposit_amount | DECIMAL(15,2) | NOT NULL | Deposit paid |
-| remaining_amount | DECIMAL(15,2) | NOT NULL | Amount remaining |
-| advance_payment_amount | DECIMAL(15,2) | NOT NULL | Advance payment |
-| installment_amount | INTEGER | NOT NULL | Number of installments |
-| progress_milestone | DECIMAL(15,2) | NOT NULL | Progress milestone % |
-| final_payment_amount | DECIMAL(15,2) | NOT NULL | Final payment amount |
-| late_payment_penalty_rate | DECIMAL(5,4) | NOT NULL | Late penalty rate |
-| special_conditions | TEXT | NOT NULL | Special conditions |
-| signed_at | TIMESTAMP | NOT NULL | Signing timestamp |
-| completed_at | TIMESTAMP | NOT NULL | Completion timestamp |
-| rating | SMALLINT | | Customer rating (1-5) |
-| comment | TEXT | | Customer comment |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
-
-#### Table: `payments`
-Payment records for contracts.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| payment_id | UUID | PK, NOT NULL | Primary key |
-| contract_id | UUID | FK(contract), NOT NULL | Associated contract |
-| payment_type | ENUM | NOT NULL | DEPOSIT, INSTALLMENT, FINAL, FULL |
-| amount | DECIMAL(15,2) | NOT NULL | Payment amount |
-| payment_date | TIMESTAMP | NOT NULL | Payment date |
-| due_date | DATE | NOT NULL | Due date |
-| payment_method | VARCHAR(50) | NOT NULL | Payment method |
-| transaction_id | VARCHAR(100) | NOT NULL | Transaction reference |
-| notes | TEXT | NOT NULL | Payment notes |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
+**Note**: This extends the `contract` table using joined inheritance strategy. Used for holding deposits before finalizing main contract.
 
 ---
 
-### 6. Documents
+## Table: districts
 
-#### Table: `document_types`
-Types of identification documents.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| document_type_id | UUID | PK, NOT NULL | Primary key |
-| name | VARCHAR(100) | NOT NULL | Document type name |
-| description | TEXT | NOT NULL | Description |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
-
-#### Table: `identification_documents`
-User identification documents.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| document_id | UUID | PK, NOT NULL | Primary key |
-| user_id | UUID | FK(users), NOT NULL | Document owner |
-| document_type_id | UUID | FK(document_types), NOT NULL | Type of document |
-| document_number | VARCHAR(50) | NOT NULL | Document number |
-| issue_date | DATE | NOT NULL | Issue date |
-| expiry_date | DATE | NOT NULL | Expiry date |
-| issuing_authority | VARCHAR(100) | NOT NULL | Issuing authority |
-| front_image_url | TEXT | NOT NULL | Front image URL |
-| back_image_url | TEXT | NOT NULL | Back image URL |
-| verification_status | ENUM | NOT NULL | PENDING, VERIFIED, REJECTED |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | district_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each district |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | avg_land_price | numeric(15, 2) | | Average land price in this district |
+| 5 | description | varchar(255) | | Description of the district |
+| 6 | district_name | varchar(255) | | Name of the district |
+| 7 | img_url | varchar(255) | | URL to district's representative image |
+| 8 | is_active | boolean | | Whether this district is currently active |
+| 9 | population | integer | | Population count of the district |
+| 10 | total_area | numeric(15, 2) | | Total area of the district |
+| 11 | city_id | uuid | FOREIGN KEY → cities, NOT NULL | City that contains this district |
 
 ---
 
-### 7. Notifications
+## Table: document_types
 
-#### Table: `notifications`
-User notifications.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| notification_id | UUID | PK, NOT NULL | Primary key |
-| user_id | UUID | FK(users), NOT NULL | Recipient user |
-| type | ENUM | NOT NULL | APPOINTMENT, CONTRACT, PAYMENT, SYSTEM, etc. |
-| title | VARCHAR(200) | NOT NULL | Notification title |
-| message | TEXT | NOT NULL | Notification message |
-| related_entity_type | ENUM | NOT NULL | PROPERTY, CONTRACT, APPOINTMENT, etc. |
-| related_entity_id | UUID | NOT NULL | Related entity ID |
-| status | ENUM | NOT NULL | UNREAD, READ, ARCHIVED |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | document_type_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each document type |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | description | varchar(255) | | Description of this document type |
+| 5 | is_compulsory | boolean | | Whether this document type is mandatory |
+| 6 | name | varchar(100) | | Name of the document type (e.g., "Deed", "Certificate") |
 
 ---
 
-### 8. Violation Reports
+## Table: identification_documents
 
-#### Table: `violation_reports`
-Reports of policy violations.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| report_id | UUID | PK, NOT NULL | Primary key |
-| reporter_id | UUID | FK(users), NOT NULL | User who reported |
-| reported_entity_type | ENUM | NOT NULL | PROPERTY, USER, etc. |
-| reported_entity_id | UUID | NOT NULL | Reported entity ID |
-| violation_type | VARCHAR(100) | NOT NULL | Type of violation |
-| description | TEXT | NOT NULL | Violation description |
-| status | ENUM | NOT NULL | PENDING, REVIEWED, RESOLVED |
-| created_at | TIMESTAMP | NOT NULL | Creation timestamp |
-| updated_at | TIMESTAMP | NOT NULL | Last update timestamp |
-| deleted_at | TIMESTAMP | | Soft delete timestamp |
-
----
-
-## MongoDB Collections (NoSQL Database)
-
-### 1. Search Logs
-
-#### Collection: `search_logs`
-Tracks user search behavior for analytics.
-
-```javascript
-{
-  _id: ObjectId,
-  user_id: UUID,
-  city_id: UUID,
-  district_id: UUID,
-  ward_id: UUID,
-  property_id: UUID,
-  property_type_id: UUID,
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | document_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each document |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | document_name | varchar(255) | NOT NULL | Name/title of the document |
+| 5 | document_number | varchar(20) | NOT NULL | Official document reference number |
+| 6 | expiry_date | date | | When the document expires |
+| 7 | file_path | varchar(500) | NOT NULL | Path to the stored document file |
+| 8 | issue_date | date | | When the document was issued |
+| 9 | issuing_authority | varchar(100) | | Authority that issued the document |
+| 10 | rejection_reason | text | | Reason if document was rejected during verification |
+| 11 | verification_status | varchar(255) | | Current verification status (pending/verified/rejected) |
+| 12 | verified_at | timestamp(6) without time zone | | When the document was verified |
+| 13 | document_type_id | uuid | FOREIGN KEY → document_types, NOT NULL | Type of this document |
+| 14 | property_id | uuid | FOREIGN KEY → properties | Property this document belongs to |
 
 ---
 
-### 2. Customer Preferences
+## Table: media
 
-#### Collection: `customer_favorite_properties`
-Customer's favorite/saved properties.
-
-```javascript
-{
-  _id: ObjectId,
-  customer_id: UUID,
-  ref_id: UUID,  // property_id
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
-
-#### Collection: `customer_preferred_cities`
-Customer's preferred cities based on behavior.
-
-```javascript
-{
-  _id: ObjectId,
-  customer_id: UUID,
-  ref_id: UUID,  // city_id
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
-
-#### Collection: `customer_preferred_districts`
-Customer's preferred districts.
-
-```javascript
-{
-  _id: ObjectId,
-  customer_id: UUID,
-  ref_id: UUID,  // district_id
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
-
-#### Collection: `customer_preferred_wards`
-Customer's preferred wards.
-
-```javascript
-{
-  _id: ObjectId,
-  customer_id: UUID,
-  ref_id: UUID,  // ward_id
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
-
-#### Collection: `customer_preferred_property_types`
-Customer's preferred property types.
-
-```javascript
-{
-  _id: ObjectId,
-  customer_id: UUID,
-  ref_id: UUID,  // property_type_id
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | media_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each media file |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | document_type | varchar(255) | | Type classification if media is a document |
+| 5 | file_name | varchar(255) | NOT NULL | Original filename |
+| 6 | file_path | varchar(500) | NOT NULL | Path to stored media file |
+| 7 | media_type | varchar(255) | NOT NULL | Type of media (image/video/document) |
+| 8 | mime_type | varchar(100) | NOT NULL | MIME type of the file |
+| 9 | property_id | uuid | FOREIGN KEY → properties | Property this media belongs to |
+| 10 | violation_id | uuid | FOREIGN KEY → violation_reports | Violation report this media is evidence for |
 
 ---
 
-### 3. Monthly Reports
+## Table: notifications
 
-All reports are generated once per month and stored for historical analysis.
-
-#### Collection: `property_statistic_reports`
-Property and search statistics report.
-
-```javascript
-{
-  _id: ObjectId,
-  report_month: Integer,     // 1-12
-  report_year: Integer,      // e.g., 2025
-  
-  // Property counts
-  total_active_properties: Integer,
-  total_sold_properties_current_month: Integer,
-  total_sold_properties: Integer,      // all-time daily count
-  total_rented_properties_current_month: Integer,
-  total_rented_properties: Integer,    // all-time daily count
-  
-  // Most searched cities (with pagination support)
-  searched_cities_month: [
-    { id: UUID, count: Integer }  // RankedItem - current month
-  ],
-  searched_cities: [
-    { id: UUID, count: Integer }  // RankedItem - all-time
-  ],
-  
-  // Most favorited cities
-  favorite_cities: [
-    { id: UUID, count: Integer }  // RankedItem
-  ],
-  
-  // Most searched districts
-  searched_districts_month: [
-    { id: UUID, count: Integer }
-  ],
-  searched_districts: [
-    { id: UUID, count: Integer }
-  ],
-  
-  // Most favorited districts
-  favorite_districts: [
-    { id: UUID, count: Integer }
-  ],
-  
-  // Most searched wards
-  searched_wards_month: [
-    { id: UUID, count: Integer }
-  ],
-  searched_wards: [
-    { id: UUID, count: Integer }
-  ],
-  
-  // Most favorited wards
-  favorite_wards: [
-    { id: UUID, count: Integer }
-  ],
-  
-  // Most searched property types
-  searched_property_types_month: [
-    { id: UUID, count: Integer }
-  ],
-  searched_property_types: [
-    { id: UUID, count: Integer }
-  ],
-  
-  // Most favorited property types
-  favorite_property_types: [
-    { id: UUID, count: Integer }
-  ],
-  
-  // Most searched individual properties
-  searched_properties_month: [
-    { id: UUID, count: Integer }
-  ],
-  searched_properties: [
-    { id: UUID, count: Integer }
-  ],
-  
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
-
-#### Collection: `financial_reports`
-Financial performance and revenue report.
-
-```javascript
-{
-  _id: ObjectId,
-  report_month: Integer,
-  report_year: Integer,
-  
-  // Revenue metrics
-  total_revenue_current_month: Decimal,
-  total_revenue: Decimal,                    // all-time
-  total_service_fees_current_month: Decimal,
-  
-  // Contract metrics
-  contract_count_current_month: Decimal,
-  contract_count: Decimal,                   // all-time
-  
-  // Financial calculations
-  tax: Decimal,
-  net_profit: Decimal,
-  
-  // Rating metrics
-  total_rates: Decimal,                      // all-time count
-  avg_rating: Decimal,                       // all-time average
-  total_rates_current_month: Decimal,
-  avg_rating_current_month: Decimal,
-  
-  // Revenue by location (with pagination support)
-  revenue_cities: [
-    { id: UUID, revenue: Decimal }           // RankedRevenueItem - all-time
-  ],
-  revenue_cities_current_month: [
-    { id: UUID, revenue: Decimal }           // current month
-  ],
-  
-  revenue_districts: [
-    { id: UUID, revenue: Decimal }
-  ],
-  revenue_districts_current_month: [
-    { id: UUID, revenue: Decimal }
-  ],
-  
-  revenue_wards: [
-    { id: UUID, revenue: Decimal }
-  ],
-  revenue_wards_current_month: [
-    { id: UUID, revenue: Decimal }
-  ],
-  
-  // Revenue by property type
-  revenue_property_types: [
-    { id: UUID, revenue: Decimal }
-  ],
-  revenue_property_types_current_month: [
-    { id: UUID, revenue: Decimal }
-  ],
-  
-  // Revenue by sales agent
-  revenue_sales_agents: [
-    { id: UUID, revenue: Decimal }
-  ],
-  revenue_sales_agents_current_month: [
-    { id: UUID, revenue: Decimal }
-  ],
-  
-  // Sales agent salaries
-  sale_agents_salary_month: [
-    { id: UUID, revenue: Decimal }           // current month salary
-  ],
-  sale_agents_salary_career: [
-    { id: UUID, revenue: Decimal }           // all-time salary
-  ],
-  
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
-
-#### Collection: `agent_performance_reports`
-Sales agent performance metrics.
-
-```javascript
-{
-  _id: ObjectId,
-  report_month: Integer,
-  report_year: Integer,
-  
-  // Agent metrics
-  total_agents: Integer,
-  avg_revenue_per_agent: Decimal,
-  avg_customer_satisfaction: Decimal,
-  
-  // Rating metrics
-  total_rates: Integer,                      // all-time
-  avg_rating: Decimal,                       // all-time
-  total_rates_current_month: Integer,
-  avg_rating_current_month: Decimal,
-  
-  // Individual agent performance (with pagination support)
-  list_performance_month: [
-    {
-      agent_id: UUID,
-      total_contracts: Integer,
-      total_revenue: Decimal,
-      avg_rating: Decimal,
-      performance_tier: String               // BRONZE, SILVER, GOLD, PLATINUM, DIAMOND
-    }
-  ],
-  
-  list_performance_career: [
-    {
-      agent_id: UUID,
-      total_contracts: Integer,
-      total_revenue: Decimal,
-      avg_rating: Decimal,
-      performance_tier: String
-    }
-  ],
-  
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
-
-#### Collection: `customer_analytics_reports`
-Customer behavior and value analytics.
-
-```javascript
-{
-  _id: ObjectId,
-  report_month: Integer,
-  report_year: Integer,
-  
-  // Customer metrics
-  total_customers: Integer,
-  new_customers_acquired_current_month: Integer,
-  avg_customer_transaction_value: Decimal,
-  high_value_customer_count: Integer,
-  customer_satisfaction_score: Decimal,
-  
-  // Rating metrics
-  total_rates: Integer,
-  avg_rating: Decimal,
-  total_rates_current_month: Integer,
-  avg_rating_current_month: Decimal,
-  
-  // Individual customer potential (with pagination support)
-  list_potential_month: [
-    {
-      customer_id: UUID,
-      total_contracts: Integer,
-      total_spent: Decimal,
-      avg_rating: Decimal,
-      customer_tier: String                  // BRONZE, SILVER, GOLD, PLATINUM
-    }
-  ],
-  
-  list_potential_all: [
-    {
-      customer_id: UUID,
-      total_contracts: Integer,
-      total_spent: Decimal,
-      avg_rating: Decimal,
-      customer_tier: String
-    }
-  ],
-  
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
-
-#### Collection: `property_owner_contribution_report`
-Property owner contribution metrics.
-
-```javascript
-{
-  _id: ObjectId,
-  report_month: Integer,
-  report_year: Integer,
-  
-  // Owner metrics
-  total_owners: Integer,
-  contribution_value: Decimal,
-  avg_owners_contribution_value: Decimal,
-  
-  // Individual owner contribution (with pagination support)
-  list_contribution_month: [
-    {
-      owner_id: UUID,
-      total_properties: Integer,
-      total_contracts: Integer,
-      total_revenue: Decimal,
-      contribution_tier: String              // BRONZE, SILVER, GOLD, PLATINUM, DIAMOND
-    }
-  ],
-  
-  list_contribution_all: [
-    {
-      owner_id: UUID,
-      total_properties: Integer,
-      total_contracts: Integer,
-      total_revenue: Decimal,
-      contribution_tier: String
-    }
-  ],
-  
-  created_at: DateTime,
-  updated_at: DateTime
-}
-```
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | notification_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each notification |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | delivery_status | varchar(255) | | Status of notification delivery (sent/failed/pending) |
+| 5 | img_url | varchar(255) | | URL to notification's associated image |
+| 6 | is_read | boolean | | Whether the notification has been read |
+| 7 | message | text | NOT NULL | Notification message content |
+| 8 | read_at | timestamp(6) without time zone | | When the notification was read |
+| 9 | related_entity_id | varchar(100) | | ID of related entity (property/contract/etc) |
+| 10 | related_entity_type | varchar(255) | | Type of related entity |
+| 11 | title | varchar(200) | NOT NULL | Notification title/subject |
+| 12 | type | varchar(255) | | Notification type/category |
+| 13 | recipient_id | uuid | FOREIGN KEY → users, NOT NULL | User who receives this notification |
 
 ---
 
-## Enumerations (Constants)
+## Table: payments
 
-### RoleEnum
-- `USER` - Basic user
-- `CUSTOMER` - Customer/Buyer
-- `PROPERTY_OWNER` - Property owner
-- `SALE_AGENT` - Sales agent
-- `ADMIN` - System administrator
-
-### StatusProfileEnum
-- `ACTIVE` - Active account
-- `INACTIVE` - Inactive account
-- `BANNED` - Banned account
-
-### CustomerTierEnum
-- `BRONZE` - Bronze tier
-- `SILVER` - Silver tier
-- `GOLD` - Gold tier
-- `PLATINUM` - Platinum tier
-
-### PerformanceTierEnum
-- `BRONZE` - Bronze performance
-- `SILVER` - Silver performance
-- `GOLD` - Gold performance
-- `PLATINUM` - Platinum performance
-- `DIAMOND` - Diamond performance
-
-### ContributionTierEnum
-- `BRONZE` - Bronze contribution
-- `SILVER` - Silver contribution
-- `GOLD` - Gold contribution
-- `PLATINUM` - Platinum contribution
-- `DIAMOND` - Diamond contribution
-
-### AppointmentStatusEnum
-- `PENDING` - Awaiting confirmation
-- `CONFIRMED` - Confirmed appointment
-- `COMPLETED` - Completed appointment
-- `CANCELLED` - Cancelled appointment
-
-### ContractTypeEnum
-- `SALE` - Sale contract
-- `RENT` - Rental contract
-
-### ContractStatusEnum
-- `DRAFT` - Draft contract
-- `ACTIVE` - Active contract
-- `COMPLETED` - Completed contract
-- `CANCELLED` - Cancelled contract
-
-### ContractPaymentTypeEnum
-- `FULL_PAYMENT` - Full payment upfront
-- `INSTALLMENT` - Payment in installments
-- `PROGRESS_BASED` - Payment based on progress
-
-### PaymentTypeEnum
-- `DEPOSIT` - Deposit payment
-- `INSTALLMENT` - Installment payment
-- `FINAL` - Final payment
-- `FULL` - Full payment
-
-### VerificationStatusEnum
-- `PENDING` - Pending verification
-- `VERIFIED` - Verified
-- `REJECTED` - Rejected
-
-### NotificationTypeEnum
-- `APPOINTMENT` - Appointment notification
-- `CONTRACT` - Contract notification
-- `PAYMENT` - Payment notification
-- `SYSTEM` - System notification
-- `PROPERTY_UPDATE` - Property update
-- `MESSAGE` - Message notification
-
-### NotificationStatusEnum
-- `UNREAD` - Unread notification
-- `READ` - Read notification
-- `ARCHIVED` - Archived notification
-
-### MediaTypeEnum
-- `IMAGE` - Image file
-- `VIDEO` - Video file
-
-### TransactionTypeEnum
-- `SALE` - For sale
-- `RENT` - For rent
-- `BOTH` - Both sale and rent
-
-### OrientationEnum
-- `NORTH` - North facing
-- `SOUTH` - South facing
-- `EAST` - East facing
-- `WEST` - West facing
-- `NORTHEAST` - Northeast facing
-- `NORTHWEST` - Northwest facing
-- `SOUTHEAST` - Southeast facing
-- `SOUTHWEST` - Southwest facing
-
-### PropertyStatusEnum
-- `AVAILABLE` - Available for transaction
-- `PENDING` - Pending transaction
-- `SOLD` - Sold
-- `RENTED` - Rented
-- `UNAVAILABLE` - Unavailable
-
-### RelatedEntityTypeEnum
-- `PROPERTY` - Property entity
-- `CONTRACT` - Contract entity
-- `APPOINTMENT` - Appointment entity
-- `PAYMENT` - Payment entity
-- `USER` - User entity
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | payment_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each payment |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | amount | numeric(15, 2) | NOT NULL | Payment amount |
+| 5 | due_date | date | NOT NULL | When payment is due |
+| 6 | installment_number | integer | | For installment payments, which installment this is |
+| 7 | notes | text | | Additional payment notes |
+| 8 | paid_time | timestamp(6) without time zone | | When payment was actually made |
+| 9 | payment_method | varchar(255) | | Method used for payment (bank transfer/cash/etc) |
+| 10 | payment_type | varchar(255) | NOT NULL | Type of payment (deposit/rent/purchase/service_fee) |
+| 11 | payway_payment_id | varchar(36) | UNIQUE | Payment ID from Payway payment gateway |
+| 12 | penalty_amount | numeric(15, 2) | | Penalty amount if payment is late |
+| 13 | status | smallint | | Payment status (pending/completed/failed) |
+| 14 | transaction_reference | varchar(100) | | External transaction reference number |
+| 15 | contract_id | uuid | FOREIGN KEY → contract | Contract this payment is for |
+| 16 | payer_user_id | uuid | FOREIGN KEY → users | User who made the payment |
+| 17 | property_id | uuid | FOREIGN KEY → properties | Property this payment relates to |
 
 ---
 
-## Key Design Decisions
+## Table: properties
 
-### PostgreSQL Usage
-- **Relational data**: Users, properties, contracts, payments
-- **ACID compliance**: Critical for financial transactions
-- **Foreign key constraints**: Ensure data integrity
-- **Soft deletes**: All tables use `deleted_at` for soft deletion
-
-### MongoDB Usage
-- **Analytics and reports**: Generated monthly, stored for historical analysis
-- **Search logs**: High-write volume tracking
-- **Customer preferences**: Flexible schema for behavior tracking
-- **Pagination support**: Lists use offset/limit for efficient queries
-
-### Report Generation Strategy
-- Reports are generated **once per month** (not in real-time)
-- All ranked lists (cities, districts, agents, etc.) support pagination via **offset and limit**
-- Data is pre-sorted and stored to avoid runtime sorting overhead
-- Uses `RankedItem` for count-based rankings and `RankedRevenueItem` for revenue-based rankings
-
-### UUID Primary Keys
-- All entities use UUID for primary keys
-- Better for distributed systems and security
-- No sequential ID leakage
-
-### Timestamps
-- All tables/collections have `created_at` and `updated_at`
-- Enables audit trails and data lineage
-
----
-
-## Indexes (Recommended)
-
-### PostgreSQL Indexes
-```sql
--- Users
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
-
--- Properties
-CREATE INDEX idx_properties_owner_id ON properties(owner_id);
-CREATE INDEX idx_properties_ward_id ON properties(ward_id);
-CREATE INDEX idx_properties_type_id ON properties(property_type_id);
-CREATE INDEX idx_properties_status ON properties(status);
-CREATE INDEX idx_properties_transaction_type ON properties(transaction_type);
-
--- Contracts
-CREATE INDEX idx_contracts_property_id ON contract(property_id);
-CREATE INDEX idx_contracts_customer_id ON contract(customer_id);
-CREATE INDEX idx_contracts_agent_id ON contract(agent_id);
-CREATE INDEX idx_contracts_status ON contract(status);
-CREATE INDEX idx_contracts_signed_at ON contract(signed_at);
-
--- Payments
-CREATE INDEX idx_payments_contract_id ON payments(contract_id);
-CREATE INDEX idx_payments_payment_date ON payments(payment_date);
-```
-
-### MongoDB Indexes
-```javascript
-// Search logs
-db.search_logs.createIndex({ user_id: 1, created_at: -1 });
-db.search_logs.createIndex({ city_id: 1 });
-db.search_logs.createIndex({ property_id: 1 });
-
-// Customer preferences
-db.customer_favorite_properties.createIndex({ customer_id: 1 });
-db.customer_preferred_cities.createIndex({ customer_id: 1 });
-
-// Reports
-db.property_statistic_reports.createIndex({ report_year: -1, report_month: -1 });
-db.financial_reports.createIndex({ report_year: -1, report_month: -1 });
-db.agent_performance_reports.createIndex({ report_year: -1, report_month: -1 });
-```
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | property_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each property |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | amenities | text | | List of amenities/features |
+| 5 | approved_at | timestamp(6) without time zone | | When property listing was approved |
+| 6 | area | numeric(10, 2) | NOT NULL | Property area in square meters |
+| 7 | balcony_orientation | varchar(100) | | Direction the balcony faces (N/S/E/W/NE/etc) |
+| 8 | bathrooms | integer | | Number of bathrooms |
+| 9 | bedrooms | integer | | Number of bedrooms |
+| 10 | commission_rate | numeric(5, 4) | NOT NULL | Commission rate for agents (e.g., 0.0250 = 2.5%) |
+| 11 | description | text | NOT NULL | Detailed property description |
+| 12 | floors | integer | | Number of floors |
+| 13 | full_address | varchar(255) | | Complete address string |
+| 14 | house_orientation | varchar(100) | | Direction the house faces |
+| 15 | price_amount | numeric(15, 2) | NOT NULL | Listed price of the property |
+| 16 | price_per_square_meter | numeric(15, 2) | | Calculated price per square meter |
+| 17 | rooms | integer | | Total number of rooms |
+| 18 | service_fee_amount | numeric(15, 2) | NOT NULL | Service fee charged for this listing |
+| 19 | service_fee_collected_amount | numeric(15, 2) | NOT NULL | Amount of service fee collected so far |
+| 20 | status | varchar(255) | | Property status (pending/approved/sold/rented/rejected) |
+| 21 | title | varchar(200) | NOT NULL | Property listing title |
+| 22 | transaction_type | varchar(255) | NOT NULL | Type of transaction (SALE/RENT) |
+| 23 | view_count | integer | | Number of times property has been viewed |
+| 24 | year_built | integer | | Year the property was built |
+| 25 | assigned_agent_id | uuid | FOREIGN KEY → sale_agents | Agent assigned to manage this property |
+| 26 | owner_id | uuid | FOREIGN KEY → property_owners, NOT NULL | Owner of the property |
+| 27 | property_type_id | uuid | FOREIGN KEY → property_types, NOT NULL | Type of property (house/apartment/land) |
+| 28 | ward_id | uuid | FOREIGN KEY → wards, NOT NULL | Ward/commune where property is located |
 
 ---
 
-## Migration Notes
+## Table: property_owners
 
-### Property Area Changes
-- **Previous**: Single `total_area` field
-- **Current**: Separate `min_area` and `max_area` fields
-- **Reason**: Support properties with variable area ranges
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | owner_id | uuid | PRIMARY KEY, FOREIGN KEY → users, NOT NULL | References user_id, extends user entity |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | approved_at | timestamp(6) without time zone | | When owner account was approved |
 
-### Report Pagination
-- All report lists (searched cities, revenue by location, agent performance, etc.) support pagination
-- Use `offset` and `limit` parameters when querying
-- Data is pre-sorted in descending order (highest first)
+**Note**: This is an extension table that inherits from `users` table. All owner data is stored in users table with role=PROPERTY_OWNER.
 
 ---
 
-*Last Updated: 2025-10-23*
+## Table: property_types
 
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | property_type_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each property type |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | avatar_url | varchar(255) | | URL to representative icon/image |
+| 5 | description | text | | Description of this property type |
+| 6 | is_active | boolean | | Whether this type is currently active |
+| 7 | type_name | varchar(50) | NOT NULL, UNIQUE | Name of property type (e.g., "House", "Apartment") |
+
+---
+
+## Table: purchase_contract
+
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | advance_payment_amount | numeric(15, 2) | | Amount paid in advance |
+| 2 | commission_amount | numeric(15, 2) | NOT NULL | Commission amount for the sale |
+| 3 | property_value | numeric(15, 2) | NOT NULL | Total value of the property being purchased |
+| 4 | contract_id | uuid | PRIMARY KEY, FOREIGN KEY → contract, NOT NULL | References parent contract |
+| 5 | deposit_contract_id | uuid | FOREIGN KEY → deposit_contract, UNIQUE | Related deposit contract if exists |
+
+**Note**: This extends the `contract` table using joined inheritance strategy for property purchase contracts.
+
+---
+
+## Table: rental_contract
+
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | accumulated_unpaid_penalty | numeric(15, 2) | NOT NULL | Total accumulated late payment penalties |
+| 2 | commission_amount | numeric(15, 2) | NOT NULL | Commission amount for the rental |
+| 3 | late_payment_penalty_rate | numeric(5, 4) | NOT NULL | Penalty rate for late payments (e.g., 0.0100 = 1%) |
+| 4 | month_count | integer | NOT NULL | Total number of months for the rental period |
+| 5 | monthly_rent_amount | numeric(15, 2) | NOT NULL | Monthly rent amount |
+| 6 | security_deposit_amount | numeric(15, 2) | | Security deposit amount |
+| 7 | security_deposit_decision_at | timestamp(6) without time zone | | When decision on security deposit return was made |
+| 8 | security_deposit_decision_reason | varchar(500) | | Reason for security deposit decision |
+| 9 | security_deposit_status | varchar(255) | | Status of security deposit (held/returned/forfeited) |
+| 10 | unpaid_months_count | integer | NOT NULL | Number of months with unpaid rent |
+| 11 | contract_id | uuid | PRIMARY KEY, FOREIGN KEY → contract, NOT NULL | References parent contract |
+| 12 | deposit_contract_id | uuid | FOREIGN KEY → deposit_contract, UNIQUE | Related deposit contract if exists |
+
+**Note**: This extends the `contract` table using joined inheritance strategy for property rental contracts.
+
+---
+
+## Table: sale_agents
+
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | sale_agent_id | uuid | PRIMARY KEY, FOREIGN KEY → users, NOT NULL | References user_id, extends user entity |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | employee_code | varchar(255) | NOT NULL, UNIQUE | Unique employee code for the agent |
+| 5 | hired_date | timestamp(6) without time zone | NOT NULL | When the agent was hired |
+| 6 | max_properties | integer | NOT NULL | Maximum number of properties agent can manage |
+
+**Note**: This is an extension table that inherits from `users` table. All agent data is stored in users table with role=AGENT.
+
+---
+
+## Table: users
+
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | user_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each user |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | avatar_url | varchar(255) | | URL to user's avatar image |
+| 5 | back_id_picture_path | varchar(255) | | Path to back side of ID card image |
+| 6 | bank_account_name | varchar(150) | | Name on bank account |
+| 7 | bank_account_number | varchar(30) | | Bank account number |
+| 8 | bank_bin | varchar(20) | | Bank code (SWIFT/BIC), misnamed as bank_bin |
+| 9 | day_of_birth | date | | User's date of birth |
+| 10 | email | varchar(255) | NOT NULL, UNIQUE | User's email address |
+| 11 | fcm_token | varchar(255) | | Firebase Cloud Messaging token for push notifications |
+| 12 | first_name | varchar(255) | NOT NULL | User's first name |
+| 13 | front_id_picture_path | varchar(255) | | Path to front side of ID card image |
+| 14 | gender | varchar(255) | | User's gender |
+| 15 | identification_number | varchar(255) | | ID card/passport number |
+| 16 | issue_date | date | | Date ID was issued |
+| 17 | issuing_authority | varchar(255) | | Authority that issued the ID |
+| 18 | last_login_at | timestamp(6) without time zone | | Timestamp of last login |
+| 19 | last_name | varchar(255) | NOT NULL | User's last name |
+| 20 | nation | varchar(255) | | User's nationality |
+| 21 | password | varchar(255) | NOT NULL | Hashed password |
+| 22 | phone_number | varchar(255) | NOT NULL, UNIQUE | User's phone number |
+| 23 | role | smallint | NOT NULL | User role enum (customer/agent/owner/admin) |
+| 24 | status | smallint | NOT NULL | Account status (active/suspended/pending verification) |
+| 25 | zalo_contact | varchar(255) | | Zalo messaging app contact |
+| 26 | ward_id | uuid | FOREIGN KEY → wards, NOT NULL | Ward where user resides |
+
+---
+
+## Table: violation_reports
+
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | violation_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each violation report |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | description | text | NOT NULL | Detailed description of the violation |
+| 5 | penalty_applied | smallint | | Type of penalty applied for this violation |
+| 6 | related_entity_id | uuid | NOT NULL | ID of entity being reported (property/user/etc) |
+| 7 | related_entity_type | smallint | NOT NULL | Type of entity being reported |
+| 8 | resolution_notes | text | | Notes about how violation was resolved |
+| 9 | resolved_at | timestamp(6) without time zone | | When the violation was resolved |
+| 10 | status | smallint | | Current status (pending/under_review/resolved) |
+| 11 | violation_type | smallint | NOT NULL | Type of violation (fraud/spam/inappropriate_content) |
+| 12 | reporter_user | uuid | FOREIGN KEY → users, NOT NULL | User who reported the violation |
+
+---
+
+## Table: wards
+
+| No | Attribute name | Data type | Constraint | Meaning/Note |
+|----|----------------|-----------|------------|--------------|
+| 1 | ward_id | uuid | PRIMARY KEY, NOT NULL | Unique identifier for each ward |
+| 2 | created_at | timestamp(6) without time zone | | Timestamp when record was created |
+| 3 | updated_at | timestamp(6) without time zone | | Timestamp when record was last updated |
+| 4 | avg_land_price | numeric(15, 2) | | Average land price in this ward |
+| 5 | description | varchar(255) | NOT NULL | Description of the ward |
+| 6 | img_url | varchar(255) | | URL to ward's representative image |
+| 7 | is_active | boolean | | Whether this ward is currently active |
+| 8 | population | integer | NOT NULL | Population count of the ward |
+| 9 | total_area | numeric(15, 2) | NOT NULL | Total area of the ward |
+| 10 | ward_name | varchar(255) | NOT NULL | Name of the ward |
+| 11 | district_id | uuid | FOREIGN KEY → districts, NOT NULL | District that contains this ward |
+
+---
+
+## Entity Relationships Summary
+
+### Geographic Hierarchy
+- **cities** → **districts** → **wards** (one-to-many cascading)
+- **users** and **properties** reference **wards**
+
+### User Specialization (Table-per-class inheritance)
+- **users** (base table)
+  - **customers** (role extension)
+  - **property_owners** (role extension)
+  - **sale_agents** (role extension)
+
+### Contract Hierarchy (Joined inheritance)
+- **contract** (base table)
+  - **deposit_contract** (initial deposit)
+  - **purchase_contract** (property purchase)
+  - **rental_contract** (property rental)
+
+### Property Management
+- **properties** belongs to **property_owners**
+- **properties** managed by **sale_agents**
+- **properties** has many **media**, **identification_documents**, **appointments**
+- **properties** categorized by **property_types**
+
+### Transactional
+- **appointments** link **customers**, **properties**, and **sale_agents**
+- **contracts** formalize agreements between **customers** and **properties**
+- **payments** track financial transactions for **contracts** and **properties**
+
+### Supporting Systems
+- **notifications** sent to **users**
+- **violation_reports** can target any entity, reported by **users**
+- **media** can belong to **properties** or **violation_reports**
+- **identification_documents** verify **properties** using **document_types**

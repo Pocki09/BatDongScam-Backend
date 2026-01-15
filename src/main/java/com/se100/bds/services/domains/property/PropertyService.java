@@ -5,6 +5,7 @@ import com.se100.bds.dtos.requests.property.UpdatePropertyTypeRequest;
 import com.se100.bds.dtos.requests.property.CreatePropertyRequest;
 import com.se100.bds.dtos.requests.property.UpdatePropertyRequest;
 import com.se100.bds.dtos.requests.property.UpdatePropertyStatusRequest;
+import com.se100.bds.dtos.responses.property.PropertyContractHistoryDatapoint;
 import com.se100.bds.dtos.responses.property.PropertyDetails;
 import com.se100.bds.dtos.responses.property.PropertyTypeResponse;
 import com.se100.bds.dtos.responses.property.SimplePropertyCard;
@@ -66,4 +67,6 @@ public interface PropertyService {
     int countPropertiesByPropertyTypeId(UUID propertyTypeId);
 
     Page<PropertyCard> getFavoritePropertyCards(List<UUID> propertyIds, Pageable pageable);
+
+    List<PropertyContractHistoryDatapoint> getPropertyContractHistory(UUID propertyId, boolean includePastContracts);
 }

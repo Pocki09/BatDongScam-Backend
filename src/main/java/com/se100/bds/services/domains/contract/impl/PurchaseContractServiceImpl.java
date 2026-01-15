@@ -465,6 +465,7 @@ public class PurchaseContractServiceImpl implements PurchaseContractService {
 
         contract.setCancellationReason(request.getCancellationReason());
         contract.setCancelledBy(isCustomer ? RoleEnum.CUSTOMER : RoleEnum.PROPERTY_OWNER);
+        contract.setCancelledAt(LocalDateTime.now());
         contract.setStatus(ContractStatusEnum.CANCELLED);
 
         // Refund advance payment if it was paid
@@ -501,6 +502,7 @@ public class PurchaseContractServiceImpl implements PurchaseContractService {
         contract.setStatus(ContractStatusEnum.CANCELLED);
         contract.setCancellationReason("Voided by admin");
         contract.setCancelledBy(RoleEnum.ADMIN);
+        contract.setCancelledAt(LocalDateTime.now());
 
         PurchaseContract saved = purchaseContractRepository.save(contract);
         log.info("Voided purchase contract {} by admin", contractId);
@@ -819,6 +821,7 @@ public class PurchaseContractServiceImpl implements PurchaseContractService {
                 .specialTerms(contract.getSpecialTerms())
                 .cancellationReason(contract.getCancellationReason())
                 .cancelledBy(contract.getCancelledBy())
+                .cancelledAt(contract.getCancelledAt())
                 .property(PropertySummary.builder()
                         .id(property.getId())
                         .title(property.getTitle())

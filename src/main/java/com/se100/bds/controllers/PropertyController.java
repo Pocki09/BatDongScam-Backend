@@ -10,6 +10,7 @@ import com.se100.bds.dtos.responses.SingleResponse;
 import com.se100.bds.dtos.responses.SuccessResponse;
 import com.se100.bds.dtos.responses.error.DetailedErrorResponse;
 import com.se100.bds.dtos.responses.error.ErrorResponse;
+import com.se100.bds.dtos.responses.property.PropertyContractHistoryDatapoint;
 import com.se100.bds.dtos.responses.property.PropertyTypeResponse;
 import com.se100.bds.dtos.responses.property.PropertyDetails;
 import com.se100.bds.services.domains.property.PropertyService;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 import static com.se100.bds.utils.Constants.SECURITY_SCHEME_NAME;
@@ -43,6 +45,24 @@ import static com.se100.bds.utils.Constants.SECURITY_SCHEME_NAME;
 @Slf4j
 public class PropertyController extends AbstractBaseController {
     private final PropertyService propertyService;
+
+    /// Get assigned property's contract history (both 5 years in the future and 2.5 future, 2.5 past)
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_AGENT')")
+    @GetMapping("/{propertyId}/contract-history")
+    @Operation(
+            summary = "Get property contract history",
+            description = "Retrieve the contract history for a specific property, including past and future contracts.",
+            security = @SecurityRequirement(name = SECURITY_SCHEME_NAME)
+    )
+    public ResponseEntity<SingleResponse<List<PropertyContractHistoryDatapoint>>> getPropertyContractHistory(
+            @Parameter(description = "Property ID", required = true)
+            @PathVariable UUID propertyId,
+            @RequestParam(name = "includePastContracts", required = false, defaultValue = "true")
+            boolean includePastContracts
+    ) {
+        var propertyDetails = propertyService.getPropertyContractHistory(propertyId, includePastContracts);
+        return responseFactory.successSingle(propertyDetails, "Property contract history retrieved successfully");
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN','PROPERTY_OWNER')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

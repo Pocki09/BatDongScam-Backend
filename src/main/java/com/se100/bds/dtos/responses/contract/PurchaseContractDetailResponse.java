@@ -55,6 +55,9 @@ public class PurchaseContractDetailResponse {
     @Schema(description = "Which party cancelled (if cancelled)")
     private RoleEnum cancelledBy;
 
+    @Schema(description = "When the contract was cancelled")
+    private LocalDateTime cancelledAt;
+
     // Related entities
     @Schema(description = "Property information")
     private PropertySummary property;

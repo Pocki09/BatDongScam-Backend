@@ -482,6 +482,7 @@ public class DepositContractServiceImpl implements DepositContractService {
 
         contract.setCancellationReason(request.getCancellationReason());
         contract.setCancelledBy(isCustomer ? RoleEnum.CUSTOMER : RoleEnum.PROPERTY_OWNER);
+        contract.setCancelledAt(LocalDateTime.now());
         contract.setStatus(ContractStatusEnum.CANCELLED);
 
         // Handle money transfer based on who cancelled (only if contract was active or pending payment)
@@ -539,6 +540,7 @@ public class DepositContractServiceImpl implements DepositContractService {
         contract.setStatus(ContractStatusEnum.CANCELLED);
         contract.setCancellationReason("Voided by admin");
         contract.setCancelledBy(RoleEnum.ADMIN);
+        contract.setCancelledAt(LocalDateTime.now());
 
         DepositContract saved = depositContractRepository.save(contract);
         log.info("Voided deposit contract {} by admin", contractId);
@@ -825,6 +827,7 @@ public class DepositContractServiceImpl implements DepositContractService {
                 .cancellationPenalty(contract.getCancellationPenalty())
                 .cancellationReason(contract.getCancellationReason())
                 .cancelledBy(contract.getCancelledBy())
+                .cancelledAt(contract.getCancelledAt())
                 .property(PropertySummary.builder()
                         .id(property.getId())
                         .title(property.getTitle())
