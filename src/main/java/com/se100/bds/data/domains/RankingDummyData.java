@@ -123,7 +123,7 @@ public class RankingDummyData {
 
         for (PropertyOwner owner : owners) {
             // Calculate contribution metrics
-            List<Property> properties = propertyRepository.findAllByOwner_Id(Pageable.unpaged(), owner.getId()).stream().toList();
+            List<Property> properties = propertyRepository.findAllByOwner_Id(owner.getId()).stream().toList();
 
             int totalForSales = (int) properties.stream()
                     .filter(p -> p.getTransactionType() == Constants.TransactionTypeEnum.SALE)
@@ -185,7 +185,7 @@ public class RankingDummyData {
         List<IndividualPropertyOwnerContributionAll> rankings = new ArrayList<>();
 
         for (PropertyOwner owner : owners) {
-            List<Property> properties = propertyRepository.findAllByOwner_Id(Pageable.unpaged(), owner.getId()).stream().toList();
+            List<Property> properties = propertyRepository.findAllByOwner_Id(owner.getId()).stream().toList();
 
             int totalForSales = (int) properties.stream()
                     .filter(p -> p.getTransactionType() == Constants.TransactionTypeEnum.SALE)
@@ -240,7 +240,7 @@ public class RankingDummyData {
 
         for (SaleAgent agent : agents) {
             // Get agent's properties and contracts
-            List<Property> properties = propertyRepository.findAllByAssignedAgent_Id(Pageable.unpaged(), agent.getId()).stream().toList();
+            List<Property> properties = propertyRepository.findAllByAssignedAgent_Id(agent.getId()).stream().toList();
             List<Contract> contracts = contractRepository.findAllByAgent_Id(agent.getId());
 
             int handlingProperties = (int) properties.stream()
@@ -300,7 +300,7 @@ public class RankingDummyData {
         List<IndividualSalesAgentPerformanceCareer> rankings = new ArrayList<>();
 
         for (SaleAgent agent : agents) {
-            List<Property> properties = propertyRepository.findAllByAssignedAgent_Id(Pageable.unpaged(), agent.getId()).stream().toList();
+            List<Property> properties = propertyRepository.findAllByAssignedAgent_Id(agent.getId()).stream().toList();
             List<Contract> contracts = contractRepository.findAllByAgent_Id(agent.getId());
 
             int currentHandlingProperties = (int) properties.stream()

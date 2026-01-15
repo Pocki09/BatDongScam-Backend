@@ -11,6 +11,7 @@ import com.se100.bds.dtos.responses.contract.RentalContractListItem;
 import com.se100.bds.exceptions.BadRequestException;
 import com.se100.bds.exceptions.ForbiddenException;
 import com.se100.bds.exceptions.NotFoundException;
+import com.se100.bds.models.entities.contract.Contract;
 import com.se100.bds.models.entities.contract.DepositContract;
 import com.se100.bds.models.entities.contract.Payment;
 import com.se100.bds.models.entities.contract.RentalContract;
@@ -28,11 +29,13 @@ import com.se100.bds.repositories.domains.user.SaleAgentRepository;
 import com.se100.bds.services.domains.contract.DepositContractService;
 import com.se100.bds.services.domains.contract.RentalContractService;
 import com.se100.bds.services.domains.notification.NotificationService;
-import com.se100.bds.services.domains.payment.PaymentService;
+import com.se100.bds.services.domains.report.FinancialUpdateService;
 import com.se100.bds.services.domains.user.UserService;
 import com.se100.bds.services.payment.PaymentGatewayService;
+import com.se100.bds.services.payment.dto.CreatePaymentSessionRequest;
 import com.se100.bds.services.payment.dto.CreatePaymentSessionResponse;
 import com.se100.bds.services.payment.dto.CreatePayoutSessionRequest;
+import com.se100.bds.utils.Constants;
 import com.se100.bds.utils.Constants.ContractStatusEnum;
 import com.se100.bds.utils.Constants.MainContractTypeEnum;
 import com.se100.bds.utils.Constants.NotificationTypeEnum;
@@ -78,7 +81,8 @@ public class RentalContractServiceImpl implements RentalContractService {
 
     private static final int DEFAULT_PAYMENT_DUE_DAYS = 7;
     private static final String CURRENCY_VND = "VND";
-    private final PaymentService paymentService;
+    private static final String PAYOS_METHOD = "PAYOS";
+    private final FinancialUpdateService financialUpdateService;
 
     // ========================
     // RENTAL CONTRACT CRUD
@@ -369,7 +373,7 @@ public class RentalContractServiceImpl implements RentalContractService {
             throw new BadRequestException("Security deposit payment already exists for this contract");
         }
 
-        Payment payment = paymentService.createContractPayment(
+        Payment payment = createContractPayment(
                 contract,
                 PaymentTypeEnum.SECURITY_DEPOSIT,
                 contract.getSecurityDepositAmount(),
@@ -426,7 +430,7 @@ public class RentalContractServiceImpl implements RentalContractService {
         contract.setSignedAt(LocalDateTime.now());
 
         // Create first month rent payment
-        Payment firstMonthPayment = paymentService.createContractPayment(
+        Payment firstMonthPayment = createContractPayment(
                 contract,
                 PaymentTypeEnum.MONTHLY,
                 contract.getMonthlyRentAmount(),
@@ -563,6 +567,13 @@ public class RentalContractServiceImpl implements RentalContractService {
 
         // Payout first month rent to owner (minus commission)
         BigDecimal payoutAmount = contract.getMonthlyRentAmount().subtract(contract.getCommissionAmount());
+        var currentTime = LocalDate.now();
+        financialUpdateService.transaction(
+                contract.getProperty().getId(),
+                contract.getCommissionAmount(),
+                currentTime.getMonthValue(),
+                currentTime.getYear()
+        );
         triggerPayoutToOwner(contract, payoutAmount, "First month rent payment");
 
         rentalContractRepository.save(contract);
@@ -577,6 +588,13 @@ public class RentalContractServiceImpl implements RentalContractService {
 
         // Payout to owner (monthly rent - commission)
         BigDecimal payoutAmount = contract.getMonthlyRentAmount().subtract(contract.getCommissionAmount());
+        var currentTime = LocalDate.now();
+        financialUpdateService.transaction(
+                contract.getProperty().getId(),
+                contract.getCommissionAmount(),
+                currentTime.getMonthValue(),
+                currentTime.getYear()
+        );
         triggerPayoutToOwner(contract, payoutAmount, "Monthly rent payment");
 
         log.info("Monthly rent payment {} completed for rental contract {}, triggered payout to owner", paymentId, contractId);
@@ -638,6 +656,43 @@ public class RentalContractServiceImpl implements RentalContractService {
     // HELPER METHODS
     // ==================
 
+    @Transactional
+    public Payment createContractPayment(
+            Contract contract, PaymentTypeEnum type, BigDecimal amount, String description, int paymentDueDays
+    ) {
+        Payment payment = Payment.builder()
+                .contract(contract)
+                .property(contract.getProperty())
+                .payer(contract.getCustomer().getUser())
+                .paymentType(type)
+                .amount(amount)
+                .dueDate(LocalDate.now().plusDays(paymentDueDays))
+                .status(Constants.PaymentStatusEnum.PENDING)
+                .paymentMethod(PAYOS_METHOD)
+                .build();
+
+        Payment savedPayment = paymentRepository.save(payment);
+
+        CreatePaymentSessionRequest gatewayRequest = CreatePaymentSessionRequest.builder()
+                .amount(amount)
+                .currency(CURRENCY_VND)
+                .description(description)
+                .metadata(Map.of(
+                        "paymentType", type.getValue(),
+                        "contractId", contract.getId().toString(),
+                        "paymentId", savedPayment.getId().toString()
+                ))
+                .build();
+
+        CreatePaymentSessionResponse gatewayResponse = paymentGatewayService.createPaymentSession(
+                gatewayRequest,
+                savedPayment.getId().toString()
+        );
+
+        savedPayment.setPaywayPaymentId(gatewayResponse.getId());
+        return paymentRepository.save(savedPayment);
+    }
+
     private void checkReadAccess(RentalContract contract) {
         boolean isAdmin = hasRole(RoleEnum.ADMIN);
         if (isAdmin) return;
@@ -684,6 +739,28 @@ public class RentalContractServiceImpl implements RentalContractService {
         PropertyOwner owner = contract.getProperty().getOwner();
         User ownerUser = owner.getUser();
 
+        // ensure owner has bank details
+        if (ownerUser.getBankAccountNumber() == null || ownerUser.getBankAccountName() == null || ownerUser.getBankBin() == null) {
+            log.error("Cannot trigger payout to owner {} for contract {}: missing bank details",
+                    owner.getId(), contract.getId());
+            // send notification to admin to manually transfer
+            notificationService.createNotification(
+                    // TODO: put the admin getter somewhere portable and reusable
+                    userService.findByEmail("admin@example.com"),
+                    NotificationTypeEnum.SYSTEM_ALERT,
+                    "Payout Failed - Missing Bank Details",
+                    String.format("Cannot process payout of %s VND to property owner '%s' (ID: %s) for rental contract %s due to missing bank details. Please process manually.",
+                            amount.toPlainString(),
+                            ownerUser.getFullName(),
+                            ownerUser.getId(),
+                            contract.getId()),
+                    RelatedEntityTypeEnum.CONTRACT,
+                    contract.getId().toString(),
+                    null
+            );
+            return;
+        }
+
         CreatePayoutSessionRequest payoutRequest = CreatePayoutSessionRequest.builder()
                 .amount(amount)
                 .currency(CURRENCY_VND)
@@ -706,6 +783,28 @@ public class RentalContractServiceImpl implements RentalContractService {
 
     private void triggerPayoutToCustomer(RentalContract contract, BigDecimal amount, String description) {
         User customerUser = contract.getCustomer().getUser();
+
+        // ensure owner has bank details
+        if (customerUser.getBankAccountNumber() == null || customerUser.getBankAccountName() == null || customerUser.getBankBin() == null) {
+            log.error("Cannot trigger payout to owner {} for contract {}: missing bank details",
+                    customerUser.getId(), contract.getId());
+            // send notification to admin to manually transfer
+            notificationService.createNotification(
+                    // TODO: put the admin getter somewhere portable and reusable
+                    userService.findByEmail("admin@example.com"),
+                    NotificationTypeEnum.SYSTEM_ALERT,
+                    "Payout Failed - Missing Bank Details",
+                    String.format("Cannot process payout of %s VND to customer '%s' (ID: %s) for rental contract %s due to missing bank details. Please process manually.",
+                            amount.toPlainString(),
+                            customerUser.getFullName(),
+                            customerUser.getId(),
+                            contract.getId()),
+                    RelatedEntityTypeEnum.CONTRACT,
+                    contract.getId().toString(),
+                    null
+            );
+            return;
+        }
 
         CreatePayoutSessionRequest payoutRequest = CreatePayoutSessionRequest.builder()
                 .amount(amount)

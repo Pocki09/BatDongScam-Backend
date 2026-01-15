@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Objects;
 
 @Component
@@ -40,6 +41,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (StringUtils.hasText(token)) {
                 // Try to validate the token
                 try {
+                    //! DEBUG: Mock tokens for testing purpose
+                    Map<String, String> mockTokenToEmail = Map.of(
+                            "admin", "admin@example.com",
+                            "agent1", "agent1@example.com",
+                            "customer1", "customer1@example.com"
+                    );
+
+                    if (mockTokenToEmail.containsKey(token)) {
+                        String email = mockTokenToEmail.get(token);
+                        UserDetails user = userService.loadUserByEmail(email);
+
+                        UsernamePasswordAuthenticationToken auth =
+                                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+
                     if (jwtTokenProvider.validateToken(token, request)) {
                         String id = jwtTokenProvider.getUserIdFromToken(token);
                         UserDetails user = userService.loadUserById(id);

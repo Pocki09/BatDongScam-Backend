@@ -669,6 +669,28 @@ public class PurchaseContractServiceImpl implements PurchaseContractService {
         PropertyOwner owner = contract.getProperty().getOwner();
         User ownerUser = owner.getUser();
 
+        // ensure owner has bank details
+        if (ownerUser.getBankAccountNumber() == null || ownerUser.getBankAccountName() == null || ownerUser.getBankBin() == null) {
+            log.error("Cannot trigger payout to owner {} for contract {}: missing bank details",
+                    owner.getId(), contract.getId());
+            // send notification to admin to manually transfer
+            notificationService.createNotification(
+                    // TODO: put the admin getter somewhere portable and reusable
+                    userService.findByEmail("admin@example.com"),
+                    NotificationTypeEnum.SYSTEM_ALERT,
+                    "Payout Failed - Missing Bank Details",
+                    String.format("Cannot process payout of %s VND to property owner '%s' (ID: %s) for purchase contract %s due to missing bank details. Please process manually.",
+                            amount.toPlainString(),
+                            ownerUser.getFullName(),
+                            ownerUser.getId(),
+                            contract.getId()),
+                    RelatedEntityTypeEnum.CONTRACT,
+                    contract.getId().toString(),
+                    null
+            );
+            return;
+        }
+
         // TODO: Add payout entity tracking when entity is added
         CreatePayoutSessionRequest payoutRequest = CreatePayoutSessionRequest.builder()
                 .amount(amount)
